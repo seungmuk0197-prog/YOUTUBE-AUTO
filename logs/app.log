@@ -1,0 +1,54 @@
+2026-02-09 23:04:53,376 [pipeline] INFO: 파이프라인 시작: 테스트 주제
+2026-02-09 23:04:53,377 [pipeline] INFO: [1/5] 대본 생성
+2026-02-09 23:41:19,349 [video.creator] INFO: 비디오 렌더링 시작: outputvideos\1770648078_untitled.mp4
+2026-02-09 23:41:20,016 [video.creator] INFO: 비디오 생성 완료: outputvideos\1770648078_untitled.mp4
+2026-02-09 23:45:41,405 [pipeline] INFO: 파이프라인 시작: 파이썬 튜토리얼 초급 완벽 가이드
+2026-02-09 23:45:41,405 [pipeline] INFO: [1/5] 대본 생성
+2026-02-09 23:45:45,491 [script.generator] INFO: 대본 생성 시작 - 주제: 파이썬 튜토리얼 초급 완벽 가이드
+2026-02-09 23:46:01,270 [script.generator] INFO: 대본 생성 완료 - 제목: 파이썬 튜토리얼: 초급 완벽 가이드, 섹션 수: 4
+2026-02-09 23:46:01,272 [script.generator] INFO: 대본 검수 시작 - 제목: 파이썬 튜토리얼: 초급 완벽 가이드
+2026-02-09 23:46:10,301 [script.generator] INFO: 대본 검수 완료 - 제목: 파이썬 튜토리얼: 초급 완벽 가이드
+2026-02-09 23:46:10,302 [pipeline] INFO: [2/5] 영상 생성
+2026-02-09 23:46:13,851 [video.creator] INFO: TTS 시작: model=gpt-4o-mini-tts voice=alloy
+2026-02-09 23:46:13,852 [video.creator] ERROR: TTS 생성 실패
+Traceback (most recent call last):
+  File "c:\Users\채승묵\projects\youtube-auto\src\video\creator.py", line 72, in generate_audio
+    resp = self.client.audio.speech.create(
+        model=self.tts_model,
+    ...<2 lines>...
+        format=self.tts_format,
+    )
+TypeError: Speech.create() got an unexpected keyword argument 'format'
+2026-02-09 23:46:13,858 [pipeline] ERROR: 영상 생성 실패
+Traceback (most recent call last):
+  File "c:\Users\채승묵\projects\youtube-auto\src\pipeline.py", line 42, in run
+    audio_path, video_path = self._step_video(script)
+                             ~~~~~~~~~~~~~~~~^^^^^^^^
+  File "c:\Users\채승묵\projects\youtube-auto\src\pipeline.py", line 95, in _step_video
+    audio_path = creator.generate_audio(script)
+  File "c:\Users\채승묵\projects\youtube-auto\src\video\creator.py", line 72, in generate_audio
+    resp = self.client.audio.speech.create(
+        model=self.tts_model,
+    ...<2 lines>...
+        format=self.tts_format,
+    )
+TypeError: Speech.create() got an unexpected keyword argument 'format'
+2026-02-09 23:46:13,865 [pipeline] INFO: [3/5] 썸네일 생성: SKIPPED
+2026-02-09 23:46:13,865 [pipeline] INFO: [4/5] 유튜브 업로드: SKIPPED
+2026-02-09 23:46:13,866 [pipeline] INFO: [5/5] 리포트 생성: SKIPPED
+2026-02-09 23:46:13,866 [pipeline] INFO: 파이프라인 완료
+2026-02-09 23:47:16,884 [pipeline] INFO: 파이프라인 시작: AI 기초 학습 가이드
+2026-02-09 23:47:16,885 [pipeline] INFO: [1/5] 대본 생성
+2026-02-09 23:47:20,460 [script.generator] INFO: 대본 생성 시작 - 주제: AI 기초 학습 가이드
+2026-02-09 23:47:39,147 [script.generator] INFO: 대본 생성 완료 - 제목: AI 기초 학습 가이드: 시작하기, 섹션 수: 4
+2026-02-09 23:47:39,148 [script.generator] INFO: 대본 검수 시작 - 제목: AI 기초 학습 가이드: 시작하기
+2026-02-09 23:47:47,747 [script.generator] INFO: 대본 검수 완료 - 제목: AI 기초 학습 가이드: 시작하기
+2026-02-09 23:47:47,747 [pipeline] INFO: [2/5] 영상 생성
+2026-02-09 23:47:49,846 [video.creator] INFO: TTS 시작: model=gpt-4o-mini-tts voice=alloy
+2026-02-09 23:48:03,239 [video.creator] INFO: TTS 파일 생성: outputvideos\1770648469_AI.mp3
+2026-02-09 23:48:04,010 [video.creator] INFO: 비디오 렌더링 시작: outputvideos\1770648483_AI.mp4
+2026-02-09 23:48:23,179 [video.creator] INFO: 비디오 생성 완료: outputvideos\1770648483_AI.mp4
+2026-02-09 23:48:23,183 [pipeline] INFO: [3/5] 썸네일 생성: SKIPPED
+2026-02-09 23:48:23,184 [pipeline] INFO: [4/5] 유튜브 업로드: SKIPPED
+2026-02-09 23:48:23,184 [pipeline] INFO: [5/5] 리포트 생성: SKIPPED
+2026-02-09 23:48:23,184 [pipeline] INFO: 파이프라인 완료
