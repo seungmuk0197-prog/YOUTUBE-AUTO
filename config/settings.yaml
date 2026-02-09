@@ -1,0 +1,53 @@
+# YouTube 자동화 설정
+
+app:
+  project_name: "youtube-auto"
+
+# OpenAI / LLM 설정
+llm:
+  provider: "openai"
+  model: "gpt-4o"
+  api_key: ""
+
+# TTS 설정
+tts:
+  provider: "openai"
+  model: "gpt-4o-mini-tts"
+  voice: "alloy"
+  format: "mp3"
+  # optional: tts.api_key can be set here; otherwise set OPENAI_API_KEY environment variable
+  api_key: ""
+
+# 파이프라인 실행 플래그
+pipeline:
+  enable_video: true
+  enable_thumbnail: false
+  enable_upload: false
+  enable_report: false
+
+# 비디오 렌더링 설정
+video:
+  width: 1280
+  height: 720
+  fps: 30
+  background_color: [10, 10, 10]
+  codec: "libx264"
+  audio_codec: "aac"
+
+# 썸네일 설정 (사용 시)
+thumbnail:
+  width: 1280
+  height: 720
+  font: "NanumGothicBold"
+
+# YouTube API 설정
+youtube:
+  client_secrets_file: "config/client_secret.json"
+  default_category: "22"  # People & Blogs
+  default_privacy: "private"
+
+# 출력 경로 (디렉토리가 없으면 자동 생성)
+output:
+  videos_dir: "outputvideos"
+  thumbnails_dir: "outputthumbnails"
+  reports_dir: "outputreports"
