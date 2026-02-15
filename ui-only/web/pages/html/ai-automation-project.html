@@ -1,0 +1,4523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 자동화 프로젝트</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout {
+      display: flex;
+      min-height: 100vh;
+      padding-top: 0;
+    }
+    /* 공통 Sticky Header */
+    .global-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #fff;
+      border-bottom: 1px solid #e8ecf4;
+      padding: 12px 32px;
+      margin: 0 -32px 16px -32px;
+    }
+    /* 헤더 로그인 행 */
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+    .login-inline-row .login-input {
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover { background: #d5d5d5; }
+    .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-login:hover { background: #d5d5d5; }
+    .btn-login:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    /* Left Sidebar - Updates (1열) */
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .sidebar-logo:hover {
+      color: #9333ea;
+    }
+    /* 조치 카드 */
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    .sidebar-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .sidebar-card-desc {
+      font-size: 13px;
+      color: #718096;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+    .sidebar-card-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #3182ce;
+      text-decoration: none;
+      margin-bottom: 8px;
+    }
+    .sidebar-card-link:hover {
+      color: #2b6cb0;
+      text-decoration: underline;
+    }
+    .sidebar-card-link .ext-icon {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+    .sidebar-card-date {
+      font-size: 12px;
+      color: #a0aec0;
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    .sidebar-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .sidebar-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .sidebar-btn-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .sidebar-btn-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .sidebar-btn-secondary .folder-icon {
+      font-size: 18px;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    /* 워크플로우 스텝 */
+    .workflow-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list {
+      list-style: none;
+      overflow-y: auto;
+      padding-right: 4px;
+      flex: 1;
+    }
+    .workflow-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .workflow-list::-webkit-scrollbar-track {
+      background: #edf2f7;
+      border-radius: 3px;
+    }
+    .workflow-list::-webkit-scrollbar-thumb {
+      background: #cbd5e0;
+      border-radius: 3px;
+    }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+      text-decoration: none;
+    }
+    a.workflow-item:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+      color: #2d3748;
+    }
+    .workflow-item:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+      color: #2d3748;
+    }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+    /* 1~2단계(AI 창작)와 3단계(사용자 제어) 시각적 구분 */
+    .workflow-list li:nth-child(3) .workflow-item {
+      margin-top: 10px;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 14px;
+    }
+    /* 하단 대댓글 제작기 */
+    .sidebar-footer-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: auto;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .sidebar-footer-btn:hover {
+      background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(45,55,72,0.35);
+    }
+    .sidebar-footer-btn .chat-icon {
+      font-size: 18px;
+    }
+    /* Main Content */
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area {
+      flex: 1;
+    }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle { 
+      font-size: 14px; 
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .header-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-icon:hover { background: #f8f8f8; }
+    .header-row-old {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+    }
+    .header-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
+    }
+    .btn-icon:hover {
+      background: #f8f8f8;
+    }
+    .info-banner {
+      background: #fffde7;
+      border: 1px solid #f5e642;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #5c4a00;
+      margin-bottom: 20px;
+      border-radius: 6px;
+    }
+    .search-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .search-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #e8e8e8;
+      color: #333;
+    }
+    .search-input::placeholder {
+      color: #888;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary:hover {
+      background: #c62828;
+    }
+    .project-box {
+      background: linear-gradient(135deg, #e8d5e8 0%, #f0e0f0 100%);
+      border: 1px solid #e0c0e0;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      position: relative;
+    }
+    .project-box .trash-icon {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 18px;
+      color: #666;
+      cursor: pointer;
+    }
+    .project-box .project-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 12px;
+    }
+    .project-box .meta {
+      font-size: 13px;
+      color: #555;
+    }
+    .project-box .meta span {
+      display: block;
+      margin-bottom: 4px;
+    }
+    /* Topic Generation Section */
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 8px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+    /* AI 추천 주제 결과 리스트 */
+    .ai-result-section {
+      margin-top: 24px;
+      margin-bottom: 24px;
+    }
+    .ai-topic-list {
+      margin-top: 12px;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      overflow: hidden;
+    }
+    .ai-topic-item {
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 14px;
+      border: none;
+      background: #fff;
+      cursor: pointer;
+      text-align: left;
+    }
+    .ai-topic-item + .ai-topic-item {
+      border-top: 1px solid #f1f1f1;
+    }
+    .ai-topic-item:hover {
+      background: #fdf2f8;
+    }
+    .ai-topic-index {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      background: #ff6fae;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .ai-topic-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .ai-topic-title {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+      font-weight: 600;
+    }
+    .ai-topic-reason {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.5;
+    }
+    .ai-topic-empty {
+      padding: 14px;
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+    }
+    /* 주제 선택 탭 */
+    .topic-type-tabs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .topic-type-tab {
+      padding: 10px 20px;
+      background: #fff;
+      border: 2px solid #e8e8e8;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .topic-type-tab:hover {
+      border-color: #cbd5e0;
+    }
+    .topic-type-tab.active {
+      background: #ffeef5;
+      border-color: #ffb3d9;
+      color: #c2185b;
+    }
+    /* 선택 해제 버튼 */
+    .btn-clear-selection {
+      padding: 6px 12px;
+      background: #e0e0e0;
+      color: #666;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-left: auto;
+    }
+    .btn-clear-selection:hover {
+      background: #d5d5d5;
+      border-color: #b0b0b0;
+    }
+    .btn-clear-selection:active {
+      background: #c0c0c0;
+    }
+    /* 주제 아이콘 리스트 */
+    .topic-icon-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+      padding: 16px;
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+    }
+    .topic-icon-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      min-width: 80px;
+      background: #fff;
+      border: 2px solid #e8e8e8;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .topic-icon-item:hover {
+      border-color: #cbd5e0;
+      transform: translateY(-2px);
+    }
+    .topic-icon-item.selected {
+      background: #ffeef5;
+      border-color: #ffb3d9;
+    }
+    .topic-icon-item.disabled {
+      opacity: 0.45;
+      pointer-events: none;
+      filter: grayscale(0.2);
+    }
+    .topic-icon-item .icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+    .topic-icon-item .label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #333;
+      text-align: center;
+    }
+    /* 토픽 탭 */
+    .topics-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .topic-tab {
+      padding: 8px 16px;
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .topic-tab:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .topic-tab.active {
+      background: #3182ce;
+      border-color: #3182ce;
+      color: #fff;
+    }
+    .topic-tab:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .topic-type-tab:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .topics-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 16px;
+    }
+    .topics-date {
+      font-size: 12px;
+      font-weight: 600;
+      color: #718096;
+      white-space: nowrap;
+    }
+    .topics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+      height: auto;
+      min-height: 0;
+      overflow: visible;
+    }
+    .topic-card.selected {
+      background: #ffeef5;
+      border-color: #ffb3d9;
+    }
+    .topic-card.disabled {
+      opacity: 0.45;
+      pointer-events: none;
+      filter: grayscale(0.2);
+    }
+    .topic-card:not(.disabled) {
+      opacity: 1;
+      pointer-events: auto;
+      filter: none;
+    }
+    .topic-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .topic-num {
+      font-size: 14px;
+      font-weight: 700;
+      color: #666;
+      min-width: 24px;
+    }
+    .topic-content {
+      flex: 1;
+      min-width: 0;
+    }
+    .topic-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+    .topic-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .topic-category {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .cat-tech { background: #42a5f5; }
+    .cat-game { background: #ef5350; }
+    .cat-life { background: #66bb6a; }
+    .cat-ent { background: #ab47bc; }
+    .cat-sport { background: #ff9800; }
+    .cat-food { background: #26a69a; }
+    .topic-views {
+      font-size: 12px;
+      color: #888;
+    }
+    .topic-keywords {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .topic-keyword {
+      font-size: 11px;
+      color: #4a5568;
+      background: #edf2f7;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #e2e8f0;
+      white-space: nowrap;
+    }
+    .data-footer {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 28px;
+    }
+    .input-area {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .input-area input,
+    .input-area textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      background: #fff;
+      box-sizing: border-box;
+    }
+    .input-area textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    .input-area input::placeholder,
+    .input-area textarea::placeholder {
+      color: #999;
+    }
+    .btn-script {
+      display: block;
+      width: 100%;
+      max-width: 200px;
+      margin: 0 auto 16px;
+      padding: 10px 16px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
+    }
+    .btn-script:hover {
+      background: #f5f5f5;
+    }
+    .btn-generate {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 24px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-generate:hover {
+      background: #c62828;
+    }
+    .btn-generate .play-icon {
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      position: relative;
+    }
+    .btn-generate .play-icon::after {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 5px;
+      border: 5px solid transparent;
+      border-left: 8px solid #e53935;
+      border-right: 0;
+    }
+
+    /* 대본 직접 넣기 모달 */
+    .script-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .script-modal-overlay.show { display: flex; }
+    .script-modal {
+      width: 100%;
+      max-width: 720px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      border: 1px solid rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .script-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #fafafa;
+    }
+    .script-modal-title { font-size: 15px; font-weight: 700; color: #222; }
+    .script-modal-close {
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: #e0e0e0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      color: #333;
+    }
+    .script-modal-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .script-modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .script-modal-grid .full { grid-column: 1 / -1; }
+    .script-field-label { font-size: 13px; font-weight: 700; color: #2d3748; margin-bottom: 6px; }
+    .script-textarea {
+      overflow-y: auto;
+      overflow-x: hidden;
+      width: 100%;
+      min-height: 140px;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    .script-input {
+      width: 100%;
+      height: 36px;
+      padding: 0 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .script-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .btn-secondary {
+      height: 34px;
+      padding: 0 14px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-secondary:hover { background: #d5d5d5; }
+
+    /* 전과정 Auto 버튼 */
+    .btn-auto-full {
+      width: 100%;
+      padding: 24px 36px;
+      background: linear-gradient(135deg, #9333ea 0%, #ec4899 50%, #f472b6 100%);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 24px rgba(147, 51, 234, 0.4), 0 0 40px rgba(236, 72, 153, 0.3);
+      margin-top: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-auto-full::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      transition: left 0.5s;
+    }
+    .btn-auto-full:hover::before {
+      left: 100%;
+    }
+    .btn-auto-full:hover {
+      background: linear-gradient(135deg, #7c3aed 0%, #db2777 50%, #f472b6 100%);
+      box-shadow: 0 12px 32px rgba(147, 51, 234, 0.5), 0 0 60px rgba(236, 72, 153, 0.4);
+      transform: translateY(-3px);
+    }
+    .btn-auto-full:active {
+      transform: translateY(-1px);
+    }
+    .btn-auto-full:disabled {
+      background: #cbd5e0;
+      color: #999;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+    .btn-auto-full:disabled::before {
+      display: none;
+    }
+
+    /* 진행 모달 */
+    .progress-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .progress-modal-overlay.show {
+      display: flex;
+    }
+    .progress-modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      animation: modalFadeIn 0.3s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    .progress-modal-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 24px;
+      text-align: center;
+      animation: pulseText 2s ease-in-out infinite;
+    }
+    @keyframes pulseText {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.8;
+        transform: scale(1.02);
+      }
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 16px;
+      background: #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      position: relative;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #9333ea 0%, #ec4899 50%, #f472b6 100%);
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .progress-bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(100%);
+      }
+    }
+    .progress-step-info {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .progress-step-number {
+      font-size: 16px;
+      font-weight: 700;
+      color: #9333ea;
+      margin-bottom: 8px;
+    }
+    .progress-step-message {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 16px;
+      min-height: 28px;
+    }
+    .progress-percentage {
+      font-size: 14px;
+      font-weight: 600;
+      color: #64748b;
+      margin-top: 8px;
+      text-align: center;
+    }
+    .progress-loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #9333ea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .progress-error {
+      margin-top: 16px;
+      padding: 12px;
+      background: #fee2e2;
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      color: #991b1b;
+      font-size: 14px;
+      display: none;
+    }
+    .progress-error.show {
+      display: block;
+    }
+    .progress-retry-btn,
+    .progress-manual-btn {
+      margin-top: 12px;
+      padding: 10px 20px;
+      background: #dc2626;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .progress-retry-btn:hover,
+    .progress-manual-btn:hover {
+      background: #b91c1c;
+      transform: translateY(-1px);
+    }
+    .progress-manual-btn {
+      background: #9333ea;
+      margin-left: 8px;
+    }
+    .progress-manual-btn:hover {
+      background: #7c3aed;
+    }
+
+    /* 복구 모달 */
+    .recovery-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 10001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .recovery-modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      animation: modalFadeIn 0.3s ease-out;
+    }
+    .recovery-modal-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .recovery-modal-content {
+      margin-bottom: 24px;
+      line-height: 1.6;
+      color: #4a5568;
+    }
+    .recovery-modal-content p {
+      margin-bottom: 12px;
+    }
+    .recovery-modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    .btn-recovery-resume,
+    .btn-recovery-cancel {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-recovery-resume {
+      background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+      color: #fff;
+    }
+    .btn-recovery-resume:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
+    }
+    .btn-recovery-cancel {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+    .btn-recovery-cancel:hover {
+      background: #cbd5e0;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- Left Sidebar - 1열 업데이트 사항 -->
+    <aside class="sidebar">
+      <div class="sidebar-logo" onclick="window.location.href='ai-automation-project.html'" title="홈으로 이동">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <!-- 워크플로우 단계 -->
+      <div class="workflow-wrap">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item active">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+
+      <!-- 하단: 대댓글 제작기 -->
+      <button type="button" class="sidebar-footer-btn">
+        <span class="chat-icon">💬</span> 대댓글 제작기
+      </button>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>AI 자동화 프로젝트</h1>
+          <p class="subtitle">작업한 내용을 저장하고 관리하세요</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID">
+            <input type="password" class="login-input" id="loginPw" placeholder="Password">
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+          <div class="header-buttons">
+            <a href="/" class="btn-icon" style="text-decoration:none;color:inherit;">🏠 메인화면</a>
+            <button type="button" class="btn-icon">ℹ️ 안내사항</button>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title">주제 생성</h2>
+      <p class="section-desc">키워드를 입력하지 않으면 선택한 카테고리 기준으로 주제를 생성합니다.</p>
+      
+      <a href="step-3.html" class="btn-generate" style="margin-bottom: 16px; display:inline-block; text-decoration:none; text-align:center;">
+        내 대본으로 즉시 제작하기 (3단계로 이동)
+      </a>
+
+      <!-- 주제 타입 선택 탭 -->
+      <div class="topic-type-tabs">
+        <button class="topic-type-tab active" data-type="basic">기본 주제</button>
+        <button class="topic-type-tab" data-type="niche">틈새 주제</button>
+        <button class="topic-type-tab" data-type="channel">운영 채널</button>
+        <button type="button" class="btn-clear-selection" id="btnClearTopicSelection" data-section="topic">선택 해제</button>
+      </div>
+
+      <!-- 주제 아이콘 리스트 -->
+      <div class="topic-icon-list" id="basicTopicIcons"></div>
+      <div class="topic-icon-list" id="nicheTopicIcons" style="display: none;"></div>
+      <div class="topic-icon-list" id="channelTopicIcons" style="display: none;"></div>
+
+      <!-- 토픽 탭 -->
+      <div class="topics-tabs" style="margin-top: 24px;">
+        <button class="topic-tab active" data-tab="weekly">주간 급상승</button>
+        <button class="topic-tab" data-tab="daily">일간 핫이슈</button>
+      </div>
+      <div class="topics-header">
+        <span id="topicsHeader">주간 급상승 토픽 TOP 20 ⚡🔥</span>
+        <span class="topics-date" id="topicsDate"></span>
+      </div>
+      <div class="topics-grid" id="topicsGrid">
+        <!-- 데이터는 API에서 동적으로 로드됩니다 -->
+        <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #999;">데이터를 불러오는 중...</div>
+      </div>
+
+      <p class="data-footer" id="dataFooter">데이터 기준: 로딩 중...</p>
+
+      <!-- 키워드 선정 -->
+      <h2 class="section-title" style="margin-top: 24px;">키워드 선정</h2>
+      <div class="input-area" style="padding: 0; border: none; background: transparent;">
+        <input type="text" id="keywordInput" placeholder="키워드를 입력하면 해당 키워드 중심으로 주제를 생성합니다">
+      </div>
+
+      <!-- 전과정 Auto 버튼 -->
+      <button type="button" class="btn-auto-full" id="btnFullAuto" disabled>
+        🚀 전과정 Auto 영상 제작 시작
+      </button>
+
+      <!-- 최하단 실행 버튼 -->
+      <button type="button" class="btn-generate" id="btnAnalyzeGenerate" style="margin-top: 16px;">
+        <span class="play-icon"></span>
+        AI 분석 주제 생성하기
+      </button>
+
+      <!-- AI 추천 주제 선택 결과 섹션 -->
+      <div class="ai-result-section" id="aiTopicResults" style="display:none;">
+        <h2 class="section-title" style="margin-top: 24px;">추천 주제 선택</h2>
+        <p class="section-desc">생성된 주제 중 하나를 선택하면 바로 2. AI 대본 생성 단계로 이동합니다.</p>
+        <div class="ai-topic-list" id="aiTopicList">
+          <!-- AI가 생성한 주제를 여기에서 렌더링 -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 진행 모달 -->
+  <div class="progress-modal-overlay" id="progressModal">
+    <div class="progress-modal">
+      <div class="progress-modal-title">🤖 AI 영상 자동 생성 중...</div>
+      <div class="progress-step-info">
+        <div class="progress-step-number" id="progressStepNumber">Step 0 / 9</div>
+        <div class="progress-step-message" id="progressStepMessage">초기화 중...</div>
+        <div class="progress-percentage" id="progressPercentage">0%</div>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+      </div>
+      <div class="progress-loading">
+        <div class="loading-spinner"></div>
+      </div>
+      <div class="progress-error" id="progressError">
+        <div id="progressErrorText"></div>
+        <div style="display: flex; gap: 8px; justify-content: center;">
+          <button class="progress-retry-btn" id="progressRetryBtn" style="display: none;">재시도</button>
+          <button class="progress-manual-btn" id="progressManualBtn" style="display: none;">수동 전환</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 대본 직접 넣기: 텍스트/파일/URL 입력 모달 -->
+  <div class="script-modal-overlay" id="scriptModal">
+    <div class="script-modal">
+      <div class="script-modal-header">
+        <div class="script-modal-title">대본 직접 넣기</div>
+        <button type="button" class="script-modal-close" id="scriptModalClose">✕</button>
+      </div>
+      <div class="script-modal-body">
+        <div class="script-modal-grid">
+          <div class="full">
+            <div class="script-field-label">텍스트 입력</div>
+            <textarea class="script-textarea" id="scriptText" placeholder="대본을 입력하거나 붙여넣으세요"></textarea>
+          </div>
+          <div>
+            <div class="script-field-label">파일 업로드 (.txt)</div>
+            <input type="file" id="scriptFile" class="script-input" accept=".txt,text/plain">
+          </div>
+          <div>
+            <div class="script-field-label">URL 입력</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="scriptUrl" class="script-input" placeholder="https://..." style="flex:1;">
+              <button type="button" class="btn-generate" id="scriptUrlLoadBtn" style="width:auto;padding:0 12px;height:34px;white-space:nowrap;">불러오기</button>
+            </div>
+          </div>
+        </div>
+        <div class="script-actions">
+          <button type="button" class="btn-secondary" id="scriptModalCancel">취소</button>
+          <button type="button" class="btn-generate" id="scriptApplyBtn" style="width:auto;padding:0 16px;height:34px;">
+            그대로 적용
+          </button>
+          <button type="button" class="btn-generate" id="scriptAnalyzeBtn" style="width:auto;padding:0 16px;height:34px;">
+            재구성
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 전역 상태 관리
+    var globalState = {
+      selectedTopicType: 'basic',
+      selectedCategory: null,
+      selectedTopics: [],
+      generatedMaterials: null,
+      keyword: '',
+      scriptText: '',
+      aiTopics: []
+    };
+    var isAutoProcessing = false;
+    var currentAutoStep = 0;
+    var autoProcessError = null;
+    var currentProjectId = null;
+    var autoSaveInterval = null;
+
+    // ===== 주제 목록 (가나다순 자동 정렬) =====
+    var BASIC_TOPICS = [
+      'AI 도구 리뷰','ASMR','게임 가이드','공부 팁','뉴스/시사 요약','동기부여','리액션 영상','반려동물','브이로그','메이크업 튜토리얼','여행 가이드','요리 레시피','영화/드라마 리뷰','제품 언박싱','재테크 기초','패션 코디','홈 트레이딩','IT 기기 비교'
+    ].sort(function(a,b){ return a.localeCompare(b,'ko'); });
+
+    var NICHE_TOPICS = [
+      '1인 미디어','3D 프린팅','AI 자동화','VR/AR 작업','가구 리폼','고전 게임','공예 재테크','나홀로 캠핑','데이터 분석','디지털 노마드','디지털 드로잉','명상 테라피','미국 배당주','미니멀 라이프','무인 창업','비건 비즈니스','부동산 경매','소상공인 마케팅','스마트홈','시니어 IT','식물 재테크','심리 상담','와인 소믈리에','은퇴 설계','재생 에너지','정부 지원금','중고차 관리','커리어 컨설팅','친환경 창업','토플/아이엘츠','특수 외국어','퍼스널 브랜딩','협업툴 리뷰'
+    ].sort(function(a,b){ return a.localeCompare(b,'ko'); });
+
+    var CHANNEL_TOPICS = [
+      '뉴스 채널','순위 채널(Top 10)','쇼핑 쇼츠','시니어 건강','시니어 썰'
+    ].sort(function(a,b){ return a.localeCompare(b,'ko'); });
+
+    function getTopicIcon(label) {
+      if (label.indexOf('AI') !== -1) return '🤖';
+      if (label.indexOf('ASMR') !== -1) return '🎧';
+      if (label.indexOf('게임') !== -1) return '🎮';
+      if (label.indexOf('공부') !== -1) return '📚';
+      if (label.indexOf('뉴스') !== -1 || label.indexOf('시사') !== -1) return '📰';
+      if (label.indexOf('여행') !== -1) return '✈️';
+      if (label.indexOf('요리') !== -1 || label.indexOf('레시피') !== -1) return '🍳';
+      if (label.indexOf('메이크업') !== -1) return '💄';
+      if (label.indexOf('패션') !== -1) return '👗';
+      if (label.indexOf('언박싱') !== -1 || label.indexOf('기기') !== -1) return '📦';
+      if (label.indexOf('재테크') !== -1 || label.indexOf('배당') !== -1 || label.indexOf('경매') !== -1) return '💰';
+      if (label.indexOf('시니어') !== -1 || label.indexOf('은퇴') !== -1) return '🧓';
+      if (label.indexOf('명상') !== -1 || label.indexOf('심리') !== -1) return '🧘';
+      if (label.indexOf('캠핑') !== -1) return '🏕️';
+      if (label.indexOf('스마트홈') !== -1) return '🏠';
+      return '📌';
+    }
+
+    function renderTopicIconList(containerId, topics) {
+      var el = document.getElementById(containerId);
+      if (!el) return;
+      el.innerHTML = '';
+      topics.forEach(function(label) {
+        var item = document.createElement('div');
+        item.className = 'topic-icon-item';
+        item.setAttribute('data-category', label);
+        item.innerHTML = '<div class="icon">' + getTopicIcon(label) + '</div><div class="label">' + label + '</div>';
+        el.appendChild(item);
+      });
+    }
+
+    function renderAllTopicIconLists() {
+      renderTopicIconList('basicTopicIcons', BASIC_TOPICS);
+      renderTopicIconList('nicheTopicIcons', NICHE_TOPICS);
+      renderTopicIconList('channelTopicIcons', CHANNEL_TOPICS);
+    }
+
+    function setActiveTopicType(type) {
+      globalState.selectedTopicType = type;
+      var basic = document.getElementById('basicTopicIcons');
+      var niche = document.getElementById('nicheTopicIcons');
+      var channel = document.getElementById('channelTopicIcons');
+      if (basic) basic.style.display = type === 'basic' ? 'grid' : 'none';
+      if (niche) niche.style.display = type === 'niche' ? 'grid' : 'none';
+      if (channel) channel.style.display = type === 'channel' ? 'grid' : 'none';
+    }
+
+    // 주제 타입 탭 기능 (기본/틈새/운영 채널)
+    renderAllTopicIconLists();
+    setActiveTopicType(globalState.selectedTopicType);
+    document.querySelectorAll('.topic-type-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        document.querySelectorAll('.topic-type-tab').forEach(function(t) {
+          t.classList.remove('active');
+        });
+        this.classList.add('active');
+
+        var type = this.getAttribute('data-type');
+        setActiveTopicType(type);
+      });
+    });
+
+    var keywordInputEl = document.getElementById('keywordInput');
+    var topicsGridEl = document.getElementById('topicsGrid');
+    var aiResultSectionEl = document.getElementById('aiTopicResults');
+    var aiTopicListEl = document.getElementById('aiTopicList');
+
+    // ===== AI 주제 생성 로직 (전문가 페르소나 + 5가지 관점) =====
+    function getBaseContext() {
+      var keyword = keywordInputEl ? keywordInputEl.value.trim() : '';
+      var seed =
+        keyword ||
+        globalState.keyword ||
+        globalState.selectedCategory ||
+        (globalState.selectedTopics && globalState.selectedTopics[0]) ||
+        'AI 콘텐츠';
+
+      var field = '콘텐츠';
+      if (/재테크|배당|주식|부동산|경매/.test(seed)) field = '재테크';
+      else if (/테크|IT|AI|기기|기술/.test(seed)) field = '테크/AI';
+      else if (/시니어|은퇴|노인/.test(seed)) field = '시니어';
+
+      return {
+        seed: seed,
+        field: field,
+        personaPrefix: '10년 경력의 전문 콘텐츠 전략가이자 ' + field + ' 분야 수석 연구원 관점에서, '
+      };
+    }
+
+    function scoreTopic(searchKeyword, targetPersona) {
+      // 간단한 가중치 합산으로 내부 점수 계산 (UI에는 노출하지 않음)
+      var score = 0;
+      if (searchKeyword.length >= 2) score += 0.3;
+      if (/[?|!]/.test(searchKeyword)) score += 0.2;
+      if (/202[6-9]|미래|예측|전망/.test(searchKeyword)) score += 0.2;
+      if (/초보|입문|처음|시작/.test(targetPersona)) score += 0.15;
+      if (/전업|실전|전략/.test(targetPersona)) score += 0.15;
+      return Math.min(1, score);
+    }
+
+    function buildPerspectiveTopics(ctx) {
+      var seed = ctx.seed;
+      var persona = ctx.personaPrefix;
+      var topics = [];
+
+      // A: Deep Dive (1~3)
+      [
+        {
+          title: seed + '의 탄생과 진화: 우리가 놓쳤던 숨겨진 역사',
+          reason: persona + '초기 등장부터 지금까지 ' + seed + '가 어떻게 진화했는지 시간 순으로 짚어주며 시청자의 이해도를 끌어올립니다.',
+          searchKeyword: seed + ' 역사',
+          targetPersona: '배경지식을 알고 싶은 진지한 시청자'
+        },
+        {
+          title: '숫자로 보는 ' + seed + ' 성장 곡선',
+          reason: persona + '시장 데이터와 통계를 기반으로 ' + seed + '의 성장 속도와 전환점을 분석해 신뢰감을 줍니다.',
+          searchKeyword: seed + ' 통계 데이터',
+          targetPersona: '투자·비즈니스 관점으로 트렌드를 보는 시청자'
+        },
+        {
+          title: '현업이 말하는 ' + seed + '의 진짜 핵심 기술 한눈에 정리',
+          reason: persona + '마케팅 문구가 아닌 실제 현업에서 쓰이는 핵심 기술 요소만 추려 알려줘 전문가 인사이트를 제공합니다.',
+          searchKeyword: seed + ' 핵심 기술',
+          targetPersona: '실무 중심의 정보가 궁금한 시청자'
+        }
+      ].forEach(function(t) {
+        t.perspective = 'A';
+        t.score = scoreTopic(t.searchKeyword, t.targetPersona);
+        topics.push(t);
+      });
+
+      // B: Controversial (4~6)
+      [
+        {
+          title: "'" + seed + "' 과연 거품일까, 필수 트렌드일까?",
+          reason: persona + '양극단의 의견을 공정하게 정리해 시청자가 스스로 판단할 수 있도록 돕는 구도를 만듭니다.',
+          searchKeyword: seed + ' 거품 논란',
+          targetPersona: '트렌드에 뒤처지기 싫지만 섣불리 뛰어들기 부담스러운 시청자'
+        },
+        {
+          title: seed + ' 규제와 윤리 논쟁, 어디까지가 안전선인가',
+          reason: persona + seed + ' 관련 규제·윤리 이슈를 실제 사례와 함께 풀어내어 댓글 토론을 자연스럽게 유도합니다.',
+          searchKeyword: seed + ' 규제 윤리',
+          targetPersona: '사회적 파급력을 따지는 시청자'
+        },
+        {
+          title: seed + '로 돈 버는 사람 vs 잃는 사람, 결정적 차이 한 가지',
+          reason: persona + '성공·실패 케이스를 극단 비교해 시청자의 공포와 욕망을 동시에 자극하는 구조로 설계합니다.',
+          searchKeyword: seed + ' 실패 사례',
+          targetPersona: '당장 수익화·성과에 관심이 큰 시청자'
+        }
+      ].forEach(function(t) {
+        t.perspective = 'B';
+        t.score = scoreTopic(t.searchKeyword, t.targetPersona);
+        topics.push(t);
+      });
+
+      // C: How-to (7~9)
+      [
+        {
+          title: '하루 30분, ' + seed + '로 시작하는 현실적인 첫걸음 가이드',
+          reason: persona + '과장된 성공담이 아닌, 바쁜 직장인도 따라 할 수 있는 최소 행동 루틴만 정리해 줍니다.',
+          searchKeyword: seed + ' 시작 방법',
+          targetPersona: '시간이 부족한 직장인·초보자'
+        },
+        {
+          title: '실패를 줄이는 ' + seed + ' 체크리스트 7가지',
+          reason: persona + '시청자가 바로 캡처해 갈 수 있는 체크리스트 형식으로 구성해 공유·저장을 유도합니다.',
+          searchKeyword: seed + ' 체크리스트',
+          targetPersona: '실수 없이 차근차근 배우고 싶은 시청자'
+        },
+        {
+          title: '한 달 안에 체감 성과를 만드는 ' + seed + ' 실전 루틴',
+          reason: persona + '4주 단위 실행 계획으로 구조화해, 시청자가 목표와 일정을 명확히 그릴 수 있게 도와줍니다.',
+          searchKeyword: seed + ' 실전 루틴',
+          targetPersona: '단기간에 변화를 보고 싶은 시청자'
+        }
+      ].forEach(function(t) {
+        t.perspective = 'C';
+        t.score = scoreTopic(t.searchKeyword, t.targetPersona);
+        topics.push(t);
+      });
+
+      // D: Future Insight (10~12)
+      [
+        {
+          title: '3년 뒤 ' + seed + '로 인해 사라질 직업·새로 생길 일자리',
+          reason: persona + '노동시장 변화를 시나리오 형태로 제시해, 시청자가 자신의 커리어를 다시 점검하게 만듭니다.',
+          searchKeyword: seed + ' 미래 일자리 2029',
+          targetPersona: '커리어 방향을 고민하는 20~40대 시청자'
+        },
+        {
+          title: '지금 투자하면 3년 뒤 격차가 벌어질 ' + seed + ' 핵심 영역 3곳',
+          reason: persona + '장기적 관점에서 기회가 큰 세부 영역을 콕 집어 주어, 시청자의 FOMO를 건강하게 자극합니다.',
+          searchKeyword: seed + ' 유망 분야 전망',
+          targetPersona: '선제적으로 움직이고 싶은 선도 투자자·창업 희망자'
+        },
+        {
+          title: '정부·기업이 준비 중인 ' + seed + ' 3년 로드맵 총정리',
+          reason: persona + '공개된 정책·로드맵을 해석해 주며, 단순 뉴스 요약을 넘는 전략적 해석을 제공합니다.',
+          searchKeyword: seed + ' 정책 로드맵',
+          targetPersona: '정책 변화에 민감한 실무자·사업가'
+        }
+      ].forEach(function(t) {
+        t.perspective = 'D';
+        t.score = scoreTopic(t.searchKeyword, t.targetPersona);
+        topics.push(t);
+      });
+
+      // E: Myth Busting (13~15)
+      [
+        {
+          title: "'" + seed + "' 하면 다들 착각하는 대표 오해 5가지",
+          reason: persona + '커뮤니티·댓글에서 자주 보이는 오해를 정리해 주며, 시청자의 궁금증을 시원하게 해소합니다.',
+          searchKeyword: seed + ' 오해 진실',
+          targetPersona: '정보 과잉 속에서 무엇이 맞는지 헷갈리는 시청자'
+        },
+        {
+          title: "전문가가 직접 짚어주는 '" + seed + "' 관련 대표 낚시 콘텐츠 구별법",
+          reason: persona + '과장된 썸네일·떡락/떡상 콘텐츠를 사례로 보여주며, 시청자가 스스로 판별하는 기준을 알려줍니다.',
+          searchKeyword: seed + ' 진짜 정보 구별',
+          targetPersona: '유튜브·SNS 정보에 피로감을 느끼는 시청자'
+        },
+        {
+          title: "'" + seed + "' 시작하기에 늦었다는 말이 틀린 이유",
+          reason: persona + '연령·경력과 상관없이 지금 뛰어들어도 되는 구체적 근거를 제시해 행동을 유도합니다.',
+          searchKeyword: seed + ' 지금 시작 늦었나',
+          targetPersona: '시니어·경력 전환을 고민하는 시청자'
+        }
+      ].forEach(function(t) {
+        t.perspective = 'E';
+        t.score = scoreTopic(t.searchKeyword, t.targetPersona);
+        topics.push(t);
+      });
+
+      // 내부 점수 기준으로 소트 후 상위 15개만 사용
+      topics.sort(function(a, b) { return (b.score || 0) - (a.score || 0); });
+      return topics.slice(0, 15);
+    }
+
+    function generateAiTopics() {
+      var ctx = getBaseContext();
+      return buildPerspectiveTopics(ctx);
+    }
+
+    function renderAiTopicResults(topics) {
+      if (!aiTopicListEl) return;
+      if (!topics || !topics.length) {
+        aiTopicListEl.innerHTML = '<div class="ai-topic-empty">생성된 주제가 없습니다. 먼저 AI 분석 주제 생성하기 버튼을 눌러 주세요.</div>';
+        if (aiResultSectionEl) aiResultSectionEl.style.display = 'block';
+        return;
+      }
+      aiTopicListEl.innerHTML = topics
+        .map(function(topic, idx) {
+          var safeTitle = (topic.title || '').replace(/"/g, '&quot;');
+          var safeReason = (topic.reason || '').replace(/"/g, '&quot;');
+          return (
+            '<button type="button" class="ai-topic-item" data-index="' +
+            idx +
+            '">' +
+            '<span class="ai-topic-index">' +
+            (idx + 1) +
+            '</span>' +
+            '<div class="ai-topic-text">' +
+            '<div class="ai-topic-title">' +
+            safeTitle +
+            '</div>' +
+            '<div class="ai-topic-reason">' +
+            safeReason +
+            '</div>' +
+            '</div>' +
+            '</button>'
+          );
+        })
+        .join('');
+      if (aiResultSectionEl) aiResultSectionEl.style.display = 'block';
+    }
+
+    function clearTrendSelection() {
+      globalState.selectedTopics = [];
+      document.querySelectorAll('.topic-card.selected').forEach(function(card) {
+        card.classList.remove('selected');
+      });
+      // 선택 해제 시 배경색 제거
+      updateFormBackground();
+      // 선택 해제 시 즉시 반대편 잠금 해제
+      syncMutualExclusion();
+    }
+    function clearKeywordSelection() {
+      globalState.selectedCategory = null;
+      globalState.keyword = '';
+      if (keywordInputEl) keywordInputEl.value = '';
+      document.querySelectorAll('.topic-icon-item.selected').forEach(function(item) {
+        item.classList.remove('selected');
+      });
+      // 선택 해제 시 배경색 제거
+      updateFormBackground();
+      // 선택 해제 시 즉시 반대편 잠금 해제
+      syncMutualExclusion();
+    }
+
+    function setTrendDisabled(disabled) {
+      document.querySelectorAll('.topic-tab').forEach(function(btn) {
+        btn.disabled = !!disabled;
+      });
+      document.querySelectorAll('.topic-card').forEach(function(card) {
+        if (disabled) {
+          card.classList.add('disabled');
+          card.style.opacity = '0.45';
+          card.style.pointerEvents = 'none';
+        } else {
+          card.classList.remove('disabled');
+          card.style.opacity = '1';
+          card.style.pointerEvents = 'auto';
+        }
+      });
+    }
+    function setKeywordDisabled(disabled) {
+      document.querySelectorAll('.topic-type-tab').forEach(function(btn) {
+        if (btn.classList.contains('btn-clear-selection')) return; // 선택 해제 버튼은 제외
+        btn.disabled = !!disabled;
+      });
+      document.querySelectorAll('.topic-icon-item').forEach(function(item) {
+        if (disabled) {
+          item.classList.add('disabled');
+          item.style.opacity = '0.45';
+          item.style.pointerEvents = 'none';
+        } else {
+          item.classList.remove('disabled');
+          item.style.opacity = '1';
+          item.style.pointerEvents = 'auto';
+        }
+      });
+      if (keywordInputEl) keywordInputEl.disabled = !!disabled;
+    }
+
+    function isKeywordModeActive() {
+      return !!(globalState.selectedCategory || (keywordInputEl && keywordInputEl.value.trim()));
+    }
+    function isTrendModeActive() {
+      return (globalState.selectedTopics || []).length > 0;
+    }
+
+    function syncMutualExclusion() {
+      if (isKeywordModeActive()) {
+        setTrendDisabled(true);
+        setKeywordDisabled(false);
+      } else if (isTrendModeActive()) {
+        setKeywordDisabled(true);
+        setTrendDisabled(false);
+      } else {
+        setKeywordDisabled(false);
+        setTrendDisabled(false);
+      }
+      updateFormBackground();
+    }
+
+    // 선택 효과: 키워드 입력창 배경
+    function updateFormBackground() {
+      var hasSelection = isKeywordModeActive() || isTrendModeActive();
+      if (keywordInputEl) {
+        keywordInputEl.style.background = hasSelection ? '#ffeef5' : '#fff';
+        keywordInputEl.style.borderColor = hasSelection ? '#ffb3d9' : '#cbd5e0';
+      }
+    }
+
+    // 선택 해제 버튼 클릭 이벤트
+    var btnClearSelection = document.getElementById('btnClearTopicSelection');
+    if (btnClearSelection) {
+      btnClearSelection.addEventListener('click', function() {
+        // 키워드 선정 섹션 선택 해제
+        clearKeywordSelection();
+        
+        // 로딩 상태 초기화
+        isLoadingState.weekly = false;
+        isLoadingState.daily = false;
+        
+        // 데이터 리프레시
+        var activeTab = document.querySelector('.topic-tab.active');
+        if (activeTab) {
+          var tabType = activeTab.getAttribute('data-tab');
+          if (tabType === 'weekly') {
+            loadWeeklyTopics();
+          } else if (tabType === 'daily') {
+            loadDailyTopics();
+          }
+        }
+        
+        saveGlobalState();
+      });
+    }
+
+    // 주제 아이콘 선택 (이벤트 위임)
+    document.addEventListener('click', function(e) {
+      var icon = e.target.closest('.topic-icon-item');
+      if (!icon) return;
+      if (icon.classList.contains('disabled')) return;
+
+      // 키워드 선택 시 트렌드 선택은 불가 (상호배타)
+      clearTrendSelection();
+
+      document.querySelectorAll('.topic-icon-item').forEach(function(i) {
+        i.classList.remove('selected');
+      });
+      icon.classList.add('selected');
+      globalState.selectedCategory = icon.getAttribute('data-category');
+      saveGlobalState();
+      syncMutualExclusion();
+    });
+
+    // 키워드 입력 시 트렌드 선택 비활성화
+    if (keywordInputEl) {
+      keywordInputEl.addEventListener('input', function() {
+        globalState.keyword = (keywordInputEl.value || '').trim();
+        if (globalState.keyword) {
+          clearTrendSelection();
+        }
+        saveGlobalState();
+        syncMutualExclusion();
+      });
+    }
+
+    // 토픽 카드 선택 (이벤트 위임) - 단일 선택 모드
+    if (topicsGridEl) {
+      topicsGridEl.addEventListener('click', function(e) {
+        var card = e.target.closest('.topic-card');
+        if (!card) return;
+        if (card.classList.contains('disabled')) return;
+
+        // 트렌드 선택 시 키워드 선정은 불가 (상호배타)
+        if (isKeywordModeActive()) return;
+        clearKeywordSelection();
+
+        var topicTitleEl = card.querySelector('.topic-title');
+        var topicTitle = topicTitleEl ? topicTitleEl.textContent : '';
+        var wasSelected = card.classList.contains('selected');
+
+        // 이전 선택 상태 초기화 (항상 1개만 선택되도록)
+        document.querySelectorAll('.topic-card.selected').forEach(function(c) {
+          c.classList.remove('selected');
+        });
+        globalState.selectedTopics = [];
+
+        // 이미 선택된 카드를 다시 누르면 선택 해제, 아니면 해당 카드만 선택
+        if (!wasSelected) {
+          card.classList.add('selected');
+          globalState.selectedTopics = [topicTitle];
+        }
+
+        saveGlobalState();
+        syncMutualExclusion();
+      });
+    }
+
+    // ===== 주간/일간 탭 및 데이터 렌더링 =====
+    var topicsHeaderEl = document.getElementById('topicsHeader');
+    var topicsDateEl = document.getElementById('topicsDate');
+    var dataFooterEl = document.getElementById('dataFooter');
+    var weeklyGridSnapshot = '';
+
+    function formatDateYYYYMMDD(d) {
+      return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function setTopicsMeta(type, customDate) {
+      if (!topicsHeaderEl || !topicsDateEl) return;
+      if (type === 'weekly') {
+        topicsHeaderEl.textContent = '주간 급상승 토픽 TOP 20 ⚡🔥';
+        if (customDate) {
+          topicsDateEl.textContent = '적용: ' + customDate;
+        } else {
+          // 현재 주의 날짜 범위 계산
+          var today = new Date();
+          var dayOfWeek = today.getDay();
+          var diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+          var weekStart = new Date(today.setDate(diff));
+          var weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          topicsDateEl.textContent = '적용: ' + formatDateYYYYMMDD(weekStart) + ' ~ ' + formatDateYYYYMMDD(weekEnd);
+        }
+      } else {
+        topicsHeaderEl.textContent = '일간 핫이슈 TOP 20 🔥';
+        if (customDate) {
+          topicsDateEl.textContent = '적용: ' + customDate;
+        } else {
+          var today = new Date();
+          topicsDateEl.textContent = '적용: ' + formatDateYYYYMMDD(today);
+        }
+      }
+    }
+
+    function getRelatedKeywords(title) {
+      var map = {
+        'OpenAI Sora 3.0 리뷰': ['OpenAI','Sora','영상AI','리뷰'],
+        'GTA VI 히든 퀘스트 공략': ['GTA6','히든퀘스트','공략','팁'],
+        '초저가 다이소 꿀템 꿀': ['다이소','꿀템','저가','추천'],
+        '올해 최고의 K-POP 컴백': ['K-POP','컴백','신곡','트렌드'],
+        '프리미어리그 경기 하이라이트': ['프리미어리그','하이라이트','골모음','축구'],
+        '집에서 만드는 간단 레시피': ['자취요리','간단레시피','집밥','요리'],
+        'ChatGPT 5 활용 꿀팁': ['ChatGPT','업무자동화','프롬프트','활용'],
+        '에르다 전설 공략': ['에르다','공략','빌드','게임팁'],
+        '2026 트렌드 코디': ['패션','코디','트렌드','룩북'],
+        '넷플릭스 신작 드라마': ['넷플릭스','신작','드라마','추천'],
+        'NBA 올스타 위크': ['NBA','올스타','하이라이트','농구'],
+        '다이어트 식단 추천': ['다이어트','식단','저칼로리','레시피'],
+        '클라우드 AI 비교': ['클라우드','AI','비교','가이드'],
+        '스팀 겨울 세일': ['스팀','세일','할인','추천게임'],
+        '미니멀 인테리어': ['인테리어','미니멀','정리','집꾸미기'],
+        '영화 OST 모음': ['영화OST','플레이리스트','감성','음악'],
+        '마라톤 준비 운동법': ['마라톤','러닝','스트레칭','훈련'],
+        '카페 메뉴 추천': ['카페','메뉴','추천','디저트'],
+        '스마트폰 비교 리뷰': ['스마트폰','비교','카메라','스펙'],
+        '인디 게임 추천': ['인디게임','추천','신작','리뷰']
+      };
+      if (map[title]) return map[title];
+      // fallback: 단어 기반
+      var words = (title || '').split(/\s+/).filter(Boolean).slice(0, 4);
+      return words.length ? words : ['트렌드','추천','핫이슈'];
+    }
+
+    function attachKeywordsToExistingWeeklyCards() {
+      document.querySelectorAll('#topicsGrid .topic-card').forEach(function(card) {
+        var titleEl = card.querySelector('.topic-title');
+        if (!titleEl) return;
+        if (card.querySelector('.topic-keywords')) return;
+        var kw = getRelatedKeywords(titleEl.textContent);
+        var kwWrap = document.createElement('div');
+        kwWrap.className = 'topic-keywords';
+        kw.forEach(function(k) {
+          var chip = document.createElement('span');
+          chip.className = 'topic-keyword';
+          chip.textContent = k;
+          kwWrap.appendChild(chip);
+        });
+        var content = card.querySelector('.topic-content');
+        if (content) content.appendChild(kwWrap);
+      });
+    }
+
+    // 트렌드 주제 우선 정렬 및 배지 추가
+    async function enrichTopicsWithTrends(topics) {
+      try {
+        // 시즌별 주제 가져오기
+        var seasonalResponse = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/trends/seasonal');
+        var seasonalData = seasonalResponse.ok ? await seasonalResponse.json() : null;
+        
+        // 실시간 트렌드 가져오기
+        var trendsResponse = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/trends/realtime');
+        var trendsData = trendsResponse.ok ? await trendsResponse.json() : null;
+        
+        // 주제에 트렌드 정보 추가
+        if (topics && Array.isArray(topics)) {
+          topics.forEach(function(topic) {
+            // 시즌별 주제 매칭
+            if (seasonalData && seasonalData.topics) {
+              var seasonalMatch = seasonalData.topics.find(function(st) {
+                return st.title && topic.title && topic.title.includes(st.title.substring(0, 10));
+              });
+              if (seasonalMatch) {
+                topic.badge = seasonalMatch.badge || '🍂 시즌 추천';
+                topic.priority = seasonalMatch.priority || 1;
+                topic.isSeasonal = true;
+              }
+            }
+            
+            // 실시간 트렌드 매칭
+            if (trendsData && trendsData.trends) {
+              var trendMatch = trendsData.trends.find(function(rt) {
+                return rt.keyword && topic.title && topic.title.toLowerCase().includes(rt.keyword.toLowerCase());
+              });
+              if (trendMatch && trendMatch.trend === 'hot') {
+                topic.badge = '⚡ 트렌드 급상승';
+                topic.priority = 0; // 최우선
+                topic.isTrending = true;
+              } else if (trendMatch && trendMatch.trend === 'rising') {
+                if (!topic.badge) {
+                  topic.badge = '📈 트렌드 상승';
+                  topic.priority = topic.priority || 2;
+                }
+              }
+            }
+          });
+          
+          // 우선순위별 정렬 (priority가 낮을수록 우선)
+          topics.sort(function(a, b) {
+            var aPriority = a.priority !== undefined ? a.priority : 999;
+            var bPriority = b.priority !== undefined ? b.priority : 999;
+            return aPriority - bPriority;
+          });
+        }
+      } catch (error) {
+        console.warn('[Trends] 트렌드 정보 로드 실패:', error);
+        // 실패해도 계속 진행
+      }
+      
+      return topics;
+    }
+
+    async function renderTopics(topics) {
+      if (!topicsGridEl) return;
+      
+      if (!topics || topics.length === 0) {
+        showErrorMessage('표시할 데이터가 없습니다');
+        return;
+      }
+      
+      // 트렌드 정보로 주제 강화
+      topics = await enrichTopicsWithTrends(topics);
+      
+      topicsGridEl.innerHTML = topics.map(function(t, idx) {
+        // API 데이터 구조에 맞게 매핑
+        var title = t.title || t.name || '';
+        var categoryClass = t.categoryClass || (t.category ? 'cat-' + t.category.toLowerCase().replace(/\s+/g, '-') : '');
+        var categoryLabel = t.categoryLabel || t.category || '기타';
+        var views = t.views || t.viewCount || t.viewsCount || '0';
+        var keywords = t.keywords || t.tags || [];
+        var badge = t.badge || '';
+        
+        // 키워드가 문자열 배열이 아닌 경우 처리
+        if (typeof keywords === 'string') {
+          keywords = keywords.split(',').map(function(k) { return k.trim(); });
+        }
+        
+        var kws = keywords.map(function(k) {
+          return '<span class="topic-keyword">' + (k || '').replace(/[<>]/g, '') + '</span>';
+        }).join('');
+        
+        var badgeHtml = badge ? '<span class="topic-badge" style="display: inline-block; margin-left: 6px; padding: 2px 6px; background: ' + 
+                              (badge.includes('급상승') ? '#fef3c7' : '#e0e7ff') + '; color: ' + 
+                              (badge.includes('급상승') ? '#92400e' : '#3730a3') + '; border-radius: 4px; font-size: 10px; font-weight: 600;">' + 
+                              badge + '</span>' : '';
+        
+        return '<div class="topic-card" data-title="' + title.replace(/"/g, '&quot;') + '" ' +
+               (t.isTrending || t.isSeasonal ? 'style="border: 2px solid ' + (t.isTrending ? '#fbbf24' : '#a78bfa') + ';"' : '') + '>' +
+          '<span class="topic-num">' + (idx + 1) + '</span>' +
+          '<div class="topic-content">' +
+            '<div class="topic-title">' + title + badgeHtml + '</div>' +
+            '<div class="topic-meta">' +
+              '<span class="topic-category ' + categoryClass + '">' + categoryLabel + '</span>' +
+              '<span class="topic-views">' + views + '</span>' +
+            '</div>' +
+            (kws ? '<div class="topic-keywords">' + kws + '</div>' : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+      
+      // 이벤트 리스너 재연결 (동적으로 생성된 카드에 대해)
+      syncMutualExclusion();
+    }
+
+    // API 엔드포인트 설정 (server 4000 호출)
+    var API_BASE = window.__API_BASE__ || 'http://localhost:4000';
+    var API_ENDPOINTS = {
+      weekly: API_BASE + '/api/topics/weekly',
+      daily: API_BASE + '/api/topics/daily'
+    };
+
+    // 로딩 상태 관리
+    var isLoadingState = {
+      weekly: false,
+      daily: false
+    };
+
+    // 캐시 데이터 저장소
+    var cachedData = {
+      weekly: null,
+      daily: null
+    };
+
+    // Mock Data (기본 데이터)
+    function getMockWeeklyTopics() {
+      var today = new Date();
+      var dayOfWeek = today.getDay();
+      var diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      var weekStart = new Date(today);
+      weekStart.setDate(weekStart.getDate() + diff - today.getDate());
+      var weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      
+      return {
+        topics: [
+          { title: 'OpenAI Sora 3.0 리뷰', categoryClass: 'cat-tech', categoryLabel: '테크/AI', views: '350만+', keywords: ['OpenAI', 'Sora', '영상AI', '리뷰'] },
+          { title: 'GTA VI 히든 퀘스트 공략', categoryClass: 'cat-game', categoryLabel: '게임', views: '280만+', keywords: ['GTA6', '히든퀘스트', '공략', '팁'] },
+          { title: '초저가 다이소 꿀템', categoryClass: 'cat-life', categoryLabel: '라이프/쇼핑', views: '210만+', keywords: ['다이소', '꿀템', '저가', '추천'] },
+          { title: '올해 최고의 K-POP 컴백', categoryClass: 'cat-ent', categoryLabel: '엔터테인먼트', views: '190만+', keywords: ['K-POP', '컴백', '신곡', '트렌드'] },
+          { title: '프리미어리그 경기 하이라이트', categoryClass: 'cat-sport', categoryLabel: '스포츠', views: '170만+', keywords: ['프리미어리그', '하이라이트', '골모음', '축구'] },
+          { title: '집에서 만드는 간단 레시피', categoryClass: 'cat-food', categoryLabel: '푸드', views: '150만+', keywords: ['자취요리', '간단레시피', '집밥', '요리'] },
+          { title: 'ChatGPT 5 활용 꿀팁', categoryClass: 'cat-tech', categoryLabel: '테크/AI', views: '140만+', keywords: ['ChatGPT', '업무자동화', '프롬프트', '활용'] },
+          { title: '에르다 전설 공략', categoryClass: 'cat-game', categoryLabel: '게임', views: '130만+', keywords: ['에르다', '공략', '빌드', '게임팁'] },
+          { title: '2026 트렌드 코디', categoryClass: 'cat-life', categoryLabel: '라이프/쇼핑', views: '120만+', keywords: ['패션', '코디', '트렌드', '룩북'] },
+          { title: '넷플릭스 신작 드라마', categoryClass: 'cat-ent', categoryLabel: '엔터테인먼트', views: '110만+', keywords: ['넷플릭스', '신작', '드라마', '추천'] },
+          { title: 'NBA 올스타 위크', categoryClass: 'cat-sport', categoryLabel: '스포츠', views: '100만+', keywords: ['NBA', '올스타', '하이라이트', '농구'] },
+          { title: '다이어트 식단 추천', categoryClass: 'cat-food', categoryLabel: '푸드', views: '95만+', keywords: ['다이어트', '식단', '저칼로리', '레시피'] },
+          { title: '클라우드 AI 비교', categoryClass: 'cat-tech', categoryLabel: '테크/AI', views: '90만+', keywords: ['클라우드', 'AI', '비교', '가이드'] },
+          { title: '스팀 겨울 세일', categoryClass: 'cat-game', categoryLabel: '게임', views: '85만+', keywords: ['스팀', '세일', '할인', '추천게임'] },
+          { title: '미니멀 인테리어', categoryClass: 'cat-life', categoryLabel: '라이프/쇼핑', views: '80만+', keywords: ['인테리어', '미니멀', '정리', '집꾸미기'] },
+          { title: '영화 OST 모음', categoryClass: 'cat-ent', categoryLabel: '엔터테인먼트', views: '75만+', keywords: ['영화OST', '플레이리스트', '감성', '음악'] },
+          { title: '마라톤 준비 운동법', categoryClass: 'cat-sport', categoryLabel: '스포츠', views: '70만+', keywords: ['마라톤', '러닝', '스트레칭', '훈련'] },
+          { title: '카페 메뉴 추천', categoryClass: 'cat-food', categoryLabel: '푸드', views: '65만+', keywords: ['카페', '메뉴', '추천', '디저트'] },
+          { title: '스마트폰 비교 리뷰', categoryClass: 'cat-tech', categoryLabel: '테크/AI', views: '60만+', keywords: ['스마트폰', '비교', '카메라', '스펙'] },
+          { title: '인디 게임 추천', categoryClass: 'cat-game', categoryLabel: '게임', views: '55만+', keywords: ['인디게임', '추천', '신작', '리뷰'] }
+        ],
+        dateRange: formatDateYYYYMMDD(weekStart) + ' ~ ' + formatDateYYYYMMDD(weekEnd),
+        lastUpdated: new Date().toISOString()
+      };
+    }
+
+    function getMockDailyTopics() {
+      var today = new Date();
+      return {
+        topics: [
+          { title: '오늘의 AI 핫툴 업데이트', categoryClass: 'cat-tech', categoryLabel: '테크/AI', views: '120만+', keywords: ['신기능', '툴추천', '자동화', '업데이트'] },
+          { title: 'Top 10 소비 트렌드', categoryClass: 'cat-life', categoryLabel: '라이프/쇼핑', views: '98만+', keywords: ['Top10', '소비', '트렌드', '쇼핑'] },
+          { title: '최신 게임 업데이트', categoryClass: 'cat-game', categoryLabel: '게임', views: '85만+', keywords: ['게임', '업데이트', '신작', '리뷰'] },
+          { title: '일일 엔터테인먼트 뉴스', categoryClass: 'cat-ent', categoryLabel: '엔터테인먼트', views: '75만+', keywords: ['엔터', '뉴스', '최신', '이슈'] },
+          { title: '오늘의 스포츠 하이라이트', categoryClass: 'cat-sport', categoryLabel: '스포츠', views: '65만+', keywords: ['스포츠', '하이라이트', '경기', '뉴스'] },
+          { title: '일일 푸드 트렌드', categoryClass: 'cat-food', categoryLabel: '푸드', views: '55만+', keywords: ['푸드', '트렌드', '레시피', '추천'] },
+          { title: '오늘의 테크 뉴스', categoryClass: 'cat-tech', categoryLabel: '테크/AI', views: '50만+', keywords: ['테크', '뉴스', 'IT', '최신'] },
+          { title: '일일 게임 리뷰', categoryClass: 'cat-game', categoryLabel: '게임', views: '48만+', keywords: ['게임', '리뷰', '평가', '추천'] },
+          { title: '오늘의 쇼핑 정보', categoryClass: 'cat-life', categoryLabel: '라이프/쇼핑', views: '45만+', keywords: ['쇼핑', '할인', '정보', '추천'] },
+          { title: '일일 엔터 소식', categoryClass: 'cat-ent', categoryLabel: '엔터테인먼트', views: '42만+', keywords: ['엔터', '소식', '연예', '뉴스'] },
+          { title: '오늘의 스포츠 결과', categoryClass: 'cat-sport', categoryLabel: '스포츠', views: '40만+', keywords: ['스포츠', '결과', '경기', '스코어'] },
+          { title: '일일 레시피 추천', categoryClass: 'cat-food', categoryLabel: '푸드', views: '38만+', keywords: ['레시피', '요리', '추천', '맛집'] },
+          { title: '오늘의 AI 트렌드', categoryClass: 'cat-tech', categoryLabel: '테크/AI', views: '35만+', keywords: ['AI', '트렌드', '기술', '혁신'] },
+          { title: '일일 게임 공략', categoryClass: 'cat-game', categoryLabel: '게임', views: '33만+', keywords: ['게임', '공략', '팁', '가이드'] },
+          { title: '오늘의 라이프스타일', categoryClass: 'cat-life', categoryLabel: '라이프/쇼핑', views: '30만+', keywords: ['라이프', '스타일', '일상', '트렌드'] },
+          { title: '일일 엔터 인터뷰', categoryClass: 'cat-ent', categoryLabel: '엔터테인먼트', views: '28만+', keywords: ['인터뷰', '연예인', '엔터', '이슈'] },
+          { title: '오늘의 스포츠 분석', categoryClass: 'cat-sport', categoryLabel: '스포츠', views: '25만+', keywords: ['스포츠', '분석', '전술', '리뷰'] },
+          { title: '일일 푸드 리뷰', categoryClass: 'cat-food', categoryLabel: '푸드', views: '23만+', keywords: ['푸드', '리뷰', '맛집', '추천'] },
+          { title: '오늘의 테크 가이드', categoryClass: 'cat-tech', categoryLabel: '테크/AI', views: '20만+', keywords: ['테크', '가이드', '튜토리얼', '팁'] },
+          { title: '일일 게임 뉴스', categoryClass: 'cat-game', categoryLabel: '게임', views: '18만+', keywords: ['게임', '뉴스', '업데이트', '이벤트'] }
+        ],
+        date: formatDateYYYYMMDD(today),
+        lastUpdated: new Date().toISOString()
+      };
+    }
+
+    // 공통 데이터 페칭 함수
+    async function fetchTopicsData(type) {
+      var isLoadingKey = type === 'weekly' ? 'weekly' : 'daily';
+      
+      // 중복 요청 방지
+      if (isLoadingState[isLoadingKey]) {
+        console.warn(type + ' 데이터 로딩이 이미 진행 중입니다.');
+        // 캐시 데이터 반환
+        if (cachedData[isLoadingKey]) {
+          return cachedData[isLoadingKey];
+        }
+        // 캐시도 없으면 Mock Data 반환
+        return type === 'weekly' ? getMockWeeklyTopics() : getMockDailyTopics();
+      }
+      
+      isLoadingState[isLoadingKey] = true;
+      
+      try {
+        var url = '';
+        var today = new Date();
+        
+        if (type === 'weekly') {
+          // 현재 주의 시작일과 종료일 계산 (월요일 ~ 일요일)
+          var dayOfWeek = today.getDay();
+          var diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+          var weekStart = new Date(today);
+          weekStart.setDate(weekStart.getDate() + diff - today.getDate());
+          var weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          
+          var startDate = formatDateYYYYMMDD(weekStart);
+          var endDate = formatDateYYYYMMDD(weekEnd);
+          url = API_ENDPOINTS.weekly + '?start=' + encodeURIComponent(startDate) + '&end=' + encodeURIComponent(endDate) + '&limit=20';
+        } else {
+          var dateStr = formatDateYYYYMMDD(today);
+          url = API_ENDPOINTS.daily + '?date=' + encodeURIComponent(dateStr) + '&limit=20';
+        }
+        
+        console.log('API 요청 URL:', url);
+        
+        var res = await fetch(url, { 
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json' },
+          mode: 'cors'
+        });
+        
+        if (!res.ok) {
+          // 404, 500 등 에러 처리
+          if (res.status === 404) {
+            console.warn(type + ' API 엔드포인트를 찾을 수 없습니다 (404) - URL: ' + url);
+          } else if (res.status >= 500) {
+            console.error(type + ' 서버 오류 발생 (500+) - URL: ' + url);
+          } else {
+            console.error(type + ' API 호출 실패:', res.status, '- URL: ' + url);
+          }
+          throw new Error('API 호출 실패: ' + res.status);
+        }
+        
+        var data = await res.json();
+        
+        // 다양한 API 응답 구조 지원
+        var topics = null;
+        if (data) {
+          // 구조 1: { topics: [...] }
+          if (data.topics && Array.isArray(data.topics)) {
+            topics = data.topics;
+          }
+          // 구조 2: { data: { topics: [...] } }
+          else if (data.data && data.data.topics && Array.isArray(data.data.topics)) {
+            topics = data.data.topics;
+          }
+          // 구조 3: { weeklyTopics: [...] } 또는 { dailyTopics: [...] }
+          else if (data[type + 'Topics'] && Array.isArray(data[type + 'Topics'])) {
+            topics = data[type + 'Topics'];
+          }
+          // 구조 4: 배열 자체
+          else if (Array.isArray(data)) {
+            topics = data;
+          }
+        }
+        
+        if (!topics || topics.length === 0) {
+          throw new Error('데이터가 비어있습니다');
+        }
+        
+        // 결과 생성
+        var result = null;
+        if (type === 'weekly') {
+          result = {
+            topics: topics,
+            dateRange: data.dateRange || data.data?.dateRange || (formatDateYYYYMMDD(weekStart) + ' ~ ' + formatDateYYYYMMDD(weekEnd)),
+            lastUpdated: data.lastUpdated || data.data?.lastUpdated || new Date().toISOString()
+          };
+        } else {
+          result = {
+            topics: topics,
+            date: data.date || data.data?.date || formatDateYYYYMMDD(today),
+            lastUpdated: data.lastUpdated || data.data?.lastUpdated || new Date().toISOString()
+          };
+        }
+        
+        // 성공 시 캐시에 저장
+        cachedData[isLoadingKey] = result;
+        return result;
+        
+      } catch (error) {
+        console.error('API Error Detail:', error);
+        console.error('에러 발생 URL:', url);
+        console.error('에러 타입:', type);
+        console.error('에러 메시지:', error.message || error);
+        
+        // CORS 에러 확인
+        if (error.message && error.message.includes('CORS')) {
+          console.error('CORS 에러가 발생했습니다. 서버에서 CORS 헤더를 확인해주세요.');
+        }
+        
+        // 캐시 데이터가 있으면 사용
+        if (cachedData[isLoadingKey]) {
+          console.log('캐시된 데이터를 사용합니다:', type);
+          return cachedData[isLoadingKey];
+        }
+        
+        // 캐시도 없으면 Mock Data 반환
+        console.log('Mock Data를 사용합니다:', type);
+        var mockData = type === 'weekly' ? getMockWeeklyTopics() : getMockDailyTopics();
+        cachedData[isLoadingKey] = mockData;
+        return mockData;
+      } finally {
+        isLoadingState[isLoadingKey] = false;
+      }
+    }
+
+    // 주간 데이터 가져오기 (공통 함수 사용)
+    async function fetchWeeklyTopics() {
+      return await fetchTopicsData('weekly');
+    }
+
+    // 일간 데이터 가져오기 (공통 함수 사용)
+    async function fetchDailyTopics() {
+      return await fetchTopicsData('daily');
+    }
+
+    // 오류 메시지 표시
+    function showErrorMessage(message) {
+      if (!topicsGridEl) return;
+      topicsGridEl.innerHTML = '<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #666; background: #f5f5f5; border-radius: 8px;">' +
+        '<div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">⚠️</div>' +
+        '<div style="font-size: 14px;">' + (message || '최신 데이터를 불러오지 못했습니다') + '</div>' +
+        '</div>';
+    }
+
+    // 주간 토픽 로드
+    async function loadWeeklyTopics() {
+      if (!topicsGridEl) return;
+      if (isLoadingState.weekly) return; // 중복 로딩 방지
+      
+      // 로딩 상태 표시
+      topicsGridEl.innerHTML = '<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #999;">데이터를 불러오는 중...</div>';
+      if (dataFooterEl) {
+        dataFooterEl.textContent = '데이터 기준: 로딩 중...';
+      }
+      
+      var result = await fetchWeeklyTopics();
+      
+      // fetchTopicsData에서 항상 데이터를 반환하므로 null 체크는 불필요하지만 안전을 위해 유지
+      if (!result || !result.topics || result.topics.length === 0) {
+        // Mock Data도 실패한 경우 (이론적으로 불가능하지만 안전장치)
+        result = getMockWeeklyTopics();
+      }
+      
+      globalState.selectedTopics = [];
+      renderTopics(result.topics.slice(0, 20));
+      
+      // 날짜 범위 업데이트 (동적)
+      var dateRangeText = result.dateRange || '';
+      if (!dateRangeText) {
+        // 현재 주의 날짜 범위 계산
+        var today = new Date();
+        var dayOfWeek = today.getDay();
+        var diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        var weekStart = new Date(today);
+        weekStart.setDate(weekStart.getDate() + diff - today.getDate());
+        var weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        dateRangeText = formatDateYYYYMMDD(weekStart) + ' ~ ' + formatDateYYYYMMDD(weekEnd);
+      }
+      
+      if (dataFooterEl) {
+        dataFooterEl.textContent = '데이터 기준: ' + dateRangeText + ' (Global)';
+      }
+      setTopicsMeta('weekly', dateRangeText);
+      
+      // 스냅샷 업데이트
+      weeklyGridSnapshot = topicsGridEl.innerHTML;
+      
+      saveGlobalState();
+      syncMutualExclusion();
+    }
+
+    // 일간 토픽 로드
+    async function loadDailyTopics() {
+      if (!topicsGridEl) return;
+      if (isLoadingState.daily) return; // 중복 로딩 방지
+      
+      // 로딩 상태 표시
+      topicsGridEl.innerHTML = '<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #999;">데이터를 불러오는 중...</div>';
+      if (topicsDateEl) {
+        topicsDateEl.textContent = '적용: 로딩 중...';
+      }
+      
+      var result = await fetchDailyTopics();
+      
+      // fetchTopicsData에서 항상 데이터를 반환하므로 null 체크는 불필요하지만 안전을 위해 유지
+      if (!result || !result.topics || result.topics.length === 0) {
+        // Mock Data도 실패한 경우 (이론적으로 불가능하지만 안전장치)
+        result = getMockDailyTopics();
+      }
+      
+      globalState.selectedTopics = [];
+      renderTopics(result.topics.slice(0, 20));
+      
+      // 날짜 업데이트 (동적 - 실패 시 오늘 날짜로 강제 표시)
+      var dateText = result.date || formatDateYYYYMMDD(new Date());
+      setTopicsMeta('daily', dateText);
+      
+      saveGlobalState();
+      syncMutualExclusion();
+    }
+
+    // 급상승 토픽 탭 기능
+    document.querySelectorAll('.topic-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        if (tab.disabled) return;
+        document.querySelectorAll('.topic-tab').forEach(function(t) {
+          t.classList.remove('active');
+        });
+        this.classList.add('active');
+
+        var tabType = this.getAttribute('data-tab');
+        if (tabType === 'weekly') loadWeeklyTopics();
+        if (tabType === 'daily') loadDailyTopics();
+      });
+    });
+
+    // ===== 대본 직접 넣기: 모달 (텍스트/파일/URL) =====
+    var scriptModalEl = document.getElementById('scriptModal');
+    var btnScript = document.querySelector('.btn-script');
+    var btnScriptClose = document.getElementById('scriptModalClose');
+    var btnScriptCancel = document.getElementById('scriptModalCancel');
+    var btnScriptApply = document.getElementById('scriptApplyBtn');
+    var btnScriptAnalyze = document.getElementById('scriptAnalyzeBtn');
+    var btnScriptUrlLoad = document.getElementById('scriptUrlLoadBtn');
+
+    function openScriptModal() {
+      if (!scriptModalEl) return;
+      scriptModalEl.classList.add('show');
+    }
+    function closeScriptModal() {
+      if (!scriptModalEl) return;
+      scriptModalEl.classList.remove('show');
+    }
+
+    if (btnScript) btnScript.addEventListener('click', openScriptModal);
+    if (btnScriptClose) btnScriptClose.addEventListener('click', closeScriptModal);
+    if (btnScriptCancel) btnScriptCancel.addEventListener('click', closeScriptModal);
+    if (scriptModalEl) {
+      scriptModalEl.addEventListener('click', function(e) {
+        if (e.target === scriptModalEl) closeScriptModal();
+      });
+    }
+
+    // URL 불러오기: /api/fetch-url 호출 후 텍스트 영역에 채움 (CORS 없음)
+    if (btnScriptUrlLoad) {
+      btnScriptUrlLoad.addEventListener('click', async function() {
+        var urlEl = document.getElementById('scriptUrl');
+        var textEl = document.getElementById('scriptText');
+        var url = urlEl ? urlEl.value.trim() : '';
+        if (!url) {
+          alert('URL을 입력한 뒤 불러오기를 눌러 주세요.');
+          return;
+        }
+        btnScriptUrlLoad.disabled = true;
+        btnScriptUrlLoad.textContent = '불러오는 중…';
+        try {
+          var res = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/fetch-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+          });
+          var data = await res.json();
+          if (data.success && (data.text || data.title || data.description)) {
+            var text = data.text || (data.title && data.description ? data.title + '\n\n' + data.description : data.title || data.description);
+            if (textEl) textEl.value = text;
+          } else {
+            alert(data.error || 'URL 내용을 가져오지 못했습니다.');
+          }
+        } catch (e) {
+          alert('URL을 불러오지 못했습니다. 네트워크를 확인해 주세요.');
+        }
+        btnScriptUrlLoad.disabled = false;
+        btnScriptUrlLoad.textContent = '불러오기';
+      });
+    }
+
+    function extractKeywords(text) {
+      var words = (text || '').replace(/[^\w가-힣\s]/g, ' ').split(/\s+/).filter(Boolean);
+      // 길이/중복 간단 처리
+      var uniq = [];
+      words.forEach(function(w) {
+        if (w.length < 2) return;
+        if (uniq.indexOf(w) === -1) uniq.push(w);
+      });
+      return uniq.slice(0, 8);
+    }
+    function generateSummary(text) {
+      var t = (text || '').trim();
+      return t.length <= 140 ? t : (t.substring(0, 140) + '…');
+    }
+
+    function analyzeScriptText(scriptText) {
+      var kw = extractKeywords(scriptText);
+      globalState.scriptText = scriptText;
+      globalState.generatedMaterials = {
+        keywords: kw,
+        summary: generateSummary(scriptText),
+        mode: 'restructured'
+      };
+      globalState.keyword = kw.join(', ');
+      if (keywordInputEl) keywordInputEl.value = globalState.keyword;
+
+      // 상호배타: 키워드 모드로 전환
+      clearTrendSelection();
+      saveGlobalState();
+      syncMutualExclusion();
+      closeScriptModal();
+      alert('대본이 분석되었습니다. 키워드가 자동 입력되었습니다.');
+    }
+
+    async function readScriptFromModal() {
+      var textEl = document.getElementById('scriptText');
+      var fileEl = document.getElementById('scriptFile');
+      var urlEl = document.getElementById('scriptUrl');
+
+      var textVal = textEl ? textEl.value.trim() : '';
+      if (textVal) return textVal;
+
+      var file = fileEl && fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
+      if (file) {
+        return await new Promise(function(resolve, reject) {
+          var reader = new FileReader();
+          reader.onload = function() { resolve(String(reader.result || '').trim()); };
+          reader.onerror = function() { reject(new Error('file read error')); };
+          reader.readAsText(file);
+        });
+      }
+
+      var urlVal = urlEl ? urlEl.value.trim() : '';
+      if (urlVal) {
+        try {
+          var res = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/fetch-url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: urlVal })
+          });
+          var data = await res.json();
+          if (data.success && (data.text || data.title || data.description)) {
+            return data.text || (data.title && data.description ? data.title + '\n\n' + data.description : data.title || data.description);
+          }
+          alert(data.error || 'URL 내용을 가져오지 못했습니다.');
+        } catch (e) {
+          alert('URL을 불러오지 못했습니다. 네트워크를 확인해 주세요.');
+        }
+      }
+
+      return '';
+    }
+
+    function applyScriptDirect(scriptText) {
+      globalState.scriptText = scriptText;
+      globalState.generatedMaterials = {
+        keywords: [],
+        summary: generateSummary(scriptText),
+        mode: 'direct'
+      };
+      try {
+        localStorage.setItem('raw_source_script', scriptText);
+        localStorage.setItem('script_direct_apply', 'true');
+      } catch (e) {}
+      saveGlobalState();
+      closeScriptModal();
+      alert('대본 원문이 그대로 적용되었습니다. 2·3단계에서 이 내용을 기준으로 사용합니다.');
+    }
+
+    if (btnScriptAnalyze) {
+      btnScriptAnalyze.addEventListener('click', async function() {
+        var scriptText = await readScriptFromModal();
+        if (!scriptText) {
+          alert('텍스트/파일/URL 중 하나를 입력해 주세요.');
+          return;
+        }
+        btnScriptAnalyze.disabled = true;
+        btnScriptAnalyze.textContent = '재구성 중…';
+        try {
+          var res = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/summarize-for-planning', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: scriptText })
+          });
+          var data = await res.json();
+          if (data.success && data.title != null) {
+            try {
+              localStorage.setItem('step2PreFillBlueprint', JSON.stringify({
+                title: data.title || '',
+                target: data.target || '',
+                hook: data.hook || '',
+                storyline: data.storyline || ''
+              }));
+            } catch (e) {}
+            closeScriptModal();
+            alert('기획안 형태로 요약되었습니다. 2단계로 이동해 확인하세요.');
+            window.location.href = '/step-2';
+            return;
+          }
+          alert(data.error || '재구성에 실패했습니다.');
+        } catch (e) {
+          alert('재구성 요청 중 오류가 발생했습니다.');
+        }
+        btnScriptAnalyze.disabled = false;
+        btnScriptAnalyze.textContent = '재구성';
+      });
+    }
+
+    if (btnScriptApply) {
+      btnScriptApply.addEventListener('click', async function() {
+        var scriptText = await readScriptFromModal();
+        if (!scriptText) {
+          alert('텍스트/파일/URL 중 하나를 입력해 주세요.');
+          return;
+        }
+        applyScriptDirect(scriptText);
+      });
+    }
+
+    // ===== 최하단 실행 버튼: 분석 후 2단계로 이동 =====
+    var btnAnalyzeGenerate = document.getElementById('btnAnalyzeGenerate');
+    if (btnAnalyzeGenerate) {
+      btnAnalyzeGenerate.addEventListener('click', function() {
+        var keyword = keywordInputEl ? keywordInputEl.value.trim() : '';
+        globalState.keyword = keyword;
+
+        if (!keyword && !globalState.selectedCategory && !(globalState.selectedTopics || []).length) {
+          alert('키워드를 입력하거나 주제를 선택해 주세요.');
+          return;
+        }
+
+        // AI 추천 주제 15개 생성 및 렌더링
+        var topics = generateAiTopics();
+        globalState.aiTopics = topics;
+        saveGlobalState();
+        renderAiTopicResults(topics);
+
+        // 결과 섹션으로 부드럽게 스크롤
+        if (aiResultSectionEl) {
+          aiResultSectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    }
+
+    // 추천 주제 리스트 클릭 시 선택 -> 2단계로 이동
+    if (aiTopicListEl) {
+      aiTopicListEl.addEventListener('click', function(e) {
+        var item = e.target.closest('.ai-topic-item');
+        if (!item) return;
+
+        var idx = parseInt(item.getAttribute('data-index') || '-1', 10);
+        var topic = (globalState.aiTopics || [])[idx] || null;
+        if (!topic) return;
+
+        var title = topic.title || '';
+        var expertSummary = topic.reason || '';
+        var keyword = keywordInputEl ? keywordInputEl.value.trim() : '';
+        globalState.keyword = keyword;
+
+        var payload = {
+          fromStep: 'topic-recommendation',
+          createdAt: new Date().toISOString(),
+          keyword: keyword,
+          topicType: globalState.selectedTopicType,
+          keywordTopic: globalState.selectedCategory,
+          trendTopics: globalState.selectedTopics || [],
+          chosenAiTopic: title,
+          expertSummary: expertSummary,
+          scriptText: globalState.scriptText || '',
+          analysis: globalState.generatedMaterials || null
+        };
+        localStorage.setItem('step2Payload', JSON.stringify(payload));
+        saveGlobalState();
+
+        window.location.href = 'step-2.html';
+      });
+    }
+
+    // 전역 상태 저장
+    function saveGlobalState() {
+      localStorage.setItem('projectGlobalState', JSON.stringify(globalState));
+    }
+
+    // 전역 상태 로드
+    function loadGlobalState() {
+      var saved = localStorage.getItem('projectGlobalState');
+      if (saved) {
+        globalState = JSON.parse(saved);
+        // UI 복원
+        if (globalState.keyword) {
+          document.getElementById('keywordInput').value = globalState.keyword;
+        }
+        // 주제 타입 복원
+        if (globalState.selectedTopicType) {
+          document.querySelectorAll('.topic-type-tab').forEach(function(btn) {
+            btn.classList.toggle('active', btn.getAttribute('data-type') === globalState.selectedTopicType);
+          });
+          setActiveTopicType(globalState.selectedTopicType);
+        }
+        // 키워드 주제 선택 복원
+        if (globalState.selectedCategory) {
+          document.querySelectorAll('.topic-icon-item').forEach(function(item) {
+            item.classList.toggle('selected', item.getAttribute('data-category') === globalState.selectedCategory);
+          });
+        }
+      }
+    }
+
+    // 로그온 시스템 (index.html과 동일)
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        } else {
+          logout();
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 입력하세요.');
+        return;
+      }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) { return u.id === id && u.password === pw; });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) {
+          logout();
+          alert('로그아웃되었습니다.');
+        }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+    
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          // 프로젝트 생성 로직 (추후 구현)
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          // 프로젝트 목록 로직 (추후 구현)
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      // 로그인 상태 변경 시 버튼 표시 업데이트
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+    
+    // 날짜 체크 및 자동 갱신 로직 (useEffect 역할)
+    function checkAndRefreshData() {
+      try {
+        var now = new Date();
+        var todayStr = formatDateYYYYMMDD(now);
+        var lastLoadDate = localStorage.getItem('lastDailyLoadDate');
+        var lastLoadWeek = localStorage.getItem('lastWeeklyLoadWeek');
+        
+        // 일간 데이터: 날짜가 바뀌었으면 갱신
+        if (lastLoadDate !== todayStr) {
+          var activeTab = document.querySelector('.topic-tab.active');
+          if (activeTab && activeTab.getAttribute('data-tab') === 'daily') {
+            loadDailyTopics();
+          }
+          localStorage.setItem('lastDailyLoadDate', todayStr);
+        }
+        
+        // 주간 데이터: 주가 바뀌었으면 갱신
+        var dayOfWeek = now.getDay();
+        var diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        var weekStart = new Date(now);
+        weekStart.setDate(weekStart.getDate() + diff - now.getDate());
+        var weekStr = formatDateYYYYMMDD(weekStart);
+        
+        if (lastLoadWeek !== weekStr) {
+          var activeTab = document.querySelector('.topic-tab.active');
+          if (activeTab && activeTab.getAttribute('data-tab') === 'weekly') {
+            loadWeeklyTopics();
+          }
+          localStorage.setItem('lastWeeklyLoadWeek', weekStr);
+        }
+        
+        // 날짜가 항상 표시되도록 보장 (오늘 날짜 기준)
+        if (topicsDateEl && (!topicsDateEl.textContent || topicsDateEl.textContent.includes('로딩') || topicsDateEl.textContent.includes('실패'))) {
+          topicsDateEl.textContent = '적용: ' + todayStr;
+        }
+        if (dataFooterEl && (dataFooterEl.textContent.includes('로딩 중') || dataFooterEl.textContent.includes('로드 실패'))) {
+          var today = new Date();
+          var dayOfWeek2 = today.getDay();
+          var diff2 = today.getDate() - dayOfWeek2 + (dayOfWeek2 === 0 ? -6 : 1);
+          var weekStart2 = new Date(today);
+          weekStart2.setDate(weekStart2.getDate() + diff2 - today.getDate());
+          var weekEnd2 = new Date(weekStart2);
+          weekEnd2.setDate(weekEnd2.getDate() + 6);
+          dataFooterEl.textContent = '데이터 기준: ' + formatDateYYYYMMDD(weekStart2) + ' ~ ' + formatDateYYYYMMDD(weekEnd2) + ' (Global)';
+        }
+      } catch (e) {
+        console.error('checkAndRefreshData 오류:', e);
+        // 오류 발생 시에도 날짜는 표시
+        var today = new Date();
+        if (topicsDateEl) {
+          topicsDateEl.textContent = '적용: ' + formatDateYYYYMMDD(today);
+        }
+        if (dataFooterEl) {
+          var dayOfWeek = today.getDay();
+          var diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+          var weekStart = new Date(today);
+          weekStart.setDate(weekStart.getDate() + diff - today.getDate());
+          var weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          dataFooterEl.textContent = '데이터 기준: ' + formatDateYYYYMMDD(weekStart) + ' ~ ' + formatDateYYYYMMDD(weekEnd) + ' (Global)';
+        }
+      }
+    }
+
+    // 자동 갱신 로직
+    function setupAutoRefresh() {
+      // 일간 데이터: 매일 자정에 갱신
+      var now = new Date();
+      var tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      var msUntilMidnight = tomorrow - now;
+      
+      setTimeout(function() {
+        // 자정에 날짜 체크 및 갱신
+        checkAndRefreshData();
+        // 매일 자정마다 반복
+        setInterval(function() {
+          checkAndRefreshData();
+        }, 24 * 60 * 60 * 1000); // 24시간마다
+      }, msUntilMidnight);
+    }
+
+    // 전과정 Auto 버튼 활성화 체크 (입력값 유효성 검사 강화)
+    function checkAutoButtonState() {
+      var btnAuto = document.getElementById('btnFullAuto');
+      if (!btnAuto) return;
+
+      // 활성화 조건 확인 (null 체크 포함)
+      var keywordInput = document.getElementById('keywordInput');
+      var keywordValue = keywordInput ? keywordInput.value.trim() : '';
+      
+      var hasTopic = !!(globalState.selectedCategory || keywordValue || (globalState.selectedTopics && globalState.selectedTopics.length > 0));
+      var hasChannelInfo = !!(globalState.selectedCategory || (globalState.selectedTopics && globalState.selectedTopics.length > 0));
+      var hasIssueData = true; // 주간/일간 이슈 데이터는 선택사항
+      var hasKeyword = !!(keywordValue || (globalState.selectedTopics && globalState.selectedTopics.length > 0));
+
+      // 모든 조건이 null이 아닌지 명시적으로 체크
+      var isEnabled = hasTopic !== null && hasTopic !== undefined && hasTopic &&
+                     hasChannelInfo !== null && hasChannelInfo !== undefined && hasChannelInfo &&
+                     hasIssueData !== null && hasIssueData !== undefined && hasIssueData &&
+                     hasKeyword !== null && hasKeyword !== undefined && hasKeyword &&
+                     !isAutoProcessing;
+      
+      btnAuto.disabled = !isEnabled;
+      
+      // 디버깅용 로그 (개발 환경에서만)
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        console.log('Auto 버튼 활성화 체크:', {
+          hasTopic: hasTopic,
+          hasChannelInfo: hasChannelInfo,
+          hasIssueData: hasIssueData,
+          hasKeyword: hasKeyword,
+          isAutoProcessing: isAutoProcessing,
+          isEnabled: isEnabled
+        });
+      }
+    }
+
+    // 진행 모달 업데이트
+    function updateProgressModal(step, totalSteps, message, customProgress) {
+      currentAutoStep = step;
+      var modal = document.getElementById('progressModal');
+      var stepNumberEl = document.getElementById('progressStepNumber');
+      var stepMessageEl = document.getElementById('progressStepMessage');
+      var progressBarEl = document.getElementById('progressBarFill');
+      var progressPercentageEl = document.getElementById('progressPercentage');
+      var errorEl = document.getElementById('progressError');
+      var errorTextEl = document.getElementById('progressErrorText');
+      var retryBtn = document.getElementById('progressRetryBtn');
+      var manualBtn = document.getElementById('progressManualBtn');
+
+      if (stepNumberEl) {
+        stepNumberEl.textContent = 'Step ' + step + ' / ' + totalSteps;
+      }
+      if (stepMessageEl) {
+        stepMessageEl.textContent = message || '처리 중...';
+      }
+      if (progressBarEl) {
+        var progress = customProgress !== undefined ? customProgress : (step / totalSteps) * 100;
+        progressBarEl.style.width = progress + '%';
+      }
+      if (progressPercentageEl) {
+        var progress = customProgress !== undefined ? customProgress : (step / totalSteps) * 100;
+        progressPercentageEl.textContent = Math.round(progress) + '%';
+      }
+
+      // 오류 표시 숨기기
+      if (errorEl) {
+        errorEl.classList.remove('show');
+      }
+      if (retryBtn) {
+        retryBtn.style.display = 'none';
+      }
+      if (manualBtn) {
+        manualBtn.style.display = 'none';
+      }
+    }
+
+    // 진행 모달 표시/숨김
+    function showProgressModal() {
+      isAutoProcessing = true;
+      var modal = document.getElementById('progressModal');
+      if (modal) {
+        modal.classList.add('show');
+      }
+      checkAutoButtonState();
+    }
+
+    function hideProgressModal() {
+      isAutoProcessing = false;
+      var modal = document.getElementById('progressModal');
+      if (modal) {
+        modal.classList.remove('show');
+      }
+      checkAutoButtonState();
+    }
+
+    // 오류 표시
+    function showProgressError(message, canRetry, canManual) {
+      var errorEl = document.getElementById('progressError');
+      var errorTextEl = document.getElementById('progressErrorText');
+      var retryBtn = document.getElementById('progressRetryBtn');
+      var manualBtn = document.getElementById('progressManualBtn');
+
+      if (errorEl && errorTextEl) {
+        errorTextEl.textContent = message || '오류가 발생했습니다.';
+        errorEl.classList.add('show');
+      }
+
+      if (retryBtn) {
+        retryBtn.style.display = canRetry ? 'block' : 'none';
+      }
+      if (manualBtn) {
+        manualBtn.style.display = canManual ? 'block' : 'none';
+        if (canManual && manualBtn) {
+          manualBtn.onclick = function() {
+            hideProgressModal();
+            // 현재 단계에 맞는 페이지로 이동
+            var targetPage = getTargetPageByStep(currentAutoStep);
+            if (targetPage) {
+              window.location.href = targetPage;
+            } else {
+              alert('수동으로 진행하려면 해당 단계 페이지로 이동해주세요.');
+            }
+          };
+        }
+      }
+    }
+
+    // 단계별 타겟 페이지 반환
+    function getTargetPageByStep(step) {
+      var pageMap = {
+        1: 'ai-automation-project.html',
+        2: 'step-2.html',
+        3: 'step-3.html',
+        4: 'step-4-1.html',
+        5: 'step-4-2.html',
+        6: 'step-6.html',
+        7: 'step-5-2.html',
+        8: 'step-7.html',
+        9: 'step-8.html'
+      };
+      return pageMap[step] || null;
+    }
+
+    // 프로젝트 ID 생성
+    function generateProjectId() {
+      return 'project_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // 체크포인트 저장 (중간 저장)
+    async function saveCheckpoint(step, stepName, data) {
+      try {
+        currentProjectId = currentProjectId || generateProjectId();
+        localStorage.setItem('currentProjectId', currentProjectId);
+        
+        var checkpoint = {
+          project_id: currentProjectId,
+          last_success_step: step,
+          last_success_step_name: stepName,
+          intermediate_data: data,
+          status: 'PROCESSING',
+          updated_at: new Date().toISOString()
+        };
+        
+        // 백엔드에도 체크포인트 저장
+        try {
+          await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/auto-workflow/checkpoint', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              project_id: currentProjectId,
+              step: step,
+              step_name: stepName,
+              result_data: data
+            })
+          });
+        } catch (e) {
+          console.warn('백엔드 체크포인트 저장 실패:', e);
+        }
+
+        // LocalStorage에 저장
+        localStorage.setItem('auto_save_snapshot', JSON.stringify(checkpoint));
+        
+        // 백엔드 API 호출 (옵션)
+        try {
+          await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/project/save-checkpoint', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(checkpoint)
+          });
+        } catch (apiError) {
+          console.warn('체크포인트 API 저장 실패 (로컬 저장은 성공):', apiError);
+        }
+
+        console.log('체크포인트 저장 완료:', stepName);
+      } catch (error) {
+        console.error('체크포인트 저장 실패:', error);
+      }
+    }
+
+    // 단계 실행 Wrapper (저장 및 에러 처리 포함)
+    async function executeStepWithSave(step, stepName, stepFunction, retryCount) {
+      retryCount = retryCount || 0;
+      var maxRetries = 3;
+      var retryDelay = 5000; // 5초
+
+      try {
+        // 단계 실행
+        var result = await stepFunction();
+        
+        // 성공 시 체크포인트 저장
+        var checkpointData = {
+          step: step,
+          stepName: stepName,
+          result: result,
+          timestamp: new Date().toISOString()
+        };
+        await saveCheckpoint(step, stepName, checkpointData);
+        
+        return result;
+      } catch (error) {
+        console.error(stepName + ' 실행 오류:', error);
+        
+        // 네트워크 오류이고 재시도 가능한 경우
+        if (retryCount < maxRetries && (error.message.includes('network') || error.message.includes('fetch') || error.status >= 500)) {
+          console.log(stepName + ' 재시도 중... (' + (retryCount + 1) + '/' + maxRetries + ')');
+          await delay(retryDelay);
+          return executeStepWithSave(step, stepName, stepFunction, retryCount + 1);
+        }
+        
+        // 재시도 실패 또는 치명적 오류
+        throw error;
+      }
+    }
+
+    // 복구 확인 및 제안
+    async function checkRecovery() {
+      try {
+        // 먼저 백엔드 API로 진행 중인 작업 확인 (우선순위)
+        try {
+          var projectId = localStorage.getItem('currentProjectId');
+          if (projectId) {
+            var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/auto-workflow/status/' + projectId);
+            if (response.ok) {
+              var data = await response.json();
+              if (data.status === 'processing' || data.status === 'queued') {
+                // 진행 중인 작업 발견 - 복구 모달 표시
+                showRecoveryModal({
+                  project_id: projectId,
+                  last_success_step: data.current_step || 0,
+                  last_success_step_name: data.current_step_name || '알 수 없음',
+                  status: data.status,
+                  progress: data.progress || 0,
+                  intermediate_data: data.result_data || {}
+                });
+                
+                // 상태 폴링 시작
+                pollWorkflowStatus(projectId);
+                return;
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('백엔드 복구 확인 실패:', e);
+        }
+
+        // LocalStorage에서 체크포인트 확인 (백업)
+        var savedCheckpoint = localStorage.getItem('auto_save_snapshot');
+        if (!savedCheckpoint) {
+          // 백엔드 API로도 확인 (레거시)
+          try {
+            var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/project/check-recovery');
+            if (response.ok) {
+              var data = await response.json();
+              if (data.has_recovery) {
+                savedCheckpoint = JSON.stringify(data.checkpoint);
+              }
+            }
+          } catch (apiError) {
+            console.warn('복구 확인 API 호출 실패:', apiError);
+          }
+        }
+
+        if (savedCheckpoint) {
+          var checkpoint = JSON.parse(savedCheckpoint);
+          
+          // PROCESSING 상태인 경우에만 복구 제안
+          if (checkpoint.status === 'PROCESSING') {
+            showRecoveryModal(checkpoint);
+          }
+        }
+      } catch (error) {
+        console.error('복구 확인 오류:', error);
+      }
+    }
+
+    // 복구 모달 표시
+    function showRecoveryModal(checkpoint) {
+      var modal = document.createElement('div');
+      modal.className = 'recovery-modal-overlay';
+      modal.innerHTML = `
+        <div class="recovery-modal">
+          <div class="recovery-modal-title">🔄 진행 중이던 작업 발견</div>
+          <div class="recovery-modal-content">
+            <p>진행 중이던 자동 제작 작업이 있습니다.</p>
+            <p><strong>마지막 완료 단계: ${checkpoint.last_success_step_name || 'Step ' + checkpoint.last_success_step}</strong></p>
+            <p>마지막 지점부터 이어서 진행하시겠습니까?</p>
+          </div>
+          <div class="recovery-modal-actions">
+            <button class="btn-recovery-resume" id="btnRecoveryResume">이어서 진행하기</button>
+            <button class="btn-recovery-cancel" id="btnRecoveryCancel">새로 시작하기</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      // 이어서 진행하기
+      document.getElementById('btnRecoveryResume').onclick = function() {
+        document.body.removeChild(modal);
+        resumeAutoProcess(checkpoint);
+      };
+
+      // 새로 시작하기
+      document.getElementById('btnRecoveryCancel').onclick = function() {
+        document.body.removeChild(modal);
+        clearCheckpoint();
+      };
+    }
+
+    // 자동화 프로세스 재개
+    async function resumeAutoProcess(checkpoint) {
+      currentProjectId = checkpoint.project_id;
+      var lastStep = checkpoint.last_success_step;
+      
+      // 중간 데이터 복원
+      if (checkpoint.intermediate_data) {
+        var data = checkpoint.intermediate_data;
+        
+        // 각 단계별 데이터 복원
+        if (data.step >= 1) {
+          globalState.chosenAiTopic = data.result?.title || localStorage.getItem('chosenAiTopic');
+          globalState.expertSummary = data.result?.expertSummary || localStorage.getItem('expertSummary');
+        }
+        if (data.step >= 2) {
+          localStorage.setItem('step2Payload', JSON.stringify(data.result?.step2Payload || {}));
+        }
+        if (data.step >= 3) {
+          localStorage.setItem('step3Blueprint', JSON.stringify(data.result?.step3Blueprint || {}));
+        }
+        if (data.step >= 4) {
+          localStorage.setItem('step4JsonPayload', JSON.stringify(data.result?.step4JsonPayload || {}));
+        }
+        if (data.step >= 5) {
+          localStorage.setItem('step42JsonData', JSON.stringify(data.result?.step42JsonData || {}));
+          localStorage.setItem('step6TTSData', JSON.stringify(data.result?.step6TTSData || {}));
+        }
+        if (data.step >= 6) {
+          localStorage.setItem('step52BGMData', JSON.stringify(data.result?.step52BGMData || {}));
+        }
+        if (data.step >= 7) {
+          localStorage.setItem('step7VideoData', JSON.stringify(data.result?.step7VideoData || {}));
+        }
+        if (data.step >= 8) {
+          localStorage.setItem('step8TitleData', JSON.stringify(data.result?.step8TitleData || {}));
+        }
+      }
+
+      // 다음 단계부터 재개
+      showProgressModal();
+      updateProgressModal(lastStep, 9, '작업 재개 중...', (lastStep / 9) * 100);
+      
+      await delay(1000);
+      
+      // 재개 실행
+      await startFullAutoProcessFromStep(lastStep + 1);
+    }
+
+    // 백엔드 상태 폴링
+    var pollingInterval = null;
+    async function pollWorkflowStatus(projectId) {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+      
+      pollingInterval = setInterval(async function() {
+        try {
+          var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/auto-workflow/status/' + projectId);
+          if (response.ok) {
+            var data = await response.json();
+            
+            if (data.status === 'processing') {
+              // 진행 상태 업데이트
+              updateProgressModal(
+                data.current_step || 0,
+                9,
+                data.current_step_name || '진행 중...',
+                data.progress || 0
+              );
+            } else if (data.status === 'completed') {
+              // 완료
+              clearInterval(pollingInterval);
+              pollingInterval = null;
+              hideProgressModal();
+              alert('🎉 전과정 자동 생성이 완료되었습니다!\n\n9. 최종 제작 페이지로 이동합니다.');
+              window.location.href = 'step-10.html';
+            } else if (data.status === 'failed') {
+              // 실패
+              clearInterval(pollingInterval);
+              pollingInterval = null;
+              showProgressError('오류: ' + (data.error_message || '알 수 없는 오류가 발생했습니다.'), true, true);
+            }
+          }
+        } catch (error) {
+          console.error('상태 폴링 오류:', error);
+        }
+      }, 5000); // 5초마다 폴링
+    }
+
+    // 체크포인트 삭제
+    function clearCheckpoint() {
+      localStorage.removeItem('auto_save_snapshot');
+      currentProjectId = null;
+      
+      // 폴링 중지
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
+      
+      // 백엔드에도 삭제 요청
+      if (currentProjectId) {
+        fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/project/clear-checkpoint', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project_id: currentProjectId })
+        }).catch(function(error) {
+          console.warn('체크포인트 삭제 API 호출 실패:', error);
+        });
+      }
+    }
+
+    // 특정 단계부터 시작
+    async function startFullAutoProcessFromStep(startStep) {
+      // 이 함수는 startFullAutoProcess의 수정된 버전으로,
+      // startStep부터 시작하도록 구현됩니다.
+      // 기존 startFullAutoProcess 함수를 수정하여 재사용합니다.
+      await startFullAutoProcess(true, startStep);
+    }
+
+    // 전과정 자동화 워크플로우 실행 (백엔드 워커 전환)
+    async function startFullAutoProcess(isResume, resumeFromStep) {
+      if (isAutoProcessing) {
+        alert('이미 자동 생성이 진행 중입니다.');
+        return;
+      }
+
+      // 백엔드 워커로 전환: 작업 큐에 추가
+      try {
+        currentProjectId = currentProjectId || generateProjectId();
+        localStorage.setItem('currentProjectId', currentProjectId);
+
+        var step1Data = {
+          selectedCategory: globalState.selectedCategory,
+          keyword: globalState.keyword,
+          selectedTopics: globalState.selectedTopics,
+          channelInfo: globalState.channelInfo,
+          chosenAiTopic: globalState.chosenAiTopic,
+          expertSummary: globalState.expertSummary
+        };
+
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/auto-workflow/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: currentProjectId,
+            step1_data: step1Data,
+            is_resume: isResume || false,
+            resume_from_step: resumeFromStep || 1
+          })
+        });
+
+        if (response.ok) {
+          var data = await response.json();
+          
+          // 진행 모달 표시
+          showProgressModal();
+          updateProgressModal(0, 9, '백엔드 작업 큐에 추가됨...', 0);
+          
+          // 상태 폴링 시작
+          pollWorkflowStatus(currentProjectId);
+          
+          return; // 백엔드에서 처리하므로 여기서 종료
+        } else {
+          console.warn('백엔드 워커 전환 실패, 로컬 모드로 진행');
+          // 백엔드 실패 시 기존 로컬 모드로 진행
+        }
+      } catch (error) {
+        console.warn('백엔드 워커 전환 오류:', error);
+        // 백엔드 실패 시 기존 로컬 모드로 진행
+      }
+
+      // 활성화 조건 최종 확인
+      var hasTopic = globalState.selectedCategory || globalState.keyword || (globalState.selectedTopics && globalState.selectedTopics.length > 0);
+      var hasKeyword = globalState.keyword || (globalState.selectedTopics && globalState.selectedTopics.length > 0);
+
+      if (!hasTopic || !hasKeyword) {
+        alert('주제와 키워드를 모두 입력하거나 선택해주세요.');
+        return;
+      }
+
+      // 프로젝트 ID 초기화 (재개가 아닌 경우)
+      if (!isResume) {
+        currentProjectId = generateProjectId();
+      }
+
+      showProgressModal();
+      updateProgressModal(0, 9, '초기화 중...', 0);
+
+      try {
+        var startStep = isResume ? resumeFromStep : 1;
+        
+        // Step 1: 주제 선택 및 AI 주제 생성 (10%)
+        if (startStep <= 1) {
+          updateProgressModal(1, 9, 'Step 1: AI 주제 생성 중...', 10);
+          var topics = await executeStepWithSave(1, 'Step 1: AI 주제 생성', async function() {
+            var topics = generateAiTopics();
+            if (!topics || topics.length === 0) {
+              throw new Error('AI 주제 생성에 실패했습니다.');
+            }
+            
+            // 첫 번째 주제 자동 선택
+            var selectedTopic = topics[0];
+            globalState.aiTopics = topics;
+            globalState.chosenAiTopic = selectedTopic.title;
+            globalState.expertSummary = selectedTopic.reason || selectedTopic.summary || '';
+            localStorage.setItem('chosenAiTopic', globalState.chosenAiTopic);
+            localStorage.setItem('expertSummary', globalState.expertSummary);
+            localStorage.setItem('aiTopics', JSON.stringify(topics));
+            
+            return { topics: topics, selectedTopic: selectedTopic };
+          });
+          
+          var selectedTopic = topics.selectedTopic;
+          await delay(500);
+        } else {
+          // 재개 시: 저장된 데이터 로드
+          var savedTopics = JSON.parse(localStorage.getItem('aiTopics') || '[]');
+          var selectedTopic = savedTopics[0] || { title: localStorage.getItem('chosenAiTopic') || '', reason: localStorage.getItem('expertSummary') || '' };
+        }
+
+        // Step 2-3: 기획 & 대본 (10% → 30%)
+        var step2Payload;
+        if (startStep <= 2) {
+          updateProgressModal(2, 9, 'Step 2: 대본 기획 중...', 15);
+          step2Payload = await executeStepWithSave(2, 'Step 2: 대본 기획', async function() {
+            return await autoStep2Blueprint(selectedTopic);
+          });
+          if (!step2Payload) {
+            throw new Error('대본 기획에 실패했습니다.');
+          }
+          localStorage.setItem('step2Payload', JSON.stringify(step2Payload));
+          await delay(300);
+        } else {
+          step2Payload = JSON.parse(localStorage.getItem('step2Payload') || '{}');
+        }
+
+        var step3Blueprint;
+        if (startStep <= 3) {
+          updateProgressModal(3, 9, 'Step 3: 시니어 맞춤형 대본 생성 중...', 30);
+          step3Blueprint = await executeStepWithSave(3, 'Step 3: 대본 생성', async function() {
+            return await autoStep3Script(step2Payload);
+          });
+          if (!step3Blueprint) {
+            throw new Error('대본 생성에 실패했습니다.');
+          }
+          localStorage.setItem('step3Blueprint', JSON.stringify(step3Blueprint));
+          await delay(300);
+        } else {
+          step3Blueprint = JSON.parse(localStorage.getItem('step3Blueprint') || '{}');
+        }
+
+        // Step 4-1: JSON 생성
+        var step4JsonPayload;
+        if (startStep <= 4) {
+          updateProgressModal(4, 9, 'Step 4-1: JSON 데이터 추출 중...', 35);
+          step4JsonPayload = await executeStepWithSave(4, 'Step 4-1: JSON 추출', async function() {
+            return await autoStep4Json(step3Blueprint);
+          });
+          if (!step4JsonPayload) {
+            throw new Error('JSON 추출에 실패했습니다.');
+          }
+          localStorage.setItem('step4JsonPayload', JSON.stringify(step4JsonPayload));
+          await delay(300);
+        } else {
+          step4JsonPayload = JSON.parse(localStorage.getItem('step4JsonPayload') || '{}');
+        }
+
+        // Step 4-2 & 5: 리소스 생성 (병렬 실행) (30% → 50%)
+        if (startStep <= 5) {
+          updateProgressModal(5, 9, 'Step 4-2 & 5: 이미지 및 TTS 동시 생성 중...', 40);
+          
+          // 병렬 실행 (재시도 로직 포함)
+          var step5Result = await executeStepWithSave(5, 'Step 4-2 & 5: 리소스 생성', async function() {
+            var imagePromise = autoStep42Images(step4JsonPayload);
+            var ttsPromise = autoStep5TTS(step3Blueprint);
+            
+            var results = await Promise.allSettled([imagePromise, ttsPromise]);
+        
+            var step42JsonData = results[0].status === 'fulfilled' ? results[0].value : null;
+            var step6TTSData = results[1].status === 'fulfilled' ? results[1].value : null;
+
+            if (!step42JsonData) {
+              console.warn('이미지 생성 실패, Placeholder 사용');
+              step42JsonData = { jsonData: step4JsonPayload.jsonData, images: [] };
+            }
+            if (!step6TTSData) {
+              console.warn('TTS 생성 실패, Placeholder 사용');
+              step6TTSData = { scenes: [] };
+            }
+
+            localStorage.setItem('step42JsonData', JSON.stringify(step42JsonData));
+            localStorage.setItem('step6TTSData', JSON.stringify(step6TTSData));
+            
+            return { step42JsonData: step42JsonData, step6TTSData: step6TTSData };
+          });
+          
+          var step42JsonData = step5Result.step42JsonData;
+          var step6TTSData = step5Result.step6TTSData;
+          await delay(500);
+        } else {
+          step42JsonData = JSON.parse(localStorage.getItem('step42JsonData') || '{}');
+          step6TTSData = JSON.parse(localStorage.getItem('step6TTSData') || '{}');
+        }
+
+        // Step 5-2: 음악 매칭 (50% → 70%)
+        if (startStep <= 6) {
+          updateProgressModal(6, 9, 'Step 5-2: BGM 핫스팟 분석 및 비트 동기화 중...', 50);
+          var step52BGMData = await executeStepWithSave(6, 'Step 5-2: BGM 삽입', async function() {
+            return await autoStep52BGM(step2Payload, step6TTSData);
+          });
+          if (!step52BGMData) {
+            throw new Error('BGM 삽입에 실패했습니다.');
+          }
+          localStorage.setItem('step52BGMData', JSON.stringify(step52BGMData));
+          await delay(500);
+        } else {
+          step52BGMData = JSON.parse(localStorage.getItem('step52BGMData') || '{}');
+        }
+
+        // Step 6: 영상 렌더링 (장시간 작업)
+        var step7VideoData;
+        if (startStep <= 7) {
+          updateProgressModal(7, 9, 'Step 6: VEO 영상 렌더링 중... (시간이 걸릴 수 있습니다)', 70);
+          
+          // 장시간 작업 알림 옵션 표시
+          var notifyOption = confirm('영상 렌더링은 시간이 오래 걸릴 수 있습니다.\n\n브라우저를 닫아도 서버에서 계속 진행됩니다.\n완료 시 알림을 받으시겠습니까?');
+          
+          step7VideoData = await executeStepWithSave(7, 'Step 6: 영상 렌더링', async function() {
+            // 서버 사이드 렌더링 요청 (백그라운드 작업)
+            var renderResponse = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-video/async', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                project_id: currentProjectId,
+                image_data: step42JsonData,
+                tts_data: step6TTSData,
+                bgm_data: step52BGMData,
+                notify_email: notifyOption ? prompt('이메일 주소를 입력하세요:') : null
+              })
+            });
+            
+            if (!renderResponse.ok) {
+              // 동기 방식으로 폴백
+              return await autoStep6Video(step42JsonData, step6TTSData, step52BGMData);
+            }
+            
+            var renderData = await renderResponse.json();
+            
+            // 비동기 작업이면 폴링
+            if (renderData.status === 'processing') {
+              updateProgressModal(7, 9, 'Step 6: 서버에서 영상 렌더링 중... (백그라운드 진행)', 70);
+              
+              // 폴링으로 상태 확인
+              var pollInterval = setInterval(async function() {
+                try {
+                  var statusResponse = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-video/status/' + renderData.task_id);
+                  var statusData = await statusResponse.json();
+                  
+                  if (statusData.status === 'completed') {
+                    clearInterval(pollInterval);
+                    return statusData.result;
+                  } else if (statusData.status === 'failed') {
+                    clearInterval(pollInterval);
+                    throw new Error('영상 렌더링 실패');
+                  }
+                } catch (error) {
+                  clearInterval(pollInterval);
+                  throw error;
+                }
+              }, 5000); // 5초마다 확인
+              
+              // 최대 10분 대기
+              await new Promise(function(resolve) {
+                setTimeout(resolve, 600000);
+              });
+              
+              // 최종 상태 확인
+              var finalResponse = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-video/status/' + renderData.task_id);
+              var finalData = await finalResponse.json();
+              
+              if (finalData.status === 'completed') {
+                return finalData.result;
+              } else {
+                throw new Error('영상 렌더링 시간 초과');
+              }
+            }
+            
+            return renderData.result;
+          });
+          
+          if (!step7VideoData) {
+            throw new Error('영상 렌더링에 실패했습니다.');
+          }
+          localStorage.setItem('step7VideoData', JSON.stringify(step7VideoData));
+          await delay(1000);
+        } else {
+          step7VideoData = JSON.parse(localStorage.getItem('step7VideoData') || '{}');
+        }
+
+        // Step 7-8: 마케팅 패키징 (70% → 90%)
+        if (startStep <= 8) {
+          updateProgressModal(8, 9, 'Step 7-8: 제목/설명 작성 및 썸네일 생성 중...', 90);
+          var step8TitleData = await executeStepWithSave(8, 'Step 7-8: 메타데이터 생성', async function() {
+            var titleData = await autoStep78Metadata(step2Payload, step3Blueprint, step7VideoData);
+            if (!titleData) {
+              throw new Error('메타데이터 생성에 실패했습니다.');
+            }
+            localStorage.setItem('step8TitleData', JSON.stringify(titleData));
+            
+            var thumbnailData = await autoStep8Thumbnail(step42JsonData, titleData);
+            if (!thumbnailData) {
+              throw new Error('썸네일 생성에 실패했습니다.');
+            }
+            localStorage.setItem('step9ThumbnailData', JSON.stringify(thumbnailData));
+            
+            return { step8TitleData: titleData, step9ThumbnailData: thumbnailData };
+          });
+          
+          await delay(500);
+        }
+
+        // 완료 (100%)
+        updateProgressModal(9, 9, '✅ 제작 완료!', 100);
+        
+        // 최종 체크포인트 저장 (완료 상태)
+        await saveCheckpoint(9, '완료', { status: 'COMPLETED' });
+        
+        // 체크포인트 삭제
+        clearCheckpoint();
+        
+        await delay(1500);
+
+        hideProgressModal();
+        alert('🎉 전과정 자동 생성이 완료되었습니다!\n\n9. 최종 제작 페이지로 이동합니다.');
+        window.location.href = 'step-10.html';
+
+      } catch (error) {
+        console.error('자동 생성 오류:', error);
+        autoProcessError = error;
+        
+        // 오류 발생 시 체크포인트 저장 (에러 상태)
+        await saveCheckpoint(currentAutoStep, '오류 발생', { 
+          error: error.message,
+          status: 'ERROR'
+        });
+        
+        showProgressError('오류: ' + (error.message || '알 수 없는 오류가 발생했습니다.') + '\n\n현재 단계에서 멈췄습니다. 수동 전환 버튼을 눌러 해당 단계로 이동할 수 있습니다.', true, true);
+        
+        // 재시도 버튼 이벤트
+        var retryBtn = document.getElementById('progressRetryBtn');
+        if (retryBtn) {
+          retryBtn.onclick = function() {
+            startFullAutoProcess();
+          };
+        }
+      }
+    }
+
+    // 지연 함수
+    function delay(ms) {
+      return new Promise(function(resolve) {
+        setTimeout(resolve, ms);
+      });
+    }
+
+    // Step 2: 대본 기획 자동화
+    async function autoStep2Blueprint(selectedTopic) {
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-blueprint', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            topic: selectedTopic.title,
+            expert_summary: selectedTopic.reason || selectedTopic.summary,
+            keyword: globalState.keyword,
+            category: globalState.selectedCategory
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('대본 기획 API 호출 실패');
+        }
+
+        var data = await response.json();
+        var result = {
+          title: data.title || selectedTopic.title,
+          target: data.target || '시니어',
+          hook: data.hook || '시작 문구',
+          storyline: data.storyline || ['오프닝', '핵심1', '마무리']
+        };
+        
+        // Step 2 Success 로그
+        console.log('[Step 2 Success] 대본 기획 완료', {
+          title: result.title,
+          target: result.target,
+          storylineCount: result.storyline.length
+        });
+        
+        // 서버 로그 (옵션)
+        try {
+          await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: 2,
+              stepName: '대본 기획',
+              status: 'success',
+              data: { title: result.title, target: result.target }
+            })
+          }).catch(function(e) {
+            console.warn('서버 로그 전송 실패:', e);
+          });
+        } catch (e) {
+          console.warn('서버 로그 전송 실패:', e);
+        }
+        
+        return result;
+      } catch (error) {
+        console.warn('대본 기획 API 실패, 기본값 사용:', error);
+        // 기본값으로 대체
+        return {
+          title: selectedTopic.title,
+          target: '시니어',
+          hook: '이 영상은 시니어를 위한 맞춤형 콘텐츠입니다.',
+          storyline: ['오프닝', '핵심1', '핵심2', '마무리']
+        };
+      }
+    }
+
+    // Step 3: 대본 생성 자동화
+    async function autoStep3Script(blueprint) {
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-script', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            blueprint: blueprint,
+            tone: '전문적으로',
+            expert_persona: '10년 경력의 전문 콘텐츠 전략가이자 해당 분야의 수석 연구원'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('대본 생성 API 호출 실패');
+        }
+
+        var data = await response.json();
+        var result = {
+          ...blueprint,
+          script: data.script || '대본 내용이 여기에 생성됩니다.',
+          scenes: data.scenes || blueprint.storyline.map(function(title, idx) {
+            return { scene_num: idx + 1, scene_title: title, script: '' };
+          })
+        };
+        
+        // Step 3 Success 로그
+        console.log('[Step 3 Success] 대본 생성 완료', {
+          scriptLength: result.script.length,
+          scenesCount: result.scenes.length,
+          tone: '전문적으로'
+        });
+        
+        // 서버 로그 (옵션)
+        try {
+          await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: 3,
+              stepName: '대본 생성',
+              status: 'success',
+              data: { scriptLength: result.script.length, scenesCount: result.scenes.length }
+            })
+          }).catch(function(e) {
+            console.warn('서버 로그 전송 실패:', e);
+          });
+        } catch (e) {
+          console.warn('서버 로그 전송 실패:', e);
+        }
+        
+        return result;
+      } catch (error) {
+        console.warn('대본 생성 API 실패, 기본값 사용:', error);
+        // 기본값으로 대체
+        var defaultScript = blueprint.storyline.map(function(title, idx) {
+          return '[' + title + '] 이 구간의 대본이 생성됩니다.';
+        }).join('\n\n');
+        return {
+          ...blueprint,
+          script: defaultScript,
+          scenes: blueprint.storyline.map(function(title, idx) {
+            return { scene_num: idx + 1, scene_title: title, script: '[' + title + '] 대본' };
+          })
+        };
+      }
+    }
+
+    // Step 4-1: JSON 생성 자동화
+    async function autoStep4Json(blueprint) {
+      try {
+        var scenes = blueprint.scenes || blueprint.storyline.map(function(title, idx) {
+          return { scene_num: idx + 1, scene_title: title };
+        });
+
+        var jsonData = {
+          script: blueprint.script,
+          jsonData: {
+            scenes: scenes.map(function(scene) {
+              return {
+                scene_num: scene.scene_num || scene.scene_no || 1,
+                script: scene.script || '',
+                image_prompt: 'A professional image for ' + (scene.scene_title || 'scene') + ', high quality, detailed',
+                visual_description: 'Visual description for ' + (scene.scene_title || 'scene')
+              };
+            })
+          }
+        };
+
+        // Step 4-1 Success 로그
+        console.log('[Step 4-1 Success] JSON 추출 완료', {
+          scenesCount: jsonData.jsonData.scenes.length
+        });
+        
+        // 서버 로그 (옵션)
+        try {
+          await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: 4,
+              stepName: 'JSON 추출',
+              status: 'success',
+              data: { scenesCount: jsonData.jsonData.scenes.length }
+            })
+          }).catch(function(e) {
+            console.warn('서버 로그 전송 실패:', e);
+          });
+        } catch (e) {
+          console.warn('서버 로그 전송 실패:', e);
+        }
+        
+        return jsonData;
+      } catch (error) {
+        console.error('JSON 생성 실패:', error);
+        throw error;
+      }
+    }
+
+    // Step 4-2: 이미지 생성 자동화
+    async function autoStep42Images(jsonPayload) {
+      try {
+        var scenes = jsonPayload.jsonData.scenes;
+        var imageResults = [];
+
+        for (var i = 0; i < scenes.length; i++) {
+          var scene = scenes[i];
+          try {
+            var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                prompt: scene.image_prompt,
+                engine: 'nano_basic'
+              })
+            });
+
+            if (response.ok) {
+              var data = await response.json();
+              imageResults.push({
+                scene_num: scene.scene_num,
+                image_url: data.image_url || 'placeholder_image.jpg',
+                status: 'success'
+              });
+            } else {
+              throw new Error('이미지 생성 실패');
+            }
+          } catch (error) {
+            console.warn('씬 ' + scene.scene_num + ' 이미지 생성 실패, Placeholder 사용:', error);
+            // Placeholder로 대체
+            imageResults.push({
+              scene_num: scene.scene_num,
+              image_url: 'placeholder_image.jpg',
+              status: 'placeholder'
+            });
+          }
+          await delay(500); // API 호출 간격
+        }
+
+        var result = {
+          jsonData: jsonPayload.jsonData,
+          images: imageResults
+        };
+        
+        // Step 4-2 Success 로그
+        var successCount = imageResults.filter(function(img) { return img.status === 'success'; }).length;
+        var placeholderCount = imageResults.filter(function(img) { return img.status === 'placeholder'; }).length;
+        console.log('[Step 4-2 Success] 이미지 생성 완료', {
+          imagesCount: imageResults.length,
+          successCount: successCount,
+          placeholderCount: placeholderCount
+        });
+        
+        // 서버 로그 (옵션)
+        try {
+          await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: 4.2,
+              stepName: '이미지 생성',
+              status: 'success',
+              data: { imagesCount: imageResults.length, successCount: successCount }
+            })
+          }).catch(function(e) {
+            console.warn('서버 로그 전송 실패:', e);
+          });
+        } catch (e) {
+          console.warn('서버 로그 전송 실패:', e);
+        }
+        
+        return result;
+      } catch (error) {
+        console.error('이미지 생성 실패:', error);
+        throw error;
+      }
+    }
+
+    // Step 5: TTS 생성 자동화
+    async function autoStep5TTS(blueprint) {
+      try {
+        var scenes = blueprint.scenes || [];
+        var ttsResults = [];
+
+        for (var i = 0; i < scenes.length; i++) {
+          var scene = scenes[i];
+          try {
+            var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-tts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                text: scene.script || '',
+                engine: 'google',
+                voice: 'ko-KR-Standard-A',
+                speed: 0.9,
+                pitch: 1.0
+              })
+            });
+
+            if (response.ok) {
+              var data = await response.json();
+              ttsResults.push({
+                scene_num: scene.scene_num || i + 1,
+                audio_url: data.audio_url || 'placeholder_audio.mp3',
+                duration: data.duration || 30,
+                status: 'success'
+              });
+            } else {
+              throw new Error('TTS 생성 실패');
+            }
+          } catch (error) {
+            console.warn('씬 ' + (scene.scene_num || i + 1) + ' TTS 생성 실패, Placeholder 사용:', error);
+            // Placeholder로 대체
+            ttsResults.push({
+              scene_num: scene.scene_num || i + 1,
+              audio_url: 'placeholder_audio.mp3',
+              duration: 30,
+              status: 'placeholder'
+            });
+          }
+          await delay(500);
+        }
+
+        var result = {
+          scenes: ttsResults
+        };
+        
+        // Step 5 Success 로그
+        var successCount = ttsResults.filter(function(tts) { return tts.status === 'success'; }).length;
+        console.log('[Step 5 Success] TTS 생성 완료', {
+          ttsCount: ttsResults.length,
+          successCount: successCount
+        });
+        
+        // 서버 로그 (옵션)
+        try {
+          await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: 5,
+              stepName: 'TTS 생성',
+              status: 'success',
+              data: { ttsCount: ttsResults.length, successCount: successCount }
+            })
+          }).catch(function(e) {
+            console.warn('서버 로그 전송 실패:', e);
+          });
+        } catch (e) {
+          console.warn('서버 로그 전송 실패:', e);
+        }
+        
+        return result;
+      } catch (error) {
+        console.error('TTS 생성 실패:', error);
+        throw error;
+      }
+    }
+
+    // Step 5-2: BGM 삽입 자동화
+    async function autoStep52BGM(blueprint, ttsData) {
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/recommend-bgm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: blueprint.title,
+            target: blueprint.target,
+            mood: '정보전달',
+            expert_summary: globalState.expertSummary
+          })
+        });
+
+        var bgmData = null;
+        if (response.ok) {
+          bgmData = await response.json();
+        } else {
+          // 기본 BGM 데이터 사용
+          bgmData = {
+            track_url: 'default_bgm.mp3',
+            bpm: 120,
+            mood: '정보전달'
+          };
+        }
+
+        var result = {
+          bgm_data: bgmData,
+          tts_data: ttsData,
+          bgm_volume: 20,
+          voice_volume: 100
+        };
+        
+        // Step 5-2 Success 로그
+        console.log('[Step 5-2 Success] BGM 삽입 완료', {
+          bgmMood: bgmData.mood || '정보전달',
+          bpm: bgmData.bpm || 120
+        });
+        
+        // 서버 로그 (옵션)
+        try {
+          await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: 5.2,
+              stepName: 'BGM 삽입',
+              status: 'success',
+              data: { mood: bgmData.mood, bpm: bgmData.bpm }
+            })
+          }).catch(function(e) {
+            console.warn('서버 로그 전송 실패:', e);
+          });
+        } catch (e) {
+          console.warn('서버 로그 전송 실패:', e);
+        }
+        
+        return result;
+      } catch (error) {
+        console.warn('BGM 추천 실패, 기본값 사용:', error);
+        var result = {
+          bgm_data: {
+            track_url: 'default_bgm.mp3',
+            bpm: 120,
+            mood: '정보전달'
+          },
+          tts_data: ttsData,
+          bgm_volume: 20,
+          voice_volume: 100
+        };
+        
+        // 실패 시에도 로그 기록
+        console.log('[Step 5-2 Success] BGM 삽입 완료 (기본값 사용)', {
+          bgmMood: '정보전달',
+          bpm: 120
+        });
+        
+        return result;
+      }
+    }
+
+    // Step 6: 영상 렌더링 자동화
+    async function autoStep6Video(imageData, ttsData, bgmData) {
+      try {
+        var scenes = imageData.jsonData.scenes;
+        var videoResults = [];
+
+        for (var i = 0; i < scenes.length; i++) {
+          var scene = scenes[i];
+          var imageUrl = imageData.images.find(function(img) {
+            return img.scene_num === scene.scene_num;
+          });
+          var audioUrl = ttsData.scenes.find(function(tts) {
+            return tts.scene_num === scene.scene_num;
+          });
+
+          if (!imageUrl || !audioUrl) {
+            console.warn('씬 ' + scene.scene_num + ' 데이터 누락, 건너뜀');
+            continue;
+          }
+
+          try {
+            var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-video', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                image_url: imageUrl.image_url,
+                audio_url: audioUrl.audio_url,
+                audio_duration: audioUrl.duration,
+                model: 'veo2',
+                camera_motion: 'Zoom In',
+                bpm: bgmData.bgm_data ? bgmData.bgm_data.bpm : null
+              })
+            });
+
+            if (response.ok) {
+              var data = await response.json();
+              videoResults.push({
+                scene_num: scene.scene_num,
+                video_url: data.video_url || 'placeholder_video.mp4',
+                status: 'success'
+              });
+            } else {
+              throw new Error('영상 생성 실패');
+            }
+          } catch (error) {
+            console.warn('씬 ' + scene.scene_num + ' 영상 생성 실패, Placeholder 사용:', error);
+            videoResults.push({
+              scene_num: scene.scene_num,
+              video_url: 'placeholder_video.mp4',
+              status: 'placeholder'
+            });
+          }
+          await delay(1000);
+        }
+
+        var result = {
+          videos: videoResults,
+          jsonData: imageData.jsonData
+        };
+        
+        // Step 6 Success 로그
+        var successCount = videoResults.filter(function(v) { return v.status === 'success'; }).length;
+        console.log('[Step 6 Success] 영상 렌더링 완료', {
+          videosCount: videoResults.length,
+          successCount: successCount
+        });
+        
+        // 서버 로그 (옵션)
+        try {
+          await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: 6,
+              stepName: '영상 렌더링',
+              status: 'success',
+              data: { videosCount: videoResults.length, successCount: successCount }
+            })
+          }).catch(function(e) {
+            console.warn('서버 로그 전송 실패:', e);
+          });
+        } catch (e) {
+          console.warn('서버 로그 전송 실패:', e);
+        }
+        
+        return result;
+      } catch (error) {
+        console.error('영상 렌더링 실패:', error);
+        throw error;
+      }
+    }
+
+    // Step 7-8: 제목/설명 및 썸네일 자동화
+    async function autoStep78Metadata(blueprint, scriptBlueprint, videoData) {
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-metadata', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: blueprint.title,
+            target: blueprint.target,
+            script_summary: scriptBlueprint.script ? scriptBlueprint.script.substring(0, 500) : '',
+            aggro_level: 3
+          })
+        });
+
+        var metadata = null;
+        if (response.ok) {
+          metadata = await response.json();
+        } else {
+          // 기본값 사용
+          metadata = {
+            selectedTitle: blueprint.title,
+            description: '이 영상은 ' + blueprint.target + '을 위한 콘텐츠입니다.',
+            hashtags: ['#' + blueprint.title.replace(/\s+/g, '')]
+          };
+        }
+
+        // Step 7-8 Success 로그
+        console.log('[Step 7-8 Success] 메타데이터 생성 완료', {
+          title: metadata.selectedTitle,
+          hashtagsCount: metadata.hashtags ? metadata.hashtags.length : 0
+        });
+        
+        // 서버 로그 (옵션)
+        try {
+          await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              step: 7.8,
+              stepName: '메타데이터 생성',
+              status: 'success',
+              data: { title: metadata.selectedTitle }
+            })
+          }).catch(function(e) {
+            console.warn('서버 로그 전송 실패:', e);
+          });
+        } catch (e) {
+          console.warn('서버 로그 전송 실패:', e);
+        }
+        
+        return metadata;
+      } catch (error) {
+        console.warn('메타데이터 생성 실패, 기본값 사용:', error);
+        var metadata = {
+          selectedTitle: blueprint.title,
+          description: '이 영상은 ' + blueprint.target + '을 위한 콘텐츠입니다.',
+          hashtags: ['#' + blueprint.title.replace(/\s+/g, '')]
+        };
+        
+        // 실패 시에도 로그 기록
+        console.log('[Step 7-8 Success] 메타데이터 생성 완료 (기본값 사용)', {
+          title: metadata.selectedTitle
+        });
+        
+        return metadata;
+      }
+    }
+
+    async function autoStep8Thumbnail(imageData, titleData) {
+      try {
+        var firstImage = imageData.images && imageData.images.length > 0 ? imageData.images[0].image_url : null;
+        
+        if (!firstImage) {
+          throw new Error('썸네일용 이미지가 없습니다.');
+        }
+
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-thumbnail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_url: firstImage,
+            title: titleData.selectedTitle,
+            font_style: 'bold',
+            effects: {
+              stroke: true,
+              shadow: true,
+              background_box: false
+            }
+          })
+        });
+
+        var thumbnailData = null;
+        if (response.ok) {
+          thumbnailData = await response.json();
+        } else {
+          // 기본값 사용
+          thumbnailData = {
+            thumbnailImageUrl: firstImage || 'placeholder_thumbnail.jpg'
+          };
+        }
+
+        return thumbnailData;
+      } catch (error) {
+        console.warn('썸네일 생성 실패, 기본값 사용:', error);
+        return {
+          thumbnailImageUrl: 'placeholder_thumbnail.jpg'
+        };
+      }
+    }
+
+    // 전과정 Auto 버튼 이벤트
+    var btnFullAuto = document.getElementById('btnFullAuto');
+    if (btnFullAuto) {
+      btnFullAuto.addEventListener('click', function() {
+        if (this.disabled) return;
+        if (confirm('전과정 자동 생성을 시작하시겠습니까?\n\n모든 단계가 자동으로 진행되며, 완료 후 9. 최종 제작 페이지로 이동합니다.')) {
+          startFullAutoProcess();
+        }
+      });
+    }
+
+    // 상태 변경 시 버튼 활성화 체크
+    function setupAutoButtonWatcher() {
+      // 키워드 입력 감지
+      if (keywordInputEl) {
+        keywordInputEl.addEventListener('input', function() {
+          globalState.keyword = this.value.trim();
+          saveGlobalState();
+          checkAutoButtonState();
+        });
+      }
+
+      // 주제 선택 감지
+      var observer = new MutationObserver(function() {
+        checkAutoButtonState();
+      });
+
+      // topicsGrid 감시
+      if (topicsGridEl) {
+        observer.observe(topicsGridEl, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+      }
+    }
+
+    // 초기화
+    // 복제된 설정 로드 (작업 보관함에서 복제한 경우)
+    (function loadClonedSettings() {
+      try {
+        var clonedSettingsRaw = localStorage.getItem('clonedSettings');
+        if (clonedSettingsRaw) {
+          var clonedSettings = JSON.parse(clonedSettingsRaw);
+          
+          // 복제된 설정을 UI에 적용할 수 있도록 저장
+          // (나중에 사용자가 선택할 수 있도록)
+          if (clonedSettings.tone) {
+            console.log('[복제된 설정] 톤앤매너:', clonedSettings.tone);
+          }
+          if (clonedSettings.imagePrompts && clonedSettings.imagePrompts.length > 0) {
+            console.log('[복제된 설정] 이미지 프롬프트:', clonedSettings.imagePrompts.length + '개 씬');
+          }
+          if (clonedSettings.bgmSettings) {
+            console.log('[복제된 설정] BGM 설정:', clonedSettings.bgmSettings);
+          }
+          if (clonedSettings.beatDropEffects) {
+            console.log('[복제된 설정] 비트 드롭 효과:', clonedSettings.beatDropEffects);
+          }
+          
+          // 복제된 설정 사용 후 삭제
+          localStorage.removeItem('clonedSettings');
+          
+          // 사용자에게 알림
+          setTimeout(function() {
+            alert('이전 프로젝트의 설정이 복제되었습니다. 동일한 톤앤매너와 효과로 새 영상을 제작할 수 있습니다.');
+          }, 500);
+        }
+      } catch (e) {
+        console.error('복제된 설정 로드 실패:', e);
+      }
+    })();
+
+    checkLoginStatus();
+    loadGlobalState();
+    
+    // 페이지 접속 시 날짜 체크 및 최신 데이터 로드
+    checkAndRefreshData();
+    loadWeeklyTopics();
+    
+    // 자동 갱신 설정
+    setupAutoRefresh();
+    
+    syncMutualExclusion();
+    
+    // 전과정 Auto 버튼 상태 체크
+    checkAutoButtonState();
+    setupAutoButtonWatcher();
+    
+    // 복구 확인 (페이지 로드 시)
+    checkRecovery();
+  </script>
+</body>
+</html>

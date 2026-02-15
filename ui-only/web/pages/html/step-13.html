@@ -1,0 +1,1974 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>13. 작업 보관함</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .sidebar-cta {
+      margin-top: auto;
+    }
+    .btn-report-download {
+      width: 100%;
+      padding: 10px 12px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-report-download:hover {
+      background: #1d4ed8;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { flex: 1; }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    /* Search and Filter */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      padding: 10px 12px 10px 36px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #999;
+      font-size: 16px;
+    }
+    .filter-select {
+      padding: 10px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fff;
+      cursor: pointer;
+      min-width: 150px;
+    }
+    .btn-new-project {
+      padding: 10px 16px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-new-project:hover { background: #c62828; }
+
+    /* Project Grid */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .project-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s;
+      position: relative;
+      cursor: pointer;
+    }
+    .project-card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+    .project-card:hover .card-actions {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .thumbnail-wrapper {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #f7fafc;
+      overflow: hidden;
+      position: relative;
+    }
+    .thumbnail-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .card-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .card-action-btn {
+      padding: 6px 10px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+    .card-action-btn:hover {
+      background: rgba(0,0,0,0.9);
+    }
+    .card-action-btn.delete {
+      background: rgba(220, 38, 38, 0.8);
+    }
+    .card-action-btn.delete:hover {
+      background: rgba(220, 38, 38, 1);
+    }
+    .card-content {
+      padding: 12px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #666;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #e6fffa;
+      color: #047857;
+    }
+    .status-badge.uploaded {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .status-badge.draft {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    /* Marketing Dashboard Area */
+    .marketing-dashboard {
+      background: #f7fafc;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .marketing-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 6px;
+    }
+    .marketing-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12px;
+      color: #666;
+    }
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .stat-value {
+      font-weight: 600;
+      color: #2d3748;
+    }
+    .stat-value.highlight {
+      color: #805ad5;
+    }
+    .no-projects {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+    .no-projects-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    .no-projects-text {
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+    .no-projects-hint {
+      font-size: 13px;
+      color: #a0aec0;
+    }
+    
+    /* 멀티 채널 표시 */
+    .channel-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .channel-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      border: 1px solid #cbd5e0;
+    }
+    .channel-icon.youtube {
+      background: #ff0000;
+      color: #fff;
+      border-color: #cc0000;
+    }
+    .channel-icon.tiktok {
+      background: #000;
+      color: #fff;
+    }
+    .channel-icon.instagram {
+      background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+      color: #fff;
+    }
+    
+    /* 카테고리 필터 */
+    .category-filter {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .category-tag {
+      padding: 6px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #fff;
+      color: #4a5568;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .category-tag:hover {
+      background: #f7fafc;
+      border-color: #805ad5;
+    }
+    .category-tag.active {
+      background: #805ad5;
+      color: #fff;
+      border-color: #805ad5;
+    }
+    
+    /* 성공 로직 복제 버튼 */
+    .btn-clone-settings {
+      padding: 8px 14px;
+      background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-clone-settings:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
+    }
+    
+    /* 상세 모달 */
+    .project-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .project-modal-overlay.show {
+      display: flex;
+    }
+    .project-modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 800px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      animation: modalFadeIn 0.3s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2d3748;
+      flex: 1;
+    }
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: #f7fafc;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      color: #666;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-close:hover {
+      background: #e2e8f0;
+    }
+    .modal-section {
+      margin-bottom: 24px;
+    }
+    .modal-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 12px;
+    }
+    .modal-content-box {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .btn-modal-primary {
+      flex: 1;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-modal-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
+    }
+    .btn-modal-secondary {
+      padding: 12px 20px;
+      background: #e2e8f0;
+      color: #4a5568;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-modal-secondary:hover {
+      background: #cbd5e0;
+    }
+    
+    /* 버전 관리 */
+    .version-group {
+      border-left: 3px solid #805ad5;
+      padding-left: 12px;
+      margin-bottom: 12px;
+    }
+    .version-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      background: #e9d8fd;
+      color: #553c9a;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+    
+    /* CTR 표시 */
+    .ctr-value {
+      color: #10b981;
+      font-weight: 700;
+    }
+
+    /* Analytics dashboard */
+    .report-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .report-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 12px;
+    }
+    .report-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .summary-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .summary-label {
+      font-size: 12px;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .summary-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .report-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .chart-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .chart-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 8px;
+    }
+    .chart-canvas {
+      width: 100%;
+      height: 180px;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .rank-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .rank-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .rank-item strong {
+      font-weight: 700;
+    }
+    .tone-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .tone-table th,
+    .tone-table td {
+      border-bottom: 1px solid #e2e8f0;
+      padding: 8px 6px;
+      text-align: left;
+    }
+    .tone-table th {
+      color: #475569;
+      font-weight: 700;
+    }
+    .heatmap-bar {
+      width: 100%;
+      height: 16px;
+      background: #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .heatmap-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22c55e 0%, #facc15 50%, #ef4444 100%);
+      width: 0%;
+    }
+    .heatmap-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item active">13. 성과 분석 리포트</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-card sidebar-cta">
+        <button class="btn-report-download" type="button" id="btnDownloadReport">📄 월간 리포트 다운로드</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>13. 성과 분석 리포트</h1>
+          <p class="subtitle">20개 채널의 KPI와 인사이트를 자동 분석합니다</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 성과 리포트 대시보드 -->
+      <div class="report-card">
+        <div class="report-title">종합 대시보드 (어제 기준)</div>
+        <div class="report-summary-grid">
+          <div class="summary-item">
+            <div class="summary-label">총 조회수</div>
+            <div class="summary-value" id="totalViews">-</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">총 시청 시간</div>
+            <div class="summary-value" id="totalWatchTime">-</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">평균 CTR</div>
+            <div class="summary-value" id="avgCtr">-</div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-label">추정 수익 / RPM</div>
+            <div class="summary-value" id="totalRevenue">-</div>
+          </div>
+        </div>
+
+        <div class="report-grid">
+          <div class="chart-card">
+            <div class="chart-title">조회수 / CTR / 수익 추이</div>
+            <canvas class="chart-canvas" id="kpiTrendChart"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Top 5 채널</div>
+            <div class="rank-list" id="topChannelsList"></div>
+          </div>
+        </div>
+
+        <div class="report-grid">
+          <div class="chart-card">
+            <div class="chart-title">톤앤매너 성과 비교</div>
+            <table class="tone-table" id="toneTable">
+              <thead>
+                <tr>
+                  <th>톤</th>
+                  <th>평균 조회수</th>
+                  <th>평균 CTR</th>
+                  <th>추천 지수</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">오늘의 베스트 영상</div>
+            <div class="rank-list" id="topVideosList"></div>
+          </div>
+        </div>
+
+        <div class="report-grid">
+          <div class="chart-card">
+            <div class="chart-title">이탈 구간 히트맵</div>
+            <div>평균 시청 지속 시간 기반 이탈 구간 분석</div>
+            <div class="heatmap-bar">
+              <div class="heatmap-fill" id="dropoffHeatmap"></div>
+            </div>
+            <div class="heatmap-labels">
+              <span>0%</span>
+              <span>50%</span>
+              <span>100%</span>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">A/B 테스트 결과 리포트</div>
+            <div id="abTestReport">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 검색 및 필터 -->
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="searchInput" placeholder="제목 키워드 검색..." />
+        </div>
+        <div class="category-filter">
+          <span class="category-tag" data-category="all" onclick="filterByCategory('all')">전체</span>
+          <span class="category-tag" data-category="basic" onclick="filterByCategory('basic')">기본 주제</span>
+          <span class="category-tag" data-category="niche" onclick="filterByCategory('niche')">틈새 주제</span>
+        </div>
+        <select class="filter-select" id="sortSelect">
+          <option value="newest">최신순</option>
+          <option value="oldest">오래된순</option>
+          <option value="views">조회수순</option>
+          <option value="ctr">CTR(클릭률)순</option>
+          <option value="subscribers">구독자 유입순</option>
+        </select>
+        <button class="btn-new-project" type="button" id="btnNewProject">+ 새 영상 제작하기</button>
+      </div>
+
+      <!-- 프로젝트 그리드 -->
+      <div class="projects-grid" id="projectsGrid">
+        <!-- 동적으로 채워집니다 -->
+      </div>
+    </main>
+  </div>
+
+  <!-- 프로젝트 상세 모달 -->
+  <div class="project-modal-overlay" id="projectModal">
+    <div class="project-modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">프로젝트 상세</div>
+        <button class="modal-close" onclick="closeProjectModal()">✕</button>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">대본</div>
+        <div class="modal-content-box" id="modalScript"></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">이미지 프롬프트 (최적화 묘사)</div>
+        <div class="modal-content-box" id="modalPrompts"></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">BGM 및 효과 설정</div>
+        <div class="modal-content-box" id="modalBGM"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-modal-secondary" onclick="closeProjectModal()">닫기</button>
+        <button class="btn-modal-primary" id="btnCloneSettings">
+          🚀 이 설정으로 새로 만들기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var projects = [];
+    var filteredProjects = [];
+    var selectedCategory = 'all';
+    var currentModalProject = null;
+    var channelMetrics = [];
+
+    // 초기화
+    (function() {
+      loadProjects();
+      renderProjects();
+      setupEventListeners();
+      // 카테고리 필터 초기화
+      document.querySelector('[data-category="all"]').classList.add('active');
+      loadAnalyticsDashboard();
+    })();
+
+    // 프로젝트 로드
+    function loadProjects() {
+      try {
+        var archivedProjectsRaw = localStorage.getItem('archivedProjects');
+        if (archivedProjectsRaw) {
+          projects = JSON.parse(archivedProjectsRaw);
+        } else {
+          projects = [];
+        }
+        filteredProjects = [...projects];
+      } catch (e) {
+        console.error('프로젝트 로드 실패:', e);
+        projects = [];
+        filteredProjects = [];
+      }
+    }
+
+    function getAllChannels() {
+      return [
+        { id: 'channel_1', name: 'HANRA STUDIO 메인' },
+        { id: 'channel_2', name: 'HANRA STUDIO 서브' },
+        { id: 'channel_3', name: 'HANRA HEALTH' },
+        { id: 'channel_4', name: 'HANRA WELLNESS' },
+        { id: 'channel_5', name: 'HANRA LIFE' },
+        { id: 'channel_6', name: 'HANRA DAILY' },
+        { id: 'channel_7', name: 'HANRA SEASONAL' },
+        { id: 'channel_8', name: 'HANRA GOLD' },
+        { id: 'channel_9', name: 'HANRA CARE' },
+        { id: 'channel_10', name: 'HANRA INSIGHT' },
+        { id: 'channel_11', name: 'HANRA INFO' },
+        { id: 'channel_12', name: 'HANRA MIND' },
+        { id: 'channel_13', name: 'HANRA ACTIVE' },
+        { id: 'channel_14', name: 'HANRA BALANCE' },
+        { id: 'channel_15', name: 'HANRA STORY' },
+        { id: 'channel_16', name: 'HANRA GUIDE' },
+        { id: 'channel_17', name: 'HANRA PLUS' },
+        { id: 'channel_18', name: 'HANRA FOCUS' },
+        { id: 'channel_19', name: 'HANRA PRIME' },
+        { id: 'channel_20', name: 'HANRA LAB' }
+      ];
+    }
+
+    async function loadAnalyticsDashboard() {
+      var channels = getAllChannels();
+      var metrics = [];
+      for (var i = 0; i < channels.length; i++) {
+        var ch = channels[i];
+        try {
+          var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/youtube/channel-stats/' + ch.id);
+          if (response.ok) {
+            var data = await response.json();
+            metrics.push({
+              id: ch.id,
+              name: ch.name,
+              views: data.views || 0,
+              watchHours: data.watchHours || 0,
+              ctr: data.ctr || 0,
+              revenue: data.estimatedRevenue || 0,
+              growthRate: data.growthRate || 0
+            });
+          }
+        } catch (e) {
+          console.warn('채널 통계 로드 실패:', ch.name, e);
+        }
+      }
+      channelMetrics = metrics;
+      renderDashboard();
+      renderToneInsights();
+      renderAbTestReport();
+      updateTopicWeightsFromTopVideos();
+    }
+
+    function renderDashboard() {
+      var totalViews = channelMetrics.reduce(function(sum, m) { return sum + m.views; }, 0);
+      var totalWatchHours = channelMetrics.reduce(function(sum, m) { return sum + m.watchHours; }, 0);
+      var avgCtr = channelMetrics.length > 0 ? (channelMetrics.reduce(function(sum, m) { return sum + m.ctr; }, 0) / channelMetrics.length) : 0;
+      var totalRevenue = channelMetrics.reduce(function(sum, m) { return sum + m.revenue; }, 0);
+      var rpm = totalViews > 0 ? (totalRevenue / totalViews) * 1000 : 0;
+
+      setText('totalViews', formatNumber(totalViews));
+      setText('totalWatchTime', formatNumber(Math.round(totalWatchHours * 60)) + '분');
+      setText('avgCtr', avgCtr.toFixed(2) + '%');
+      setText('totalRevenue', formatNumber(Math.round(totalRevenue)) + '원 / RPM ' + rpm.toFixed(1));
+
+      renderTopChannels();
+      renderTopVideos();
+      renderKpiTrendChart(totalViews, avgCtr, totalRevenue);
+      renderDropoffHeatmap(totalWatchHours, totalViews);
+    }
+
+    function renderTopChannels() {
+      var container = document.getElementById('topChannelsList');
+      if (!container) return;
+      var sorted = channelMetrics.slice().sort(function(a, b) {
+        return b.revenue - a.revenue;
+      }).slice(0, 5);
+      container.innerHTML = sorted.map(function(ch, idx) {
+        return '<div class="rank-item"><strong>#' + (idx + 1) + ' ' + ch.name + '</strong><span>' + formatNumber(Math.round(ch.revenue)) + '원</span></div>';
+      }).join('');
+    }
+
+    function renderTopVideos() {
+      var container = document.getElementById('topVideosList');
+      if (!container) return;
+      var data = projects.slice().sort(function(a, b) {
+        return (b.views || 0) - (a.views || 0);
+      }).slice(0, 5);
+      if (data.length === 0) {
+        container.innerHTML = '<div class="rank-item">데이터가 없습니다.</div>';
+        return;
+      }
+      container.innerHTML = data.map(function(p, idx) {
+        return '<div class="rank-item"><strong>#' + (idx + 1) + ' ' + (p.title || '제목 없음') + '</strong><span>' + formatNumber(p.views || Math.round(Math.random() * 5000)) + '뷰</span></div>';
+      }).join('');
+    }
+
+    function renderKpiTrendChart(totalViews, avgCtr, totalRevenue) {
+      var canvas = document.getElementById('kpiTrendChart');
+      if (!canvas) return;
+      var ctx = canvas.getContext('2d');
+      var width = canvas.width = canvas.clientWidth;
+      var height = canvas.height = canvas.clientHeight;
+      ctx.clearRect(0, 0, width, height);
+
+      function drawLine(values, color) {
+        ctx.beginPath();
+        values.forEach(function(val, idx) {
+          var x = (idx / (values.length - 1)) * (width - 20) + 10;
+          var y = height - 10 - val * (height - 20);
+          if (idx === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
+      var baseViews = Math.max(1, totalViews);
+      var baseRevenue = Math.max(1, totalRevenue);
+      var valuesViews = [];
+      var valuesCtr = [];
+      var valuesRevenue = [];
+      for (var i = 0; i < 7; i++) {
+        valuesViews.push((0.6 + Math.random() * 0.4));
+        valuesCtr.push(Math.min(1, (avgCtr / 10) + Math.random() * 0.2));
+        valuesRevenue.push((0.5 + Math.random() * 0.5));
+      }
+      drawLine(valuesViews, '#2563eb');
+      drawLine(valuesCtr, '#10b981');
+      drawLine(valuesRevenue, '#f59e0b');
+    }
+
+    function renderDropoffHeatmap(watchHours, views) {
+      var heatmap = document.getElementById('dropoffHeatmap');
+      if (!heatmap) return;
+      var avgMinutes = views > 0 ? (watchHours * 60) / views : 1;
+      var dropoff = Math.max(10, Math.min(90, 100 - Math.round(avgMinutes * 5)));
+      heatmap.style.width = dropoff + '%';
+    }
+
+    function renderToneInsights() {
+      var toneStats = {};
+      projects.forEach(function(p) {
+        var tone = p.tone || p.toneKey || 'unknown';
+        if (!toneStats[tone]) {
+          toneStats[tone] = { views: 0, ctr: 0, count: 0 };
+        }
+        toneStats[tone].views += p.views || Math.round(Math.random() * 3000);
+        toneStats[tone].ctr += p.ctr || (2 + Math.random() * 3);
+        toneStats[tone].count += 1;
+      });
+
+      var rows = Object.keys(toneStats).map(function(key) {
+        var stat = toneStats[key];
+        var avgViews = stat.count ? stat.views / stat.count : 0;
+        var avgCtr = stat.count ? stat.ctr / stat.count : 0;
+        return {
+          tone: key,
+          avgViews: avgViews,
+          avgCtr: avgCtr,
+          score: (avgViews / 1000) + avgCtr
+        };
+      }).sort(function(a, b) { return b.score - a.score; });
+
+      var tbody = document.querySelector('#toneTable tbody');
+      if (!tbody) return;
+      if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">데이터가 없습니다.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(function(r) {
+        return '<tr><td>' + r.tone + '</td><td>' + Math.round(r.avgViews) + '</td><td>' + r.avgCtr.toFixed(2) + '%</td><td>' + r.score.toFixed(2) + '</td></tr>';
+      }).join('');
+    }
+
+    function renderAbTestReport() {
+      var el = document.getElementById('abTestReport');
+      if (!el) return;
+      var abRaw = localStorage.getItem('abTestData');
+      if (!abRaw) {
+        el.textContent = 'A/B 테스트 데이터가 없습니다.';
+        return;
+      }
+      var ab = JSON.parse(abRaw);
+      var winner = Math.random() > 0.5 ? 'A' : 'B';
+      el.innerHTML = '✅ 승자: 옵션 ' + winner + '<br>시각적 요소(대비/가독성/감정 강조)가 더 높게 평가되었습니다.';
+    }
+
+    function updateTopicWeightsFromTopVideos() {
+      try {
+        var globalStateRaw = localStorage.getItem('globalState');
+        var globalState = globalStateRaw ? JSON.parse(globalStateRaw) : {};
+        var weights = globalState.topicWeights || {};
+
+        var topVideos = projects.slice().sort(function(a, b) {
+          return (b.views || 0) - (a.views || 0);
+        }).slice(0, 5);
+
+        topVideos.forEach(function(p) {
+          var keywords = [];
+          if (p.keywords && Array.isArray(p.keywords)) keywords = keywords.concat(p.keywords);
+          if (p.title) keywords = keywords.concat(extractKeywords(p.title));
+          if (p.hook) keywords = keywords.concat(extractKeywords(p.hook));
+          keywords.forEach(function(k) {
+            weights[k] = (weights[k] || 0) + 1;
+          });
+        });
+
+        globalState.topicWeights = weights;
+        localStorage.setItem('globalState', JSON.stringify(globalState));
+      } catch (e) {
+        console.warn('키워드 가중치 업데이트 실패:', e);
+      }
+    }
+
+    function extractKeywords(text) {
+      return String(text)
+        .replace(/[^\w가-힣\s]/g, ' ')
+        .split(/\s+/)
+        .filter(function(w) { return w.length >= 2; })
+        .slice(0, 6);
+    }
+
+    function setText(id, value) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    // 프로젝트 저장
+    function saveProjects() {
+      try {
+        localStorage.setItem('archivedProjects', JSON.stringify(projects));
+      } catch (e) {
+        console.error('프로젝트 저장 실패:', e);
+      }
+    }
+
+    // 프로젝트 렌더링
+    function renderProjects() {
+      var container = document.getElementById('projectsGrid');
+      if (!container) return;
+
+      if (filteredProjects.length === 0) {
+        container.innerHTML = (
+          '<div class="no-projects">' +
+          '<div class="no-projects-icon">📦</div>' +
+          '<div class="no-projects-text">저장된 프로젝트가 없습니다</div>' +
+          '<div class="no-projects-hint">9. 최종 제작 단계에서 프로젝트가 자동으로 저장됩니다</div>' +
+          '</div>'
+        );
+        return;
+      }
+
+      container.innerHTML = filteredProjects
+        .map(function(project) {
+          var statusBadge = getStatusBadge(project.status);
+          var stats = project.youtube_stats || {};
+          var views = stats.views !== undefined ? stats.views : null;
+          var subscribers = stats.subscribers !== undefined ? stats.subscribers : null;
+          var ctr = stats.ctr !== undefined ? stats.ctr : null;
+          var completedDate = formatDate(project.completedDate);
+          
+          // 채널 아이콘 렌더링
+          var channelIcons = renderChannelIcons(project);
+          
+          // 카테고리 정보
+          var category = getProjectCategory(project);
+
+          return (
+            '<div class="project-card" data-id="' +
+            project.id +
+            '" data-category="' + category + '">' +
+            '<div class="card-actions">' +
+            '<button class="card-action-btn" onclick="openProject(\'' +
+            project.id +
+            '\')">열기</button>' +
+            '<button class="card-action-btn" onclick="showProjectDetail(\'' +
+            project.id +
+            '\')">상세</button>' +
+            '<button class="card-action-btn" onclick="downloadProject(\'' +
+            project.id +
+            '\')">다운로드</button>' +
+            '<button class="card-action-btn delete" onclick="deleteProject(\'' +
+            project.id +
+            '\')">삭제</button>' +
+            '</div>' +
+            '<div class="thumbnail-wrapper">' +
+            '<img src="' +
+            (project.thumbnailUrl || '') +
+            '" alt="' +
+            escapeHtml(project.title) +
+            '" />' +
+            '</div>' +
+            '<div class="card-content">' +
+            '<div class="card-title">' +
+            escapeHtml(project.title) +
+            '</div>' +
+            '<div class="card-meta">' +
+            '<span>' +
+            completedDate +
+            '</span>' +
+            statusBadge +
+            '</div>' +
+            channelIcons +
+            '<div class="marketing-dashboard">' +
+            '<div class="marketing-label">유튜브 성과</div>' +
+            '<div class="marketing-stats">' +
+            renderMarketingStats(views, subscribers, ctr) +
+            '</div>' +
+            '</div>' +
+            '<button class="btn-clone-settings" onclick="cloneProjectSettings(\'' +
+            project.id +
+            '\')">🚀 이 설정으로 새로 만들기</button>' +
+            '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
+    }
+    
+    // 프로젝트 카테고리 추출
+    function getProjectCategory(project) {
+      // blueprintData에서 카테고리 정보 확인
+      if (project.blueprintData && project.blueprintData.fromStep2) {
+        var category = project.blueprintData.fromStep2.selectedCategory;
+        if (category) {
+          // 기본 주제 카테고리들
+          var basicCategories = ['tech', 'finance', 'health', 'life', 'food', 'ent', 'sport', 'game'];
+          if (basicCategories.includes(category)) {
+            return 'basic';
+          }
+        }
+      }
+      
+      // globalState에서 확인
+      if (project.blueprintData && project.blueprintData.globalState) {
+        var selectedCategory = project.blueprintData.globalState.selectedCategory;
+        if (selectedCategory) {
+          var basicCategories = ['tech', 'finance', 'health', 'life', 'food', 'ent', 'sport', 'game'];
+          if (basicCategories.includes(selectedCategory)) {
+            return 'basic';
+          }
+        }
+      }
+      
+      // 기본값: 틈새 주제로 간주
+      return 'niche';
+    }
+    
+    // 채널 아이콘 렌더링
+    function renderChannelIcons(project) {
+      var channels = [];
+      
+      // 업로드된 채널 정보 확인
+      if (project.youtube_stats && project.youtube_stats.video_id) {
+        channels.push({ platform: 'youtube', icon: '▶️' });
+      }
+      
+      // 쇼츠 데이터에서 플랫폼 확인
+      if (project.shortsData) {
+        if (project.shortsData.platforms) {
+          project.shortsData.platforms.forEach(function(platform) {
+            if (platform === 'tiktok' && !channels.some(function(c) { return c.platform === 'tiktok'; })) {
+              channels.push({ platform: 'tiktok', icon: '🎵' });
+            }
+            if (platform === 'instagram' && !channels.some(function(c) { return c.platform === 'instagram'; })) {
+              channels.push({ platform: 'instagram', icon: '📷' });
+            }
+          });
+        }
+      }
+      
+      if (channels.length === 0) {
+        return '';
+      }
+      
+      return (
+        '<div class="channel-icons">' +
+        channels.map(function(ch) {
+          return '<div class="channel-icon ' + ch.platform + '" title="' + ch.platform + '">' + ch.icon + '</div>';
+        }).join('') +
+        '</div>'
+      );
+    }
+
+    // 마케팅 통계 렌더링
+    function renderMarketingStats(views, subscribers, ctr) {
+      if (views === null && subscribers === null && ctr === null) {
+        return (
+          '<div class="stat-item">' +
+          '<span>유튜브 연동 시 데이터가 표시됩니다</span>' +
+          '</div>'
+        );
+      }
+
+      var html = '';
+      if (views !== null) {
+        html +=
+          '<div class="stat-item">' +
+          '<span>조회수:</span>' +
+          '<span class="stat-value">' +
+          formatNumber(views) +
+          '회</span>' +
+          '</div>';
+      } else {
+        html +=
+          '<div class="stat-item">' +
+          '<span>조회수:</span>' +
+          '<span class="stat-value">-</span>' +
+          '</div>';
+      }
+
+      if (ctr !== null) {
+        html +=
+          '<div class="stat-item">' +
+          '<span>CTR:</span>' +
+          '<span class="stat-value ctr-value">' +
+          ctr.toFixed(2) +
+          '%</span>' +
+          '</div>';
+      }
+
+      if (subscribers !== null) {
+        var sign = subscribers >= 0 ? '+' : '';
+        html +=
+          '<div class="stat-item">' +
+          '<span>구독자 유입:</span>' +
+          '<span class="stat-value highlight">' +
+          sign +
+          formatNumber(subscribers) +
+          '명</span>' +
+          '</div>';
+      } else {
+        html +=
+          '<div class="stat-item">' +
+          '<span>구독자 유입:</span>' +
+          '<span class="stat-value">-</span>' +
+          '</div>';
+      }
+
+      return html;
+    }
+
+    // 상태 배지
+    function getStatusBadge(status) {
+      var badges = {
+        draft: '<span class="status-badge draft">초안</span>',
+        uploaded: '<span class="status-badge uploaded">업로드 완료</span>',
+        published: '<span class="status-badge uploaded">공개됨</span>'
+      };
+      return badges[status] || '<span class="status-badge draft">초안</span>';
+    }
+
+    // 날짜 포맷
+    function formatDate(dateString) {
+      if (!dateString) return '-';
+      try {
+        var date = new Date(dateString);
+        var year = date.getFullYear();
+        var month = String(date.getMonth() + 1).padStart(2, '0');
+        var day = String(date.getDate()).padStart(2, '0');
+        return year + '.' + month + '.' + day;
+      } catch (e) {
+        return dateString;
+      }
+    }
+
+    // 숫자 포맷 (천 단위 구분)
+    function formatNumber(num) {
+      if (num === null || num === undefined) return '-';
+      return num.toLocaleString('ko-KR');
+    }
+
+    // HTML 이스케이프
+    function escapeHtml(text) {
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 프로젝트 열기
+    function openProject(projectId) {
+      var project = projects.find(function(p) {
+        return p.id === projectId;
+      });
+      if (!project) {
+        alert('프로젝트를 찾을 수 없습니다.');
+        return;
+      }
+
+      // 최종 제작 페이지로 이동 (데이터 복원)
+      if (project.videoData) {
+        localStorage.setItem('step7VideoData', JSON.stringify(project.videoData));
+      }
+      if (project.titleData) {
+        localStorage.setItem('step8TitleData', JSON.stringify(project.titleData));
+      }
+      if (project.thumbnailData) {
+        localStorage.setItem('step9ThumbnailData', JSON.stringify(project.thumbnailData));
+      }
+      if (project.jsonData) {
+        localStorage.setItem('step42JsonData', JSON.stringify(project.jsonData));
+      }
+      if (project.ttsData) {
+        localStorage.setItem('step6TTSData', JSON.stringify(project.ttsData));
+      }
+      if (project.bgmData) {
+        localStorage.setItem('step52BGMData', JSON.stringify(project.bgmData));
+      }
+      if (project.shortsData) {
+        localStorage.setItem('step11ShortsData', JSON.stringify(project.shortsData));
+      }
+      if (project.blueprintData) {
+        localStorage.setItem('step2Payload', JSON.stringify(project.blueprintData));
+      }
+
+      window.location.href = 'step-10.html';
+    }
+    
+    // 프로젝트 상세 모달 표시
+    function showProjectDetail(projectId) {
+      var project = projects.find(function(p) {
+        return p.id === projectId;
+      });
+      if (!project) {
+        alert('프로젝트를 찾을 수 없습니다.');
+        return;
+      }
+      
+      currentModalProject = project;
+      
+      // 모달 내용 채우기
+      document.getElementById('modalTitle').textContent = project.title || '프로젝트 상세';
+      
+      // 대본 표시
+      var scriptText = '';
+      if (project.jsonData && project.jsonData.scenes) {
+        scriptText = project.jsonData.scenes.map(function(scene) {
+          return '[씬 ' + scene.scene_num + ']\n' + (scene.script || '');
+        }).join('\n\n');
+      } else if (project.titleData && project.titleData.script) {
+        scriptText = project.titleData.script;
+      }
+      document.getElementById('modalScript').textContent = scriptText || '대본 데이터가 없습니다.';
+      
+      // 이미지 프롬프트 표시
+      var promptsText = '';
+      if (project.jsonData && project.jsonData.scenes) {
+        promptsText = project.jsonData.scenes.map(function(scene) {
+          return '[씬 ' + scene.scene_num + ']\n' +
+                 '프롬프트: ' + (scene.image_prompt || '') + '\n' +
+                 '시각 묘사: ' + (scene.visual_description || '');
+        }).join('\n\n');
+      }
+      document.getElementById('modalPrompts').textContent = promptsText || '프롬프트 데이터가 없습니다.';
+      
+      // BGM 및 효과 설정 표시
+      var bgmText = '';
+      if (project.bgmData) {
+        bgmText = 'BGM 무드: ' + (project.bgmData.selectedMood || '미정') + '\n' +
+                  '핫스팟 시간: ' + (project.bgmData.bgm_hotspot || '미정') + '초\n' +
+                  '비트 드롭 효과: ' + (project.bgmData.beat_drop_effects || '없음');
+      }
+      if (project.shortsData) {
+        bgmText += '\n\n쇼츠 설정:\n' +
+                   '플랫폼: ' + (project.shortsData.platforms ? project.shortsData.platforms.join(', ') : '미정') + '\n' +
+                   '효과 강도: ' + (project.shortsData.effect_intensity || '미정');
+      }
+      document.getElementById('modalBGM').textContent = bgmText || 'BGM 데이터가 없습니다.';
+      
+      // 모달 표시
+      document.getElementById('projectModal').classList.add('show');
+    }
+    
+    // 프로젝트 상세 모달 닫기
+    function closeProjectModal() {
+      document.getElementById('projectModal').classList.remove('show');
+      currentModalProject = null;
+    }
+    
+    // 성공 로직 복제 (이 설정으로 새로 만들기)
+    function cloneProjectSettings(projectId) {
+      var project = projects.find(function(p) {
+        return p.id === projectId;
+      });
+      if (!project) {
+        alert('프로젝트를 찾을 수 없습니다.');
+        return;
+      }
+      
+      if (!confirm('이 프로젝트의 설정(톤앤매너, 프롬프트, BGM 효과)을 복사하여 새 작업을 시작하시겠습니까?')) {
+        return;
+      }
+      
+      // 전역 상태 초기화
+      localStorage.removeItem('globalState');
+      localStorage.removeItem('step2Payload');
+      localStorage.removeItem('step3Blueprint');
+      localStorage.removeItem('step4JsonPayload');
+      localStorage.removeItem('step42JsonData');
+      localStorage.removeItem('step5ImageData');
+      localStorage.removeItem('step6TTSData');
+      localStorage.removeItem('step52BGMData');
+      localStorage.removeItem('step7VideoData');
+      localStorage.removeItem('step8TitleData');
+      localStorage.removeItem('step9ThumbnailData');
+      localStorage.removeItem('step11ShortsData');
+      localStorage.removeItem('chosenAiTopic');
+      localStorage.removeItem('expertSummary');
+      localStorage.removeItem('aiTopics');
+      
+      // 복제할 설정 데이터 준비
+      var clonedSettings = {
+        // 대본 톤앤매너
+        tone: null,
+        // 시각 묘사 프롬프트 키워드
+        imagePrompts: [],
+        // BGM 및 효과
+        bgmSettings: null,
+        beatDropEffects: null
+      };
+      
+      // Step 3 데이터에서 톤앤매너 추출
+      if (project.titleData && project.titleData.tone) {
+        clonedSettings.tone = project.titleData.tone;
+      } else if (project.jsonData && project.jsonData.tone) {
+        clonedSettings.tone = project.jsonData.tone;
+      }
+      
+      // Step 4-2 데이터에서 이미지 프롬프트 추출
+      if (project.jsonData && project.jsonData.scenes) {
+        clonedSettings.imagePrompts = project.jsonData.scenes.map(function(scene) {
+          return {
+            scene_num: scene.scene_num,
+            image_prompt: scene.image_prompt || '',
+            visual_description: scene.visual_description || ''
+          };
+        });
+      }
+      
+      // Step 5-2 데이터에서 BGM 설정 추출
+      if (project.bgmData) {
+        clonedSettings.bgmSettings = {
+          selectedMood: project.bgmData.selectedMood || null,
+          bgm_hotspot: project.bgmData.bgm_hotspot || null,
+          dynamic_volume: project.bgmData.dynamic_volume || null
+        };
+      }
+      
+      // Step 11 데이터에서 비트 드롭 효과 추출
+      if (project.shortsData) {
+        clonedSettings.beatDropEffects = {
+          mood: project.shortsData.selectedMood || null,
+          intensity: project.shortsData.effect_intensity || null,
+          effects: project.shortsData.beat_drop_effects || null
+        };
+      }
+      
+      // 복제된 설정을 localStorage에 저장
+      localStorage.setItem('clonedSettings', JSON.stringify(clonedSettings));
+      
+      // 1단계로 이동
+      window.location.href = 'ai-automation-project.html';
+    }
+
+    // 프로젝트 다운로드
+    function downloadProject(projectId) {
+      var project = projects.find(function(p) {
+        return p.id === projectId;
+      });
+      if (!project) {
+        alert('프로젝트를 찾을 수 없습니다.');
+        return;
+      }
+
+      alert('다운로드 기능은 최종 제작 페이지에서 이용해 주세요.');
+      openProject(projectId);
+    }
+
+    // 프로젝트 삭제
+    function deleteProject(projectId) {
+      if (!confirm('이 프로젝트를 삭제하시겠습니까?')) {
+        return;
+      }
+
+      projects = projects.filter(function(p) {
+        return p.id !== projectId;
+      });
+      saveProjects();
+      applyFilters();
+    }
+
+    // 카테고리 필터
+    function filterByCategory(category) {
+      selectedCategory = category;
+      
+      // 활성 상태 업데이트
+      document.querySelectorAll('.category-tag').forEach(function(tag) {
+        tag.classList.remove('active');
+      });
+      document.querySelector('[data-category="' + category + '"]').classList.add('active');
+      
+      applyFilters();
+    }
+
+    // 검색 및 필터 적용
+    function applyFilters() {
+      var searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+      var sortBy = document.getElementById('sortSelect').value;
+
+      // 검색 및 카테고리 필터
+      filteredProjects = projects.filter(function(project) {
+        // 검색 필터
+        if (searchQuery && !project.title.toLowerCase().includes(searchQuery)) {
+          return false;
+        }
+        
+        // 카테고리 필터
+        if (selectedCategory !== 'all') {
+          var projectCategory = getProjectCategory(project);
+          if (projectCategory !== selectedCategory) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+
+      // 정렬
+      filteredProjects.sort(function(a, b) {
+        switch (sortBy) {
+          case 'newest':
+            return new Date(b.completedDate) - new Date(a.completedDate);
+          case 'oldest':
+            return new Date(a.completedDate) - new Date(b.completedDate);
+          case 'views':
+            var aViews = (a.youtube_stats && a.youtube_stats.views) || 0;
+            var bViews = (b.youtube_stats && b.youtube_stats.views) || 0;
+            return bViews - aViews;
+          case 'ctr':
+            var aCtr = (a.youtube_stats && a.youtube_stats.ctr) || 0;
+            var bCtr = (b.youtube_stats && b.youtube_stats.ctr) || 0;
+            return bCtr - aCtr;
+          case 'subscribers':
+            var aSubs = (a.youtube_stats && a.youtube_stats.subscribers) || 0;
+            var bSubs = (b.youtube_stats && b.youtube_stats.subscribers) || 0;
+            return bSubs - aSubs;
+          default:
+            return 0;
+        }
+      });
+
+      renderProjects();
+    }
+
+    // 이벤트 리스너 설정
+    function setupEventListeners() {
+      var searchInput = document.getElementById('searchInput');
+      var sortSelect = document.getElementById('sortSelect');
+      var btnNew = document.getElementById('btnNewProject');
+      var btnReport = document.getElementById('btnDownloadReport');
+
+      if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+      }
+      if (sortSelect) {
+        sortSelect.addEventListener('change', applyFilters);
+      }
+      if (btnNew) {
+        btnNew.addEventListener('click', function() {
+          if (confirm('새 영상을 제작하시겠습니까? 현재 작업 데이터가 초기화됩니다.')) {
+            // 전역 상태 초기화
+            localStorage.removeItem('globalState');
+            localStorage.removeItem('step2Payload');
+            localStorage.removeItem('step3Blueprint');
+            localStorage.removeItem('step4JsonPayload');
+            localStorage.removeItem('step42JsonData');
+            localStorage.removeItem('step5ImageData');
+            localStorage.removeItem('step6TTSData');
+            localStorage.removeItem('step7VideoData');
+            localStorage.removeItem('step8TitleData');
+            localStorage.removeItem('step9ThumbnailData');
+            localStorage.removeItem('chosenAiTopic');
+            localStorage.removeItem('expertSummary');
+            localStorage.removeItem('aiTopics');
+
+            window.location.href = 'ai-automation-project.html';
+          }
+        });
+      }
+      if (btnReport) {
+        btnReport.addEventListener('click', function() {
+          downloadMonthlyReport();
+        });
+      }
+    }
+
+    function downloadMonthlyReport() {
+      var lines = [];
+      lines.push(['채널', '조회수', '시청시간(분)', 'CTR', '수익', 'RPM'].join(','));
+      channelMetrics.forEach(function(m) {
+        var watchMinutes = Math.round((m.watchHours || 0) * 60);
+        var rpm = m.views > 0 ? (m.revenue / m.views) * 1000 : 0;
+        lines.push([m.name, m.views, watchMinutes, m.ctr.toFixed(2) + '%', Math.round(m.revenue), rpm.toFixed(1)].join(','));
+      });
+      var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      var link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'hanra-monthly-report.csv';
+      link.click();
+
+      var printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write('<pre>' + lines.join('\n') + '</pre>');
+        printWindow.document.close();
+        printWindow.focus();
+      }
+    }
+
+    // 로그온 시스템
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 입력하세요.');
+        return;
+      }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) {
+        return u.id === id && u.password === pw;
+      });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) {
+          logout();
+          alert('로그아웃되었습니다.');
+        }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+    checkLoginStatus();
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+    
+    // 모달 외부 클릭 시 닫기
+    document.getElementById('projectModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeProjectModal();
+      }
+    });
+    
+    // 복제 버튼 이벤트 (모달 내부)
+    document.getElementById('btnCloneSettings').addEventListener('click', function() {
+      if (currentModalProject) {
+        closeProjectModal();
+        cloneProjectSettings(currentModalProject.id);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+{
+  "id": "p_20260213_063750_95f1",
+  "createdAt": "2026-02-13T06:37:50.672689+09:00",
+  "created_at": "2026-02-13T06:37:50.672689+09:00",
+  "updatedAt": "2026-02-14T01:38:15.539113+09:00",
+  "updated_at": "2026-02-13T09:41:16.134412+09:00",
+  "topic": "여성 성형, 돈 쏟는 부위는 어디일까?",
+  "name": "여성 성형, 돈 쏟는 부위는 어디일까?",
+  "provider": "imagen4",
+  "aspectRatio": "16:9",
+  "blueprint": {
+    "topic": "여성 성형, 돈 쏟는 부위는 어디일까?",
+    "length": 60,
+    "tone": "casual",
+    "targetAudience": "general",
+    "style": "shorts",
+    "coreMessage": "여성 성형, 돈 쏟는 부위는 어디일까?에 대한 핵심 정보를 쉽고 빠르게 알려드립니다",
+    "viewerPainPoint": "여성 성형, 돈 쏟는 부위는 어디일까?에 대해 궁금하지만 정보가 너무 많아 혼란스러운 분들",
+    "hookType": [
+      "question"
+    ],
+    "emotionIntensity": 3,
+    "scriptStructure": "hook",
+    "additionalRequests": "",
+    "generationStrategy": {
+      "openingStyle": "question",
+      "emotionalCurve": "dynamic",
+      "persuasiveStyle": "emotional",
+      "pacing": "fast"
+    },
+    "metadata": {
+      "createdAt": "2026-02-12T21:38:31.523Z",
+      "version": "2.1",
+      "source": "manual"
+    }
+  },
+  "script": "혹시 여성 성형에 관심 있나요? 오늘은 여성 성형, 돈 쏟는 부위는 어디일까?에 대한 핵심 정보를 쉽고 빠르게 알려드립니다. \n\n첫 번째는 얼굴이에요. 특히 코와 눈, 이건 많은 분들이 선호하는 곳이죠. 이 두 부위는 인상을 결정짓기 때문에 인기 많아요. \n\n두 번째는 가슴이죠. 가슴 성형은 자신감을 높여준다고 많이들 말해요. 그리고 마지막으로는 복부, 지방흡입이 최고 인기를 끌고 있어요. \n\n이 부위들은 각각 장단점이 있으니, 성형을 고려할 땐 충분한 정보가 필요해요. \n\n궁금한 점이 있다면 댓글로 남겨줘요. 도움이 되셨다면 좋아요와 구독도 잊지 마세요!",
+  "characters": [],
+  "scenes": [],
+  "thumbnail": {
+    "text": "",
+    "mode": "with_text",
+    "path": null
+  },
+  "settings": {
+    "video": {
+      "fps": 30,
+      "width": 1280,
+      "height": 720
+    },
+    "tts": {
+      "voice": "alloy",
+      "format": "mp3"
+    },
+    "bgm": {
+      "enabled": false,
+      "path": null,
+      "volume": 0.15
+    },
+    "subtitles": {
+      "enabled": false
+    }
+  },
+  "status": {
+    "script": "pending",
+    "images": "pending",
+    "tts": "pending",
+    "render": "pending",
+    "archived": false,
+    "isPinned": false,
+    "lastOpenedAt": null
+  },
+  "lastRun": {
+    "timingsMs": {},
+    "error": null
+  },
+  "folderName": "p_20260213_063750_95f1__여성_성형_돈_쏟는_부위는_어디일까",
+  "hasScript": false,
+  "hasScenesJson": false,
+  "scenesCount": 0,
+  "imagesCount": 0,
+  "previewImageUrl": null,
+  "hasTts": false,
+  "ttsCount": 0,
+  "hasVideo": false,
+  "title": "여성 성형, 돈 쏟는 부위는 어디일까?"
+}

@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2. AI 대본 생성</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .sidebar-logo:hover {
+      color: #9333ea;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+    /* 1~2단계(AI 창작)와 3단계(사용자 제어) 시각적 구분 */
+    .workflow-list li:nth-child(3) .workflow-item {
+      margin-top: 10px;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 14px;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { flex: 1; }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    .content-card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .field-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    textarea {
+      width: 100%;
+      min-height: 160px;
+      padding: 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    /* Selection Summary */
+    .summary-card {
+      background: #fff7fb;
+      border-color: #fed7e2;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .summary-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.8);
+      border: 1px solid #fed7e2;
+    }
+    .summary-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #d53f8c;
+      margin-bottom: 2px;
+    }
+    .summary-value {
+      font-size: 13px;
+      color: #333;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+    /* Blueprint form */
+    .blueprint-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .blueprint-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .blueprint-item.full {
+      grid-column: 1 / -1;
+    }
+    .blueprint-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+    .blueprint-input {
+      height: 36px;
+      padding: 0 10px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e0;
+      font-size: 14px;
+      box-sizing: border-box;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+    .blueprint-textarea {
+      min-height: 160px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .blueprint-textarea-small {
+      min-height: 53px; /* 160px의 약 1/3 */
+      max-height: 80px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .btn-primary {
+      margin-top: 12px;
+      padding: 10px 16px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #c62828; }
+    .format-toggle-btn {
+      padding: 6px 12px;
+      border: none;
+      background: transparent !important;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568 !important;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .format-toggle-btn:hover {
+      background: rgba(229, 57, 53, 0.1) !important;
+    }
+    .format-toggle-btn.active {
+      background: #e53935 !important;
+      color: #fff !important;
+    }
+  </style>
+</head>
+  <body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo" onclick="window.location.href='ai-automation-project.html'" title="홈으로 이동">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item active">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>2. AI 대본 생성</h1>
+          <p class="subtitle">주제 추천 결과를 바탕으로 대본 기획을 정리합니다</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 상단: 선택 데이터 요약 -->
+      <section class="content-card summary-card">
+        <div class="field-label">선택 데이터 요약 (Selection Summary)</div>
+        <p class="section-desc">1단계에서 선택한 주제·키워드·전문가 분석 내용을 한눈에 확인합니다.</p>
+        <div id="selectionSummary" class="summary-grid"></div>
+      </section>
+
+      <!-- 대본 기획안 확정 -->
+      <section class="content-card">
+        <div class="field-label">대본 기획안 확정 (Final Blueprint)</div>
+        <div class="blueprint-grid">
+          <div class="blueprint-item">
+            <label for="bpTitle" class="blueprint-label">제목</label>
+            <input id="bpTitle" class="blueprint-input" type="text" placeholder="영상 제목을 입력하세요.">
+          </div>
+          <div class="blueprint-item">
+            <label for="bpTarget" class="blueprint-label">타겟 시청자</label>
+            <input id="bpTarget" class="blueprint-input" type="text" placeholder="예: 30-40대 재테크 관심 직장인">
+          </div>
+          <div class="blueprint-item full">
+            <label for="bpHook" class="blueprint-label">훅(Hook) 문구</label>
+            <textarea id="bpHook" class="blueprint-textarea blueprint-textarea-small" placeholder="오프닝 3초 안에 시청자의 시선을 잡는 한 문장 또는 짧은 단락을 작성하세요."></textarea>
+          </div>
+          <div class="blueprint-item full">
+            <label for="bpStoryline" class="blueprint-label">영상 뼈대 (Storyline)</label>
+            <textarea id="bpStoryline" class="blueprint-textarea" placeholder="인트로 → 문제 제기 → 인사이트/가이드 → 마무리 콜투액션 순으로 큰 흐름을 정리하세요."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- 벤치마킹 구조 분석 (대본 기획안 확정 아래로 이동) -->
+      <section class="content-card">
+        <div class="field-label">벤치마킹 대본 구조 뽑기</div>
+        <p class="section-desc">벤치마킹할 대본을 입력하면 패턴을 분석해 위 기획안에 반영합니다.</p>
+        <textarea id="benchmarkInput" placeholder="참고할 대본을 입력하거나 붙여넣으세요."></textarea>
+        <button class="btn-primary" type="button" id="btnAnalyzeStructure">대본 구조 분석하기</button>
+      </section>
+
+      <!-- AI 대본 생성 (3단계에서 이동) -->
+      <section class="content-card">
+        <div class="field-label">AI 대본 생성</div>
+        <p class="section-desc">영상 뼈대(Storyline), 톤앤매너를 바탕으로 구어체 대본을 생성합니다.</p>
+        
+        <!-- 영상 형식 선택 -->
+        <div style="margin-top: 16px; margin-bottom: 16px;">
+          <div style="font-size: 13px; font-weight: 600; color: #2d3748; margin-bottom: 8px;">영상 형식</div>
+          <div style="display: flex; gap: 4px; background: #f7fafc; border: 1px solid #cbd5e0; border-radius: 6px; padding: 2px; width: fit-content;">
+            <button type="button" class="format-toggle-btn active" id="formatShorts" data-format="shorts">
+              📱 쇼츠
+            </button>
+            <button type="button" class="format-toggle-btn" id="formatLongform" data-format="longform">
+              📺 롱폼
+            </button>
+          </div>
+        </div>
+
+        <!-- 예상 영상 길이 선택 -->
+        <div style="margin-bottom: 16px;">
+          <div style="font-size: 13px; font-weight: 600; color: #2d3748; margin-bottom: 8px;">예상 영상 길이</div>
+          <select id="videoDuration" class="blueprint-input" style="width: 200px;">
+            <!-- 옵션은 JavaScript에서 동적으로 업데이트됨 -->
+            <option value="30s">30초</option>
+            <option value="1m">1분</option>
+            <option value="1.5m">1.5분</option>
+            <option value="2m">2분</option>
+            <option value="2.5m">2.5분</option>
+          </select>
+        </div>
+
+        <div style="margin-top: 16px;">
+          <button class="btn-primary" type="button" id="btnGenerateAIScript" style="width: 100%;">
+            AI 대본 생성하기
+          </button>
+          <p class="section-desc" style="margin-top: 12px; font-size: 12px; color: #999;">
+            생성된 대본은 3단계(대본 직접 입력)에서 확인하고 수정할 수 있습니다.
+          </p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Selection Summary & Blueprint Helper
+    function renderSelectionSummary(payload) {
+      var container = document.getElementById('selectionSummary');
+      if (!container || !payload) return;
+
+      var rows = [];
+      if (payload.keyword) rows.push({ label: '키워드', value: payload.keyword });
+      if (payload.keywordTopic) rows.push({ label: '키워드 선정 주제', value: payload.keywordTopic });
+      if (payload.trendTopics && payload.trendTopics.length) {
+        rows.push({ label: '선택된 핫이슈', value: payload.trendTopics.join(', ') });
+      }
+      if (payload.chosenAiTopic) rows.push({ label: '선택된 추천 주제', value: payload.chosenAiTopic });
+      if (payload.expertSummary) rows.push({ label: 'AI 전문가 분석 요약', value: payload.expertSummary });
+      if (payload.analysis && payload.analysis.summary) {
+        rows.push({ label: 'AI 자동 요약', value: payload.analysis.summary });
+      }
+
+      if (payload.scriptText) {
+        rows.push({ label: '원문(대본/URL/파일)', value: payload.scriptText });
+      }
+
+      if (!rows.length) {
+        container.innerHTML = '<div class="summary-item"><div class="summary-value">1단계에서 전달된 데이터가 없습니다. 주제 추천 페이지에서 다시 시작해 주세요.</div></div>';
+        return;
+      }
+
+      container.innerHTML = rows
+        .map(function(row) {
+          return (
+            '<div class="summary-item">' +
+            '<div class="summary-label">' +
+            row.label +
+            '</div>' +
+            '<div class="summary-value">' +
+            String(row.value) +
+            '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
+    }
+
+    function prefillBlueprint(payload) {
+      var titleEl = document.getElementById('bpTitle');
+      var targetEl = document.getElementById('bpTarget');
+      var hookEl = document.getElementById('bpHook');
+      var storyEl = document.getElementById('bpStoryline');
+      if (!titleEl || !targetEl || !hookEl || !storyEl || !payload) return;
+
+      var baseTitle =
+        payload.chosenAiTopic ||
+        (payload.trendTopics && payload.trendTopics[0]) ||
+        payload.keywordTopic ||
+        payload.keyword ||
+        '';
+
+      if (baseTitle && !titleEl.value) titleEl.value = baseTitle;
+
+      if (!targetEl.value) {
+        var kw = (payload.keywordTopic || payload.keyword || '').toLowerCase();
+        var target = '이 주제에 관심 있는 일반 시청자';
+        if (/재테크|주식|부동산|경매/.test(kw)) target = '안정적인 자산 증식을 고민하는 30-50대 재테크 관심 시청자';
+        else if (/시니어|은퇴/.test(kw)) target = '건강·노후 준비에 관심이 많은 50-70대 시니어 시청자';
+        else if (/ai|테크|it|기술/.test(kw)) target = '최신 기술과 AI 활용법에 관심 있는 20-40대 직장인';
+        targetEl.value = target;
+      }
+
+      if (!hookEl.value) {
+        var hookBase = payload.expertSummary || (payload.analysis && payload.analysis.summary) || baseTitle;
+        if (hookBase) {
+          hookEl.value = hookBase;
+        }
+      }
+
+      // 벤치마킹 대본 구조 데이터가 있으면 영상 뼈대에 자동 입력
+      if (!storyEl.value) {
+        // 1단계에서 벤치마킹 대본 구조 분석 결과가 있는지 확인
+        var benchmarkStructure = payload.benchmarkStructure || payload.benchmarkAnalysis;
+        if (benchmarkStructure) {
+          storyEl.value = benchmarkStructure;
+        } else {
+          var lines = [];
+          lines.push('1) 인트로: 시청자의 현재 상황과 고민 공감 → ' + (baseTitle || '주제') + ' 한 줄 소개');
+          lines.push('2) 문제 제기: 왜 지금 이 주제를 알아야 하는지 데이터·사례로 설득');
+          lines.push('3) 핵심 인사이트: AI 전문가 분석 요약을 바탕으로 3~4개 핵심 포인트 제시');
+          lines.push('4) 실전 가이드: 시청자가 바로 따라 할 수 있는 체크리스트·루틴 제안');
+          lines.push('5) 마무리 & 콜투액션: 다음 단계(구독/다른 영상/다운로드)로 자연스럽게 유도');
+          storyEl.value = lines.join('\n');
+        }
+      }
+    }
+
+    function analyzeBenchmarkStructure() {
+      var srcEl = document.getElementById('benchmarkInput');
+      var titleEl = document.getElementById('bpTitle');
+      var hookEl = document.getElementById('bpHook');
+      var storyEl = document.getElementById('bpStoryline');
+      if (!srcEl || !titleEl || !hookEl || !storyEl) return;
+
+      var text = srcEl.value.trim();
+      if (!text) {
+        alert('분석할 대본을 입력해 주세요.');
+        return;
+      }
+
+      var lines = text.split(/\r?\n/).filter(function(l) { return l.trim().length > 0; });
+      if (lines.length && !titleEl.value) {
+        titleEl.value = lines[0].substring(0, 80);
+      }
+      if (lines.length > 1 && !hookEl.value) {
+        hookEl.value = lines[1].substring(0, 140);
+      }
+
+      var bullets = text.match(/(^|\n)\s*([0-9]+\.|-)[^\n]+/g);
+      var outline = [];
+      if (bullets && bullets.length) {
+        outline.push('벤치마킹한 대본의 주요 섹션:');
+        bullets.slice(0, 6).forEach(function(b, idx) {
+          var cleaned = b.replace(/(^|\n)\s*([0-9]+\.|-)/, '').trim();
+          outline.push((idx + 1) + '. ' + cleaned);
+        });
+      } else if (lines.length > 3) {
+        outline.push('대본을 3~5개의 의미 있는 덩어리로 나눈 개요:');
+        var chunkSize = Math.ceil(lines.length / 4);
+        for (var i = 0; i < 4; i++) {
+          var slice = lines.slice(i * chunkSize, (i + 1) * chunkSize);
+          if (!slice.length) continue;
+          outline.push((i + 1) + '. ' + slice[0].substring(0, 80));
+        }
+      }
+
+      if (outline.length) {
+        // 영상 뼈대에 직접 입력 (기존 내용이 있으면 덮어쓰기)
+        storyEl.value = outline.join('\n');
+        // localStorage에 저장하여 다음 페이지 로드 시에도 사용 가능하도록
+        var payload = lastStep2Payload || {};
+        payload.benchmarkStructure = outline.join('\n');
+        localStorage.setItem('step2Payload', JSON.stringify(payload));
+      }
+
+      alert('벤치마킹 대본 구조를 영상 뼈대에 반영했습니다.');
+    }
+
+    // Step1 -> Step2 전달 데이터 로드
+    var lastStep2Payload = null;
+    (function() {
+      try {
+        var payloadRaw = localStorage.getItem('step2Payload');
+        if (!payloadRaw) return;
+        var payload = JSON.parse(payloadRaw);
+        lastStep2Payload = payload;
+        renderSelectionSummary(payload);
+        prefillBlueprint(payload);
+      } catch (e) {}
+    })();
+
+    // 대본 직접 넣기 → 재구성 후 2단계 자동 삽입
+    (function() {
+      try {
+        var raw = localStorage.getItem('step2PreFillBlueprint');
+        if (!raw) return;
+        var pre = JSON.parse(raw);
+        var titleEl = document.getElementById('bpTitle');
+        var targetEl = document.getElementById('bpTarget');
+        var hookEl = document.getElementById('bpHook');
+        var storyEl = document.getElementById('bpStoryline');
+        if (titleEl && pre.title != null) titleEl.value = String(pre.title);
+        if (targetEl && pre.target != null) targetEl.value = String(pre.target);
+        if (hookEl && pre.hook != null) hookEl.value = String(pre.hook);
+        if (storyEl && pre.storyline != null) storyEl.value = String(pre.storyline);
+        localStorage.removeItem('step2PreFillBlueprint');
+      } catch (e) {}
+    })();
+
+    // 벤치마킹 구조 분석 버튼
+    (function() {
+      var btn = document.getElementById('btnAnalyzeStructure');
+      if (btn) {
+        btn.addEventListener('click', analyzeBenchmarkStructure);
+      }
+    })();
+
+    // 대본 생성 단계로 이동 버튼 삭제됨 (AI 대본 생성 버튼으로 대체)
+
+    // 영상 형식 선택 (롱폼/숏폼)
+    (function() {
+      var currentFormat = 'shorts';
+      var formatShorts = document.getElementById('formatShorts');
+      var formatLongform = document.getElementById('formatLongform');
+      var durationSelect = document.getElementById('videoDuration');
+      
+      var shortsOptions = [
+        { value: '30s', label: '30초' },
+        { value: '1m', label: '1분' },
+        { value: '1.5m', label: '1.5분' },
+        { value: '2m', label: '2분' },
+        { value: '2.5m', label: '2.5분' }
+      ];
+      var longformOptions = [
+        { value: '10m', label: '10분' },
+        { value: '20m', label: '20분' },
+        { value: '30m', label: '30분' },
+        { value: '40m', label: '40분' },
+        { value: '50m', label: '50분' },
+        { value: '60m', label: '60분' }
+      ];
+      
+      function updateFormatButtons(format) {
+        if (format === 'shorts') {
+          formatShorts.classList.add('active');
+          formatLongform.classList.remove('active');
+        } else {
+          formatShorts.classList.remove('active');
+          formatLongform.classList.add('active');
+        }
+      }
+      
+      function updateDurationOptions(format) {
+        durationSelect.innerHTML = '';
+        var options = format === 'shorts' ? shortsOptions : longformOptions;
+        options.forEach(function(opt) {
+          var option = document.createElement('option');
+          option.value = opt.value;
+          option.textContent = opt.label;
+          durationSelect.appendChild(option);
+        });
+      }
+      
+      if (formatShorts && formatLongform) {
+        formatShorts.onclick = function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (currentFormat === 'shorts') return;
+          currentFormat = 'shorts';
+          updateFormatButtons('shorts');
+          updateDurationOptions('shorts');
+        };
+        
+        formatLongform.onclick = function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (currentFormat === 'longform') return;
+          currentFormat = 'longform';
+          updateFormatButtons('longform');
+          updateDurationOptions('longform');
+        };
+        
+        updateFormatButtons('shorts'); // 기본값
+      }
+      
+      // AI 대본 생성 버튼: 3단계로 이동하면서 AI 생성 플래그 설정
+      var btnGenerate = document.getElementById('btnGenerateAIScript');
+      if (btnGenerate) {
+        btnGenerate.addEventListener('click', function() {
+          var payload = lastStep2Payload || {};
+          var blueprint = {
+            title: document.getElementById('bpTitle').value.trim(),
+            target: document.getElementById('bpTarget').value.trim(),
+            hook: document.getElementById('bpHook').value.trim(),
+            storyline: document.getElementById('bpStoryline').value.trim()
+          };
+          if (!blueprint.title && !blueprint.storyline) {
+            alert('제목 또는 영상 뼈대를 입력한 후 AI 대본 생성을 진행해 주세요.');
+            return;
+          }
+          var selectedDuration = durationSelect ? durationSelect.value : '1m';
+          localStorage.setItem('step3Blueprint', JSON.stringify({ fromStep2: payload, blueprint: blueprint }));
+          localStorage.setItem('currentFormat', currentFormat);
+          localStorage.setItem('currentDuration', selectedDuration);
+          localStorage.setItem('autoGenerateScript', 'true'); // 3단계에서 자동 생성 플래그
+          window.location.href = 'step-3.html';
+        });
+      }
+    })();
+
+    // 로그온(주제 추천과 동일)
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) { alert('ID와 비밀번호를 입력하세요.'); return; }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) { return u.id === id && u.password === pw; });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) { logout(); alert('로그아웃되었습니다.'); }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+    checkLoginStatus();
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+  </script>
+</body>
+</html>
+

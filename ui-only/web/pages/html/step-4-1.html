@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>4-1. JSON 생성</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+    /* 1~2단계(AI 창작)와 3단계(사용자 제어) 시각적 구분 */
+    .workflow-list li:nth-child(3) .workflow-item {
+      margin-top: 10px;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 14px;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { flex: 1; }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    .content-card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .field-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    /* Script summary */
+    .summary-card {
+      background: #fff7fb;
+      border-color: #fed7e2;
+    }
+    .summary-text {
+      font-size: 13px;
+      color: #333;
+      line-height: 1.6;
+      white-space: pre-line;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 12px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 8px;
+      border: 1px solid #fed7e2;
+    }
+
+    /* JSON output */
+    .json-editor {
+      width: 100%;
+      min-height: 300px;
+      padding: 16px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      border: 1px solid #3e3e3e;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-x: auto;
+      margin-bottom: 12px;
+    }
+    .json-editor::selection {
+      background: #264f78;
+    }
+    .btn-copy {
+      padding: 8px 16px;
+      background: #4a5568;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .btn-copy:hover { background: #2d3748; }
+    .btn-copy:active { transform: scale(0.98); }
+
+    /* Scene prompts list */
+    .prompt-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .prompt-item {
+      padding: 12px;
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+    }
+    .prompt-item-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .prompt-scene-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: #553c9a;
+      background: #e9d8fd;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .prompt-scene-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+    .prompt-field {
+      margin-bottom: 8px;
+    }
+    .prompt-field-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 4px;
+    }
+    .prompt-field-input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 60px;
+    }
+    .prompt-field-input:focus {
+      outline: none;
+      border-color: #805ad5;
+      box-shadow: 0 0 0 3px rgba(128,90,213,0.1);
+    }
+
+    .btn-primary {
+      padding: 10px 16px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #c62828; }
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item active">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>4-1. JSON 생성</h1>
+          <p class="subtitle">대본을 씬별로 분할하여 이미지 생성용 JSON 데이터를 추출합니다</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 상단: 대본 데이터 요약 -->
+      <div class="content-card summary-card">
+        <div class="field-label">대본 데이터 요약</div>
+        <div class="summary-text" id="scriptSummary">로딩 중...</div>
+      </div>
+
+      <!-- 중단: JSON 추출 -->
+      <div class="content-card">
+        <div class="field-label">JSON 데이터 추출</div>
+        <p class="section-desc">3단계에서 생성된 대본을 씬별로 분할하여 이미지 생성용 JSON 구조로 변환합니다.</p>
+        <button class="btn-primary" type="button" id="btnExtractJson">이미지 생성용 JSON 추출하기</button>
+        <div id="jsonOutput" style="display:none;">
+          <button class="btn-copy" type="button" id="btnCopyJson">복사하기</button>
+          <div class="json-editor" id="jsonEditor"></div>
+        </div>
+      </div>
+
+      <!-- 하단: 씬별 프롬프트 검토 -->
+      <div class="content-card" id="promptReviewSection" style="display:none;">
+        <div class="field-label">씬별 프롬프트 검토</div>
+        <p class="section-desc">각 씬의 이미지 프롬프트를 직접 수정할 수 있습니다.</p>
+        <div class="prompt-list" id="promptList"></div>
+      </div>
+
+      <!-- 최하단: 다음 단계 이동 -->
+      <div style="margin-top: 24px;">
+        <button class="btn-primary" type="button" id="btnGoToStep42">4-2. 이미지 생성 단계로 이동</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    var jsonData = null;
+    var step3Data = null;
+
+    // Step3 -> Step4 데이터 로드 (final_script 우선, 없으면 script 사용)
+    (function() {
+      try {
+        // final_script를 우선적으로 확인
+        var finalScriptRaw = localStorage.getItem('final_script');
+        if (finalScriptRaw) {
+          var finalScript = finalScriptRaw.trim();
+          document.getElementById('scriptSummary').textContent = finalScript || '(대본 내용 없음)';
+          // step3Data에도 반영
+          var payloadRaw = localStorage.getItem('step4JsonPayload');
+          if (payloadRaw) {
+            step3Data = JSON.parse(payloadRaw);
+            step3Data.script = finalScript;
+            step3Data.final_script = finalScript;
+          } else {
+            step3Data = { script: finalScript, final_script: finalScript };
+          }
+          return;
+        }
+        
+        // final_script가 없으면 기존 방식으로 로드
+        var payloadRaw = localStorage.getItem('step4JsonPayload');
+        if (!payloadRaw) {
+          document.getElementById('scriptSummary').textContent = '3단계에서 전달된 데이터가 없습니다. 대본 생성 페이지에서 다시 시작해 주세요.';
+          return;
+        }
+        step3Data = JSON.parse(payloadRaw);
+        var scriptText = step3Data.final_script || step3Data.script || '';
+        document.getElementById('scriptSummary').textContent = scriptText || '(대본 내용 없음)';
+      } catch (e) {
+        console.error('데이터 로드 실패:', e);
+        document.getElementById('scriptSummary').textContent = '데이터를 불러오는 중 오류가 발생했습니다.';
+      }
+    })();
+
+    // 씬별로 대본 분할 (이미 구분된 씬 데이터만 참조)
+    function splitScriptByScenes(scriptText, sceneTitles) {
+      if (!scriptText || !scriptText.trim()) {
+        return [];
+      }
+      
+      var lines = scriptText.split(/\r?\n/);
+      var scenes = [];
+      var currentScene = null;
+      var currentLines = [];
+
+      // [씬 N] 또는 [씬N] 형식 찾기
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        var sceneMatch = line.match(/\[씬\s*(\d+)\]/);
+        if (sceneMatch) {
+          if (currentScene !== null && currentLines.length > 0) {
+            scenes.push({
+              scene_num: currentScene,
+              script: currentLines.join('\n').trim(),
+              scene_title: (sceneTitles && sceneTitles[currentScene - 1]) ? sceneTitles[currentScene - 1] : '씬 ' + currentScene
+            });
+          }
+          currentScene = parseInt(sceneMatch[1], 10);
+          currentLines = [];
+        } else if (currentScene !== null) {
+          currentLines.push(line);
+        } else if (currentScene === null && line.trim()) {
+          // 첫 씬 마커 전 내용은 무시하거나 첫 씬으로 포함
+          // (일반적으로 첫 씬 마커가 있으므로 여기서는 무시)
+        }
+      }
+      
+      // 마지막 씬 처리
+      if (currentScene !== null && currentLines.length > 0) {
+        scenes.push({
+          scene_num: currentScene,
+          script: currentLines.join('\n').trim(),
+          scene_title: (sceneTitles && sceneTitles[currentScene - 1]) ? sceneTitles[currentScene - 1] : '씬 ' + currentScene
+        });
+      }
+
+      return scenes;
+    }
+
+    // 전문가 톤앤매너 반영된 이미지 프롬프트 생성
+    function generateImagePrompt(scene, blueprint, fromStep2) {
+      var tone = 'professional';
+      var expertContext = '';
+      if (fromStep2 && fromStep2.expertSummary) {
+        expertContext = ' Based on expert analysis: ' + fromStep2.expertSummary.substring(0, 100);
+      }
+      var target = blueprint && blueprint.target ? blueprint.target : 'general audience';
+      var basePrompt = 'A professional video scene for ' + target + '. ' + expertContext;
+      var sceneDesc = scene.scene_title || 'Scene ' + scene.scene_num;
+      var visualStyle = 'Cinematic composition, natural lighting, warm color palette, professional video production quality, clear focus on the main subject, balanced framing.';
+      return basePrompt + ' Scene: ' + sceneDesc + '. ' + visualStyle;
+    }
+
+    // 씬 스크립트에서 시각적 묘사 추출/생성
+    function optimizeSceneDescription(script) {
+      if (!script || !script.trim()) return '';
+      // 간단한 키워드 추출: 첫 100자에서 주요 명사/동사 추출
+      var text = script.substring(0, 200).replace(/\[씬\s*\d+\]/g, '').trim();
+      return text || '';
+    }
+
+    // 시각적 묘사 생성
+    function generateVisualDescription(scene, blueprint) {
+      // 씬별 묘사 자동 최적화 적용
+      var sceneScript = scene.script || '';
+      var optimizedDescription = optimizeSceneDescription(sceneScript);
+      
+      // 시니어 맞춤형 시각 최적화 키워드 주입
+      var seniorOptimizationKeywords = 'warm and bright lighting, high contrast for better visibility, clear and friendly facial expressions, 8k resolution, cinematic quality, senior-friendly composition';
+      
+      // 최종 시각 묘사 구성
+      var finalDescription = optimizedDescription;
+      if (finalDescription) {
+        finalDescription += '. ' + seniorOptimizationKeywords;
+      } else {
+        // 기본 묘사 (씬 분석 실패 시)
+        var title = blueprint && blueprint.title ? blueprint.title : 'Content';
+        var hook = blueprint && blueprint.hook ? blueprint.hook.substring(0, 80) : '';
+        finalDescription = 'Scene composition focusing on ' + (scene.scene_title || 'main content') + '. Visual elements should reflect the theme: ' + title + '. ' + (hook ? 'Atmosphere: ' + hook.substring(0, 60) : '');
+        finalDescription += '. ' + seniorOptimizationKeywords;
+      }
+      
+      return finalDescription;
+    }
+
+    // JSON 추출
+    function extractJson() {
+      try {
+        if (!step3Data) {
+          alert('3단계 데이터가 없습니다. 대본 생성 페이지에서 다시 시작해 주세요.');
+          return;
+        }
+        var scriptText = step3Data.final_script || step3Data.script || '';
+        var sceneTitles = step3Data.scenes || [];
+        var blueprint = step3Data.blueprint || {};
+        var fromStep2 = step3Data.fromStep2 || {};
+
+        if (!scriptText.trim()) {
+          alert('대본 내용이 비어 있습니다. 3단계에서 대본을 생성한 후 다시 시도해 주세요.');
+          return;
+        }
+
+        var scenes = splitScriptByScenes(scriptText, sceneTitles);
+        
+        // [씬 N] 마커가 없으면 문단 단위로 자동 분할
+        if (!scenes.length) {
+          var paragraphs = scriptText.split(/\n\s*\n/).filter(function(p) { return p.trim().length > 0; });
+          if (paragraphs.length > 0) {
+            scenes = paragraphs.map(function(para, idx) {
+              return {
+                scene_num: idx + 1,
+                script: para.trim(),
+                scene_title: sceneTitles[idx] || '씬 ' + (idx + 1)
+              };
+            });
+          } else {
+            // 문단도 없으면 전체를 하나의 씬으로
+            scenes = [{
+              scene_num: 1,
+              script: scriptText.trim(),
+              scene_title: sceneTitles[0] || '씬 1'
+            }];
+          }
+        }
+
+        if (!scenes.length) {
+          alert('씬 데이터를 찾을 수 없습니다. 대본 형식을 확인해 주세요.');
+          return;
+        }
+
+        var jsonScenes = scenes.map(function(scene) {
+          try {
+            return {
+              scene_num: scene.scene_num,
+              script: scene.script || '',
+              image_prompt: generateImagePrompt(scene, blueprint, fromStep2),
+              visual_description: generateVisualDescription(scene, blueprint)
+            };
+          } catch (e) {
+            console.error('씬 처리 오류:', scene, e);
+            return {
+              scene_num: scene.scene_num || 1,
+              script: scene.script || '',
+              image_prompt: 'Professional video scene',
+              visual_description: 'Scene composition'
+            };
+          }
+        });
+
+        jsonData = { scenes: jsonScenes };
+        var jsonStr = JSON.stringify(jsonData, null, 2);
+        document.getElementById('jsonEditor').textContent = jsonStr;
+        document.getElementById('jsonOutput').style.display = 'block';
+        renderPromptReview(jsonScenes);
+      } catch (e) {
+        console.error('JSON 추출 오류:', e);
+        alert('JSON 추출 중 오류가 발생했습니다: ' + (e.message || '알 수 없는 오류') + '\n\n콘솔을 확인해 주세요.');
+      }
+    }
+
+    // 씬별 프롬프트 검토 렌더링
+    function renderPromptReview(scenes) {
+      var container = document.getElementById('promptList');
+      if (!container) return;
+      container.innerHTML = scenes
+        .map(function(scene, idx) {
+          return (
+            '<div class="prompt-item" data-scene-num="' +
+            scene.scene_num +
+            '">' +
+            '<div class="prompt-item-header">' +
+            '<span class="prompt-scene-num">씬 ' +
+            scene.scene_num +
+            '</span>' +
+            '<span class="prompt-scene-title">' +
+            (scene.scene_title || '씬 ' + scene.scene_num) +
+            '</span>' +
+            '</div>' +
+            '<div class="prompt-field">' +
+            '<div class="prompt-field-label">이미지 프롬프트 (영문)</div>' +
+            '<textarea class="prompt-field-input" data-field="image_prompt" data-scene="' +
+            scene.scene_num +
+            '">' +
+            (scene.image_prompt || '') +
+            '</textarea>' +
+            '</div>' +
+            '<div class="prompt-field">' +
+            '<div class="prompt-field-label">시각적 묘사</div>' +
+            '<textarea class="prompt-field-input" data-field="visual_description" data-scene="' +
+            scene.scene_num +
+            '">' +
+            (scene.visual_description || '') +
+            '</textarea>' +
+            '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
+
+      // 입력값 변경 시 JSON 데이터 업데이트
+      container.querySelectorAll('.prompt-field-input').forEach(function(input) {
+        input.addEventListener('input', function() {
+          var sceneNum = parseInt(input.getAttribute('data-scene'), 10);
+          var field = input.getAttribute('data-field');
+          if (jsonData && jsonData.scenes) {
+            var scene = jsonData.scenes.find(function(s) {
+              return s.scene_num === sceneNum;
+            });
+            if (scene) {
+              scene[field] = input.value;
+              var jsonStr = JSON.stringify(jsonData, null, 2);
+              document.getElementById('jsonEditor').textContent = jsonStr;
+            }
+          }
+        });
+      });
+
+      document.getElementById('promptReviewSection').style.display = 'block';
+    }
+
+    // 복사하기 버튼
+    (function() {
+      var btnCopy = document.getElementById('btnCopyJson');
+      if (btnCopy) {
+        btnCopy.addEventListener('click', function() {
+          var jsonStr = document.getElementById('jsonEditor').textContent;
+          if (!jsonStr) {
+            alert('복사할 JSON 데이터가 없습니다.');
+            return;
+          }
+          navigator.clipboard
+            .writeText(jsonStr)
+            .then(function() {
+              btnCopy.textContent = '복사 완료!';
+              setTimeout(function() {
+                btnCopy.textContent = '복사하기';
+              }, 2000);
+            })
+            .catch(function(err) {
+              console.error('복사 실패:', err);
+              alert('복사에 실패했습니다. 수동으로 선택하여 복사해 주세요.');
+            });
+        });
+      }
+    })();
+
+    // JSON 추출 버튼
+    (function() {
+      var btnExtract = document.getElementById('btnExtractJson');
+      if (btnExtract) {
+        btnExtract.addEventListener('click', extractJson);
+      }
+    })();
+
+    // 4-2 단계로 이동
+    (function() {
+      var btnNext = document.getElementById('btnGoToStep42');
+      if (btnNext) {
+        btnNext.addEventListener('click', function() {
+          if (!jsonData) {
+            if (!confirm('JSON 데이터가 추출되지 않았습니다. 그래도 다음 단계로 이동하시겠습니까?')) {
+              return;
+            }
+          } else {
+            localStorage.setItem('step42JsonData', JSON.stringify(jsonData));
+          }
+          window.location.href = 'step-4-2.html';
+        });
+      }
+    })();
+
+    // 로그온 시스템
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 입력하세요.');
+        return;
+      }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) {
+        return u.id === id && u.password === pw;
+      });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) {
+          logout();
+          alert('로그아웃되었습니다.');
+        }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+    checkLoginStatus();
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+  </script>
+</body>
+</html>

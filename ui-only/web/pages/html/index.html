@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>롱폼 프로젝트 - AI 자동화</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    /* 공통 Sticky Header */
+    .global-header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #fff;
+      border-bottom: 1px solid #e8ecf4;
+      padding: 12px 32px;
+      margin: 0 -32px 16px -32px;
+    }
+    /* 헤더 로그인 행 */
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+    .login-inline-row .login-input {
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+    .btn-admin {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover { background: #d5d5d5; }
+    .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-login:hover { background: #d5d5d5; }
+    .btn-login:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .locked-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 9998;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 24px;
+      font-weight: 700;
+      pointer-events: none;
+    }
+    .locked-overlay.show {
+      display: flex;
+    }
+    .project-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .project-actions label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+    .btn-delete-selected {
+      padding: 8px 16px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-delete-selected:hover { background: #c62828; }
+    .btn-delete-selected:disabled { background: #ccc; cursor: not-allowed; }
+    .project-card input[type="checkbox"] { 
+      position: absolute; 
+      top: 16px; 
+      left: 16px; 
+      width: 18px; 
+      height: 18px; 
+      cursor: pointer;
+      z-index: 2;
+    }
+
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 0 16px 24px;
+      flex-shrink: 0;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 20px;
+      padding-left: 4px;
+      text-align: left;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .sidebar-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .sidebar-card-desc {
+      font-size: 13px;
+      color: #718096;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+    .sidebar-card-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #3182ce;
+      text-decoration: none;
+      margin-bottom: 8px;
+    }
+    .sidebar-card-link:hover { color: #2b6cb0; text-decoration: underline; }
+    .sidebar-card-date { font-size: 12px; color: #a0aec0; }
+    .sidebar-section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .sidebar-section-header .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sidebar-section-header .section-title .star-icon {
+      color: #63b3ed;
+      font-size: 14px;
+    }
+    .btn-list-small {
+      padding: 4px 10px;
+      font-size: 11px;
+      color: #555;
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-left: auto;
+    }
+    .btn-list-small:hover { background: #e5e5e5; }
+    .update-entry-card {
+      background: #f0f4f8;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 10px;
+      border: 1px solid #e8ecf4;
+    }
+    .update-entry-card .entry-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .update-entry-card .entry-desc {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.4;
+      margin-bottom: 8px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .update-entry-card .entry-date {
+      font-size: 12px;
+      color: #718096;
+    }
+    .update-entry-card .entry-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .entry-delete-btn {
+      padding: 4px 10px;
+      font-size: 11px;
+      color: #c53030;
+      background: #fff;
+      border: 1px solid #feb2b2;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .entry-delete-btn:hover { background: #fff5f5; }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area h1 {
+      margin-top: 0;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .title-area {
+      flex: 1;
+    }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle { 
+      font-size: 14px; 
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .btn-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #333;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-icon:hover { background: #f8f8f8; }
+    .header-buttons { 
+      display: flex; 
+      gap: 8px; 
+      align-items: center;
+      padding-top: 28px;
+      margin-top: 0;
+    }
+
+    .info-banner {
+      background: #fffde7;
+      border: 1px solid #f5e642;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #b71c1c;
+      margin-bottom: 20px;
+      border-radius: 6px;
+    }
+    .search-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .search-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #e8e8e8;
+      color: #333;
+    }
+    .search-input::placeholder { color: #888; }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #c62828; }
+
+    .project-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .project-card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      padding: 20px;
+      position: relative;
+      transition: box-shadow 0.2s;
+    }
+    .project-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .project-card .trash-icon {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 16px;
+      color: #666;
+      cursor: pointer;
+    }
+    .project-card .project-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 8px;
+      padding-left: 30px;
+      padding-right: 28px;
+      min-height: 20px;
+    }
+    .project-card .project-work-info {
+      font-size: 12px;
+      color: #3182ce;
+      margin-bottom: 8px;
+      padding-left: 30px;
+      font-weight: 600;
+    }
+    .project-card .project-tag {
+      display: inline-block;
+      font-size: 11px;
+      color: #3182ce;
+      margin-bottom: 10px;
+    }
+    .project-card .meta {
+      font-size: 12px;
+      color: #666;
+    }
+    .project-card .meta span { display: block; margin-bottom: 2px; }
+    .project-card.search-match { background: #e3f2fd; border-color: #90caf9; }
+
+    /* 모달 공통 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      width: 90%;
+      max-width: 480px;
+      padding: 24px;
+      position: relative;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .modal-title { font-size: 18px; font-weight: 700; color: #222; }
+    .modal-close {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: #f0f0f0;
+      border-radius: 6px;
+      font-size: 18px;
+      cursor: pointer;
+      line-height: 1;
+      color: #666;
+    }
+    .modal-close:hover { background: #e0e0e0; }
+    .modal-desc { font-size: 13px; color: #666; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
+    .form-label .required { color: #e53935; }
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .form-input:focus { outline: none; border-color: #3182ce; }
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+    .btn-cancel {
+      padding: 10px 20px;
+      border: 1px solid #ccc;
+      background: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #555;
+      cursor: pointer;
+    }
+    .btn-cancel:hover { background: #f5f5f5; }
+    .btn-create {
+      padding: 10px 20px;
+      border: none;
+      background: #e91e63;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-create:hover { background: #c2185b; }
+
+    .notice-list-wrap { max-height: 55vh; overflow-y: auto; }
+    .info-banner-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .info-banner-row .info-banner { flex: 1; margin-bottom: 0; }
+    .board-modal .modal { max-width: 950px; width: 92%; max-height: 85vh; display: flex; flex-direction: column; }
+    .board-modal .modal-body { overflow-y: auto; flex: 1; min-height: 0; }
+    .board-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .board-table th, .board-table td {
+      border: 1px solid #e2e8f0;
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .board-table th {
+      background: #f7fafc;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    .board-table tr:hover { background: #fafafa; }
+    .board-table .col-no { width: 52px; text-align: center; }
+    .board-table .col-type { width: 95px; }
+    .board-table .col-title { min-width: 180px; }
+    .board-table .col-content { min-width: 280px; }
+    .board-table .col-date { width: 105px; }
+    .admin-modal .modal { max-width: 600px; }
+    .admin-section { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; }
+    .admin-section:last-child { border-bottom: none; }
+    .admin-section-title { font-size: 16px; font-weight: 700; color: #2d3748; margin-bottom: 12px; }
+    .admin-form-row { display: flex; gap: 12px; margin-bottom: 12px; align-items: center; }
+    .admin-form-row label { min-width: 100px; font-size: 14px; color: #4a5568; }
+    .admin-form-row input { flex: 1; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; }
+    .btn-save { padding: 8px 16px; background: #48bb78; color: #fff; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-save:hover { background: #38a169; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="sidebar-section-header">
+          <span class="section-title"><span class="star-icon">✦</span> 업데이트 사항</span>
+          <button type="button" class="btn-list-small" id="btnUpdateList">목록</button>
+        </div>
+        <div class="notice-list-wrap">
+          <div id="sidebarUpdateList"></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>롱폼 프로젝트</h1>
+          <p class="subtitle">작업한 내용을 저장하고 관리하세요</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID">
+            <input type="password" class="login-input" id="loginPw" placeholder="Password">
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+          <div class="header-buttons">
+            <button type="button" class="btn-icon" id="btnNotice">📢 공지글</button>
+            <a href="ai-automation-project.html" class="btn-icon">📌 주제추천</a>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="search-row">
+        <input type="text" class="search-input" id="searchInput" placeholder="프로젝트 이름 또는 설명으로 검색...">
+        <button type="button" class="btn-primary" id="btnNewProject">➕ 새 프로젝트 만들기</button>
+      </div>
+
+      <div class="project-actions">
+        <label><input type="checkbox" id="selectAllProjects"> 전체 선택</label>
+        <button type="button" class="btn-delete-selected" id="btnDeleteSelected" disabled>선택 삭제</button>
+      </div>
+
+      <div class="project-cards-grid" id="projectCardsGrid">
+        <div class="project-card" data-name="경제학" data-description="경제">
+          <input type="checkbox" class="project-checkbox">
+          <span class="trash-icon" onclick="deleteProject(this)">🗑️</span>
+          <div class="project-title">경제학</div>
+          <span class="project-tag">최근 작업</span>
+          <div class="meta">
+            <span class="meta-modified">수정: 2026. 1. 13. 오후 2:30:15</span>
+            <span class="meta-created">생성: 2026. 1. 10. 오전 9:22:00</span>
+          </div>
+        </div>
+        <div class="project-card" data-name="우주" data-description="우주">
+          <input type="checkbox" class="project-checkbox">
+          <span class="trash-icon" onclick="deleteProject(this)">🗑️</span>
+          <div class="project-title">우주</div>
+          <div class="meta">
+            <span class="meta-modified">수정: 2026. 1. 12. 오후 4:15:00</span>
+            <span class="meta-created">생성: 2026. 1. 12. 오전 11:00:00</span>
+          </div>
+        </div>
+        <div class="project-card" data-name="sdfsdfwef" data-description="">
+          <input type="checkbox" class="project-checkbox">
+          <span class="trash-icon" onclick="deleteProject(this)">🗑️</span>
+          <div class="project-title">sdfsdfwef</div>
+          <div class="meta">
+            <span class="meta-modified">수정: 2026. 1. 12. 오전 10:30:00</span>
+            <span class="meta-created">생성: 2026. 1. 11. 오후 3:00:00</span>
+          </div>
+        </div>
+        <div class="project-card" data-name="123123123" data-description="">
+          <input type="checkbox" class="project-checkbox">
+          <span class="trash-icon" onclick="deleteProject(this)">🗑️</span>
+          <div class="project-title">123123123</div>
+          <div class="meta">
+            <span class="meta-modified">수정: 2026. 1. 11. 오후 1:20:00</span>
+            <span class="meta-created">생성: 2026. 1. 11. 오전 9:00:00</span>
+          </div>
+        </div>
+        <div class="project-card" data-name="test" data-description="">
+          <input type="checkbox" class="project-checkbox">
+          <span class="trash-icon" onclick="deleteProject(this)">🗑️</span>
+          <div class="project-title">test</div>
+          <div class="meta">
+            <span class="meta-modified">수정: 2026. 1. 10. 오후 5:45:00</span>
+            <span class="meta-created">생성: 2026. 1. 10. 오전 8:00:00</span>
+          </div>
+        </div>
+        <div class="project-card" data-name="우주" data-description="우주">
+          <input type="checkbox" class="project-checkbox">
+          <span class="trash-icon" onclick="deleteProject(this)">🗑️</span>
+          <div class="project-title">우주</div>
+          <div class="meta">
+            <span class="meta-modified">수정: 2026. 1. 9. 오후 2:00:00</span>
+            <span class="meta-created">생성: 2026. 1. 9. 오전 10:00:00</span>
+          </div>
+        </div>
+        <div class="project-card" data-name="경제학" data-description="경제">
+          <input type="checkbox" class="project-checkbox">
+          <span class="trash-icon" onclick="deleteProject(this)">🗑️</span>
+          <div class="project-title">경제학</div>
+          <div class="meta">
+            <span class="meta-modified">수정: 2026. 1. 8. 오후 4:30:00</span>
+            <span class="meta-created">생성: 2026. 1. 8. 오전 9:15:00</span>
+          </div>
+        </div>
+        <div class="project-card" data-name="1월12일 우주" data-description="우주">
+          <input type="checkbox" class="project-checkbox">
+          <span class="trash-icon" onclick="deleteProject(this)">🗑️</span>
+          <div class="project-title">1월12일 우주</div>
+          <div class="meta">
+            <span class="meta-modified">수정: 2026. 1. 12. 오후 6:00:00</span>
+            <span class="meta-created">생성: 2026. 1. 12. 오후 1:00:00</span>
+          </div>
+        </div>
+        <div class="project-card" data-name="0113 우주" data-description="우주">
+          <input type="checkbox" class="project-checkbox">
+          <span class="trash-icon" onclick="deleteProject(this)">🗑️</span>
+          <div class="project-title">0113 우주</div>
+          <div class="meta">
+            <span class="meta-modified">수정: 2026. 1. 13. 오전 9:00:00</span>
+            <span class="meta-created">생성: 2026. 1. 13. 오전 8:30:00</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 공지글/업데이트 사항 입력 모달 -->
+  <div class="modal-overlay" id="noticeModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">공지·업데이트 등록</h2>
+        <button type="button" class="modal-close" data-close="noticeModal">&times;</button>
+      </div>
+      <p class="modal-desc">유형을 선택하고 내용을 입력한 뒤 등록하면 안내사항과 업데이트 사항에 표시됩니다.</p>
+      <div class="form-group">
+        <label class="form-label">유형</label>
+        <div style="display:flex;gap:16px;">
+          <label><input type="radio" name="noticeType" value="공지글" checked> 공지글</label>
+          <label><input type="radio" name="noticeType" value="업데이트 사항"> 업데이트 사항</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">내용</label>
+        <textarea id="noticeText" class="form-input" rows="4" placeholder="안내 또는 업데이트 내용을 입력하세요"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" data-close="noticeModal">취소</button>
+        <button type="button" class="btn-create" id="noticeSubmit">등록</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 업데이트/안내 목록 게시판 모달 -->
+  <div class="modal-overlay board-modal" id="listModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="listModalTitle">목록</h2>
+        <button type="button" class="modal-close" data-close="listModal">&times;</button>
+      </div>
+      <div class="modal-body" id="listModalBody">
+        <table class="board-table">
+          <thead>
+            <tr>
+              <th class="col-no">번호</th>
+              <th class="col-type">유형</th>
+              <th class="col-title">제목</th>
+              <th class="col-content">내용</th>
+              <th class="col-date">날짜</th>
+            </tr>
+          </thead>
+          <tbody id="listModalTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 관리 페이지 모달 -->
+  <div class="modal-overlay admin-modal" id="adminModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">회원 인증 관리</h2>
+        <button type="button" class="modal-close" data-close="adminModal">&times;</button>
+      </div>
+      <div class="modal-body" style="max-height:65vh;overflow-y:auto;">
+        <div class="admin-section">
+          <div class="admin-section-title">승인된 사용자 관리</div>
+          <div style="margin-bottom: 16px;">
+            <div class="admin-form-row">
+              <label>새 사용자 ID</label>
+              <input type="text" id="newUserId" placeholder="사용자 ID">
+            </div>
+            <div class="admin-form-row">
+              <label>새 사용자 PW</label>
+              <input type="password" id="newUserPw" placeholder="비밀번호">
+            </div>
+            <button type="button" class="btn-save" onclick="approveUser()" style="margin-top: 8px;">사용자 승인</button>
+          </div>
+          <div style="margin-top: 20px;">
+            <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px;">승인된 사용자 목록</div>
+            <table class="board-table" style="font-size: 12px;">
+              <thead>
+                <tr>
+                  <th class="col-no" style="width: 50px;">번호</th>
+                  <th class="col-title" style="min-width: 120px;">ID</th>
+                  <th class="col-title" style="min-width: 150px;">PW</th>
+                  <th class="col-date" style="width: 150px;">승인일시</th>
+                  <th style="width: 80px;">수정</th>
+                  <th style="width: 80px;">삭제</th>
+                </tr>
+              </thead>
+              <tbody id="approvedUsersTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="admin-section">
+          <div class="admin-section-title">로그인 정보</div>
+          <div class="admin-form-row">
+            <label>관리자 ID</label>
+            <input type="text" id="adminId" placeholder="admin">
+          </div>
+          <div class="admin-form-row">
+            <label>관리자 PW</label>
+            <input type="password" id="adminPw" placeholder="********">
+          </div>
+          <button type="button" class="btn-save" onclick="saveAdminLogin()">저장</button>
+        </div>
+        <div class="admin-section">
+          <div class="admin-section-title">API 인증 관리</div>
+          <div class="admin-form-row">
+            <label>OpenAI API</label>
+            <input type="text" id="apiOpenAI" placeholder="sk-...">
+          </div>
+          <div class="admin-form-row">
+            <label>Google API</label>
+            <input type="text" id="apiGoogle" placeholder="AIza...">
+          </div>
+          <div class="admin-form-row">
+            <label>기타 API 1</label>
+            <input type="text" id="apiOther1" placeholder="API Key">
+          </div>
+          <div class="admin-form-row">
+            <label>기타 API 2</label>
+            <input type="text" id="apiOther2" placeholder="API Key">
+          </div>
+          <button type="button" class="btn-save" onclick="saveAdminAPIs()">저장</button>
+        </div>
+        <div class="admin-section">
+          <div class="admin-section-title">👥 캐릭터 관리</div>
+          <p style="font-size: 12px; color: #666; margin-bottom: 16px;">영상 제작에 사용할 캐릭터 얼굴을 등록하고 관리합니다.</p>
+          <button type="button" class="btn-save" onclick="openCharacterManager()">캐릭터 관리 열기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 캐릭터 아셋 매니저 모달 -->
+  <div id="characterManagerModal" class="character-manager-modal" style="display: none;">
+    <div class="character-manager-overlay" onclick="closeCharacterManager()"></div>
+    <div class="character-manager-content">
+      <div class="character-manager-header">
+        <h2>👥 캐릭터 아셋 매니저</h2>
+        <button type="button" class="character-manager-close" onclick="closeCharacterManager()">×</button>
+      </div>
+      <div class="character-manager-body">
+        <!-- 성우/프리젠터 (1인) -->
+        <div class="character-section">
+          <div class="character-section-title">🎤 성우/프리젠터 (1인)</div>
+          <div class="character-slot-grid">
+            <div class="character-slot" data-role="narrator" data-index="0">
+              <div class="character-slot-upload">
+                <input type="file" class="character-upload-input" accept="image/*" data-role="narrator" data-index="0" style="display: none;" />
+                <div class="character-slot-placeholder">
+                  <div class="character-upload-icon">+</div>
+                  <div class="character-upload-text">이미지 업로드</div>
+                </div>
+                <img class="character-slot-image" style="display: none;" />
+                <div class="character-slot-info" style="display: none;">
+                  <div class="character-slot-name"></div>
+                  <button type="button" class="character-slot-delete" onclick="deleteCharacter('narrator', 0)">삭제</button>
+                </div>
+              </div>
+              <!-- AI 립싱크 토글 스위치 (성우 전용) -->
+              <div class="lipsync-toggle-section">
+                <div class="lipsync-toggle-row">
+                  <label class="lipsync-toggle-label">
+                    <span class="lipsync-toggle-text">AI 립싱크 비디오 생성 (인트로/아웃트로용)</span>
+                    <span class="lipsync-toggle-tooltip" title="활성화 시, TTS 음성에 맞춰 입모양이 움직이는 영상이 생성됩니다. 제작 시간이 크게 증가할 수 있습니다.">ℹ️</span>
+                  </label>
+                  <div class="lipsync-toggle-switch" id="lipsyncToggleNarrator0" onclick="toggleLipsync('narrator', 0)">
+                    <div class="lipsync-toggle-thumb"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 주인공 (4인) -->
+        <div class="character-section">
+          <div class="character-section-title">🦸‍♂️ 주인공 (4인)</div>
+          <div class="character-slot-grid">
+            <div class="character-slot" data-role="main" data-index="0">
+              <div class="character-slot-label">Main A</div>
+              <div class="character-slot-upload">
+                <input type="file" class="character-upload-input" accept="image/*" data-role="main" data-index="0" style="display: none;" />
+                <div class="character-slot-placeholder">
+                  <div class="character-upload-icon">+</div>
+                  <div class="character-upload-text">이미지 업로드</div>
+                </div>
+                <img class="character-slot-image" style="display: none;" />
+                <div class="character-slot-info" style="display: none;">
+                  <div class="character-slot-name"></div>
+                  <button type="button" class="character-slot-delete" onclick="deleteCharacter('main', 0)">삭제</button>
+                </div>
+              </div>
+            </div>
+            <div class="character-slot" data-role="main" data-index="1">
+              <div class="character-slot-label">Main B</div>
+              <div class="character-slot-upload">
+                <input type="file" class="character-upload-input" accept="image/*" data-role="main" data-index="1" style="display: none;" />
+                <div class="character-slot-placeholder">
+                  <div class="character-upload-icon">+</div>
+                  <div class="character-upload-text">이미지 업로드</div>
+                </div>
+                <img class="character-slot-image" style="display: none;" />
+                <div class="character-slot-info" style="display: none;">
+                  <div class="character-slot-name"></div>
+                  <button type="button" class="character-slot-delete" onclick="deleteCharacter('main', 1)">삭제</button>
+                </div>
+              </div>
+            </div>
+            <div class="character-slot" data-role="main" data-index="2">
+              <div class="character-slot-label">Main C</div>
+              <div class="character-slot-upload">
+                <input type="file" class="character-upload-input" accept="image/*" data-role="main" data-index="2" style="display: none;" />
+                <div class="character-slot-placeholder">
+                  <div class="character-upload-icon">+</div>
+                  <div class="character-upload-text">이미지 업로드</div>
+                </div>
+                <img class="character-slot-image" style="display: none;" />
+                <div class="character-slot-info" style="display: none;">
+                  <div class="character-slot-name"></div>
+                  <button type="button" class="character-slot-delete" onclick="deleteCharacter('main', 2)">삭제</button>
+                </div>
+              </div>
+            </div>
+            <div class="character-slot" data-role="main" data-index="3">
+              <div class="character-slot-label">Main D</div>
+              <div class="character-slot-upload">
+                <input type="file" class="character-upload-input" accept="image/*" data-role="main" data-index="3" style="display: none;" />
+                <div class="character-slot-placeholder">
+                  <div class="character-upload-icon">+</div>
+                  <div class="character-upload-text">이미지 업로드</div>
+                </div>
+                <img class="character-slot-image" style="display: none;" />
+                <div class="character-slot-info" style="display: none;">
+                  <div class="character-slot-name"></div>
+                  <button type="button" class="character-slot-delete" onclick="deleteCharacter('main', 3)">삭제</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 조연 (4인) -->
+        <div class="character-section">
+          <div class="character-section-title">👥 조연 (4인)</div>
+          <div class="character-slot-grid">
+            <div class="character-slot" data-role="sub" data-index="0">
+              <div class="character-slot-label">Sub A</div>
+              <div class="character-slot-upload">
+                <input type="file" class="character-upload-input" accept="image/*" data-role="sub" data-index="0" style="display: none;" />
+                <div class="character-slot-placeholder">
+                  <div class="character-upload-icon">+</div>
+                  <div class="character-upload-text">이미지 업로드</div>
+                </div>
+                <img class="character-slot-image" style="display: none;" />
+                <div class="character-slot-info" style="display: none;">
+                  <div class="character-slot-name"></div>
+                  <button type="button" class="character-slot-delete" onclick="deleteCharacter('sub', 0)">삭제</button>
+                </div>
+              </div>
+            </div>
+            <div class="character-slot" data-role="sub" data-index="1">
+              <div class="character-slot-label">Sub B</div>
+              <div class="character-slot-upload">
+                <input type="file" class="character-upload-input" accept="image/*" data-role="sub" data-index="1" style="display: none;" />
+                <div class="character-slot-placeholder">
+                  <div class="character-upload-icon">+</div>
+                  <div class="character-upload-text">이미지 업로드</div>
+                </div>
+                <img class="character-slot-image" style="display: none;" />
+                <div class="character-slot-info" style="display: none;">
+                  <div class="character-slot-name"></div>
+                  <button type="button" class="character-slot-delete" onclick="deleteCharacter('sub', 1)">삭제</button>
+                </div>
+              </div>
+            </div>
+            <div class="character-slot" data-role="sub" data-index="2">
+              <div class="character-slot-label">Sub C</div>
+              <div class="character-slot-upload">
+                <input type="file" class="character-upload-input" accept="image/*" data-role="sub" data-index="2" style="display: none;" />
+                <div class="character-slot-placeholder">
+                  <div class="character-upload-icon">+</div>
+                  <div class="character-upload-text">이미지 업로드</div>
+                </div>
+                <img class="character-slot-image" style="display: none;" />
+                <div class="character-slot-info" style="display: none;">
+                  <div class="character-slot-name"></div>
+                  <button type="button" class="character-slot-delete" onclick="deleteCharacter('sub', 2)">삭제</button>
+                </div>
+              </div>
+            </div>
+            <div class="character-slot" data-role="sub" data-index="3">
+              <div class="character-slot-label">Sub D</div>
+              <div class="character-slot-upload">
+                <input type="file" class="character-upload-input" accept="image/*" data-role="sub" data-index="3" style="display: none;" />
+                <div class="character-slot-placeholder">
+                  <div class="character-upload-icon">+</div>
+                  <div class="character-upload-text">이미지 업로드</div>
+                </div>
+                <img class="character-slot-image" style="display: none;" />
+                <div class="character-slot-info" style="display: none;">
+                  <div class="character-slot-name"></div>
+                  <button type="button" class="character-slot-delete" onclick="deleteCharacter('sub', 3)">삭제</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="character-upload-guide">
+          <div class="guide-title">📋 업로드 가이드</div>
+          <ul class="guide-list">
+            <li>정면을 바라보고, 이목구비가 뚜렷하게 나온 고해상도 독사진을 올려주세요.</li>
+            <li>얼굴이 명확하게 보이고, 배경은 단색이거나 깔끔한 것이 좋습니다.</li>
+            <li>최소 512x512 픽셀 이상의 해상도를 권장합니다.</li>
+            <li>업로드된 이미지는 자동으로 얼굴 특징(Embedding)이 추출되어 저장됩니다.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 새 프로젝트 만들기 모달 -->
+  <div class="modal-overlay" id="newProjectModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">새 프로젝트 만들기</h2>
+        <button type="button" class="modal-close" data-close="newProjectModal">&times;</button>
+      </div>
+      <p class="modal-desc">프로젝트 이름을 입력하고 작업을 시작하세요</p>
+      <div class="form-group">
+        <label class="form-label">프로젝트 이름 <span class="required">*</span></label>
+        <input type="text" id="newProjectName" class="form-input" placeholder="예: 12/6 고구려 시리즈">
+      </div>
+      <div class="form-group">
+        <label class="form-label">프로젝트 설명</label>
+        <input type="text" id="newProjectDesc" class="form-input" placeholder="우주">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" data-close="newProjectModal">취소</button>
+        <button type="button" class="btn-create" id="newProjectSubmit">생성</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 잠금 오버레이 -->
+  <div class="locked-overlay" id="lockedOverlay">
+    <div style="text-align: center;">
+      <div style="font-size: 32px; margin-bottom: 16px;">🔒</div>
+      <div>로그온이 필요합니다</div>
+      <div style="font-size: 16px; margin-top: 8px; opacity: 0.8;">승인된 ID와 비밀번호로 로그온해주세요</div>
+    </div>
+  </div>
+
+  <script>
+    var MAX_NOTICES = 300;
+    var noticeList = [
+      { type: '업데이트 사항', title: '벤치마킹 썸네일 고도화', text: '벤치마킹한 썸네일을 넣으면 비슷하게 생성', dateStr: '2026. 1. 12.' }
+    ];
+
+    function formatDateYMD(d) {
+      return d.getFullYear() + '. ' + (d.getMonth()+1) + '. ' + d.getDate();
+    }
+    function formatDateTime(d) {
+      var h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
+      var ampm = h < 12 ? '오전' : '오후';
+      h = h % 12 || 12;
+      return formatDateYMD(d) + ' ' + ampm + ' ' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    }
+    function escapeHtml(s) {
+      var div = document.createElement('div');
+      div.textContent = s;
+      return div.innerHTML;
+    }
+
+    function renderNoticeList() {
+      var listEl = document.getElementById('sidebarUpdateList');
+      listEl.innerHTML = '';
+      noticeList.forEach(function(n, i) {
+        var cardTitle = n.title || (n.type === '공지글' ? '공지' : '업데이트') + ': ' + (n.text.length > 30 ? n.text.substring(0, 30) + '…' : n.text);
+        var dateStr = n.dateStr && !n.dateStr.endsWith('.') ? n.dateStr + '.' : (n.dateStr || '');
+        var item = document.createElement('div');
+        item.className = 'update-entry-card';
+        item.innerHTML = '<div class="entry-title">' + escapeHtml(cardTitle) + '</div><p class="entry-desc">' + escapeHtml(n.text) + '</p>' +
+          '<div class="entry-footer"><div class="entry-date">' + escapeHtml(dateStr) + '</div><button type="button" class="entry-delete-btn" onclick="deleteNotice(' + i + ')">삭제</button></div>';
+        listEl.appendChild(item);
+      });
+    }
+    function deleteNotice(index) {
+      if (confirm('이 항목을 삭제하시겠습니까?')) {
+        noticeList.splice(index, 1);
+        renderNoticeList();
+      }
+    }
+
+    function openListModal(title, items) {
+      document.getElementById('listModalTitle').textContent = title;
+      var tbody = document.getElementById('listModalTbody');
+      tbody.innerHTML = '';
+      (items || []).forEach(function(n, i) {
+        var row = document.createElement('tr');
+        var titleText = n.title || (n.text && n.text.length > 50 ? n.text.substring(0, 50) + '…' : (n.text || ''));
+        row.innerHTML = '<td class="col-no">' + (i + 1) + '</td><td class="col-type">' + escapeHtml(n.type || '') + '</td><td class="col-title">' + escapeHtml(titleText) + '</td><td class="col-content">' + escapeHtml(n.text || '') + '</td><td class="col-date">' + escapeHtml(n.dateStr || '') + '</td>';
+        tbody.appendChild(row);
+      });
+      document.getElementById('listModal').classList.add('show');
+    }
+    document.querySelectorAll('[data-close="listModal"]').forEach(function(btn) {
+      btn.onclick = function() { document.getElementById('listModal').classList.remove('show'); };
+    });
+    document.getElementById('btnUpdateList').onclick = function() { openListModal('업데이트 사항 목록', noticeList); };
+    document.getElementById('btnNoticeList').onclick = function() { openListModal('안내사항 목록', noticeList); };
+
+    document.getElementById('btnNotice').onclick = function() {
+      if (!isLoggedIn) {
+        alert('로그온이 필요합니다.');
+        return;
+      }
+      document.getElementById('noticeModal').classList.add('show');
+    };
+    document.querySelectorAll('[data-close="noticeModal"]').forEach(function(btn) {
+      btn.onclick = function() { document.getElementById('noticeModal').classList.remove('show'); };
+    });
+    document.getElementById('noticeSubmit').onclick = function() {
+      var type = document.querySelector('input[name="noticeType"]:checked').value;
+      var text = document.getElementById('noticeText').value.trim();
+      if (!text) return;
+      var now = new Date();
+      var dateStr = formatDateYMD(now);
+      document.getElementById('infoBanner').textContent = '안내사항: ' + text;
+      noticeList.unshift({ type: type, text: text, dateStr: dateStr });
+      if (noticeList.length > MAX_NOTICES) noticeList.pop();
+      renderNoticeList();
+      document.getElementById('noticeText').value = '';
+      document.getElementById('noticeModal').classList.remove('show');
+    };
+
+    renderNoticeList('');
+
+    document.getElementById('btnNewProject').onclick = function() {
+      if (!isLoggedIn) {
+        alert('로그온이 필요합니다.');
+        return;
+      }
+      document.getElementById('newProjectName').value = '';
+      document.getElementById('newProjectDesc').value = '';
+      document.getElementById('newProjectModal').classList.add('show');
+    };
+    document.querySelectorAll('[data-close="newProjectModal"]').forEach(function(btn) {
+      btn.onclick = function() { document.getElementById('newProjectModal').classList.remove('show'); };
+    });
+    document.getElementById('newProjectSubmit').onclick = function() {
+      var name = document.getElementById('newProjectName').value.trim();
+      if (!name) { alert('프로젝트 이름을 입력하세요.'); return; }
+      var desc = document.getElementById('newProjectDesc').value.trim();
+      var now = new Date();
+      var dtStr = formatDateTime(now);
+      var card = document.createElement('div');
+      card.className = 'project-card';
+      card.setAttribute('data-name', name);
+      card.setAttribute('data-description', desc);
+      var now = new Date();
+      var month = now.getMonth() + 1;
+      var workCount = Math.floor(Math.random() * 10) + 1; // 임시로 랜덤 값, 실제로는 저장된 작업 수 사용
+      card.innerHTML = '<input type="checkbox" class="project-checkbox"><span class="trash-icon" onclick="deleteProject(this)">🗑️</span><div class="project-title">' + escapeHtml(name) + '</div>' +
+        '<div class="project-work-info">' + month + '월 ' + workCount + '번째 작업 중</div>' +
+        '<div class="meta"><span class="meta-modified">수정: ' + dtStr + '</span><span class="meta-created">생성: ' + dtStr + '</span></div>';
+      document.getElementById('projectCardsGrid').insertBefore(card, document.getElementById('projectCardsGrid').firstChild);
+      document.getElementById('newProjectModal').classList.remove('show');
+      runSearch();
+      updateDeleteButton();
+    };
+    function deleteProject(btn) {
+      if (confirm('이 프로젝트를 삭제하시겠습니까?')) {
+        btn.closest('.project-card').remove();
+        updateDeleteButton();
+      }
+    }
+
+    document.getElementById('searchInput').addEventListener('input', runSearch);
+    function runSearch() {
+      var q = document.getElementById('searchInput').value.trim().toLowerCase();
+      document.querySelectorAll('.project-card').forEach(function(card) {
+        var name = (card.getAttribute('data-name') || '').toLowerCase();
+        var desc = (card.getAttribute('data-description') || '').toLowerCase();
+        var match = !q || name.indexOf(q) !== -1 || desc.indexOf(q) !== -1;
+        card.classList.toggle('search-match', match && q.length > 0);
+      });
+    }
+
+    document.getElementById('selectAllProjects').addEventListener('change', function() {
+      var checked = this.checked;
+      document.querySelectorAll('.project-checkbox').forEach(function(cb) { cb.checked = checked; });
+      updateDeleteButton();
+    });
+    document.addEventListener('change', function(e) {
+      if (e.target.classList.contains('project-checkbox')) updateDeleteButton();
+    });
+    function updateDeleteButton() {
+      var selected = document.querySelectorAll('.project-checkbox:checked').length;
+      document.getElementById('btnDeleteSelected').disabled = selected === 0;
+      document.getElementById('btnDeleteSelected').textContent = selected > 0 ? '선택 삭제 (' + selected + ')' : '선택 삭제';
+    }
+    document.getElementById('btnDeleteSelected').onclick = function() {
+      var selected = document.querySelectorAll('.project-checkbox:checked');
+      if (selected.length === 0) return;
+      if (confirm(selected.length + '개의 프로젝트를 삭제하시겠습니까?')) {
+        selected.forEach(function(cb) { cb.closest('.project-card').remove(); });
+        document.getElementById('selectAllProjects').checked = false;
+        updateDeleteButton();
+      }
+    };
+
+    // 승인된 사용자 관리
+    function getApprovedUsers() {
+      var users = localStorage.getItem('approvedUsers');
+      return users ? JSON.parse(users) : [];
+    }
+    function saveApprovedUsers(users) {
+      localStorage.setItem('approvedUsers', JSON.stringify(users));
+    }
+    function renderApprovedUsersTable() {
+      var users = getApprovedUsers();
+      var tbody = document.getElementById('approvedUsersTable');
+      tbody.innerHTML = '';
+      users.forEach(function(user, index) {
+        var row = document.createElement('tr');
+        row.innerHTML = '<td>' + (index + 1) + '</td>' +
+          '<td>' + escapeHtml(user.id) + '</td>' +
+          '<td><input type="text" class="user-pw-input" id="pw_' + index + '" value="' + escapeHtml(user.password) + '" style="width: 100%; padding: 4px 8px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 12px;"></td>' +
+          '<td>' + escapeHtml(user.approvedDate) + '</td>' +
+          '<td><button type="button" class="btn-save" onclick="updateUserPassword(' + index + ')" style="padding: 4px 12px; font-size: 11px;">수정</button></td>' +
+          '<td><button type="button" class="entry-delete-btn" onclick="deleteApprovedUser(' + index + ')">삭제</button></td>';
+        tbody.appendChild(row);
+      });
+    }
+    function updateUserPassword(index) {
+      var newPw = document.getElementById('pw_' + index).value.trim();
+      if (!newPw) {
+        alert('비밀번호를 입력하세요.');
+        return;
+      }
+      var users = getApprovedUsers();
+      if (users[index]) {
+        users[index].password = newPw;
+        saveApprovedUsers(users);
+        alert('비밀번호가 수정되었습니다.');
+        renderApprovedUsersTable();
+      }
+    }
+    function approveUser() {
+      var id = document.getElementById('newUserId').value.trim();
+      var pw = document.getElementById('newUserPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 모두 입력하세요.');
+        return;
+      }
+      var users = getApprovedUsers();
+      // 중복 확인
+      if (users.some(function(u) { return u.id === id; })) {
+        alert('이미 승인된 사용자입니다.');
+        return;
+      }
+      var now = new Date();
+      var dateStr = formatDateTime(now);
+      users.push({ id: id, password: pw, approvedDate: dateStr });
+      saveApprovedUsers(users);
+      document.getElementById('newUserId').value = '';
+      document.getElementById('newUserPw').value = '';
+      renderApprovedUsersTable();
+      alert('사용자가 승인되었습니다.');
+    }
+    function deleteApprovedUser(index) {
+      if (confirm('이 사용자를 삭제하시겠습니까?')) {
+        var users = getApprovedUsers();
+        users.splice(index, 1);
+        saveApprovedUsers(users);
+        renderApprovedUsersTable();
+      }
+    }
+
+    // 로그온 상태 관리
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        // 24시간 후 자동 로그아웃
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        } else {
+          logout();
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 입력하세요.');
+        return;
+      }
+      var users = getApprovedUsers();
+      var user = users.find(function(u) { return u.id === id && u.password === pw; });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('lockedOverlay').classList.remove('show');
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) {
+          logout();
+          alert('로그아웃되었습니다.');
+        }
+      };
+      // ID/PW 입력 필드 비활성화
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+      lockAllFeatures();
+    }
+    function updateUIForLogout() {
+      document.getElementById('lockedOverlay').classList.add('show');
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      // ID/PW 입력 필드 활성화
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+      lockAllFeatures();
+    }
+    function lockAllFeatures() {
+      if (!isLoggedIn) {
+        // 모든 버튼과 입력 필드 비활성화
+        document.querySelectorAll('button:not(#btnAdmin):not(#btnLogin)').forEach(function(btn) {
+          btn.disabled = true;
+          btn.style.pointerEvents = 'none';
+          btn.style.opacity = '0.5';
+        });
+        document.querySelectorAll('input:not(#loginId):not(#loginPw), textarea').forEach(function(input) {
+          input.disabled = true;
+          input.style.pointerEvents = 'none';
+          input.style.opacity = '0.5';
+        });
+        document.querySelectorAll('a').forEach(function(link) {
+          link.style.pointerEvents = 'none';
+          link.style.opacity = '0.5';
+        });
+      } else {
+        document.querySelectorAll('button').forEach(function(btn) {
+          btn.disabled = false;
+          btn.style.pointerEvents = 'auto';
+          btn.style.opacity = '1';
+        });
+        document.querySelectorAll('input, textarea').forEach(function(input) {
+          input.disabled = false;
+          input.style.pointerEvents = 'auto';
+          input.style.opacity = '1';
+        });
+        document.querySelectorAll('a').forEach(function(link) {
+          link.style.pointerEvents = 'auto';
+          link.style.opacity = '1';
+        });
+      }
+    }
+
+    // 초기화 - 기본 관리자 계정 추가
+    (function() {
+      var users = getApprovedUsers();
+      var adminExists = users.some(function(u) { return u.id === 'chaesira'; });
+      if (!adminExists) {
+        var now = new Date();
+        var dateStr = formatDateTime(now);
+        users.push({ 
+          id: 'chaesira', 
+          password: '690614330515', 
+          approvedDate: dateStr 
+        });
+        saveApprovedUsers(users);
+      }
+    })();
+
+    // 초기화
+    checkLoginStatus();
+    lockAllFeatures();
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+
+    var ENCRYPTION_KEY = '690614330505';
+    document.getElementById('btnAdmin').onclick = function() {
+      var key = prompt('암호화 키를 입력하세요:');
+      if (key === ENCRYPTION_KEY) {
+        loadAdminData();
+        renderApprovedUsersTable();
+        document.getElementById('adminModal').classList.add('show');
+      } else if (key !== null) {
+        alert('암호화 키가 올바르지 않습니다.');
+      }
+    };
+    document.getElementById('btnLogin').onclick = login;
+    document.querySelectorAll('[data-close="adminModal"]').forEach(function(btn) {
+      btn.onclick = function() { document.getElementById('adminModal').classList.remove('show'); };
+    });
+    function loadAdminData() {
+      document.getElementById('adminId').value = localStorage.getItem('adminId') || '';
+      document.getElementById('adminPw').value = localStorage.getItem('adminPw') || '';
+      document.getElementById('apiOpenAI').value = localStorage.getItem('apiOpenAI') || '';
+      document.getElementById('apiGoogle').value = localStorage.getItem('apiGoogle') || '';
+      document.getElementById('apiOther1').value = localStorage.getItem('apiOther1') || '';
+      document.getElementById('apiOther2').value = localStorage.getItem('apiOther2') || '';
+    }
+    function saveAdminLogin() {
+      localStorage.setItem('adminId', document.getElementById('adminId').value);
+      localStorage.setItem('adminPw', document.getElementById('adminPw').value);
+      alert('로그인 정보가 저장되었습니다.');
+    }
+    // 전역 함수로 노출
+    window.deleteApprovedUser = deleteApprovedUser;
+    window.updateUserPassword = updateUserPassword;
+    function saveAdminAPIs() {
+      localStorage.setItem('apiOpenAI', document.getElementById('apiOpenAI').value);
+      localStorage.setItem('apiGoogle', document.getElementById('apiGoogle').value);
+      localStorage.setItem('apiOther1', document.getElementById('apiOther1').value);
+      localStorage.setItem('apiOther2', document.getElementById('apiOther2').value);
+      alert('API 인증 정보가 저장되었습니다.');
+    }
+
+    // 캐릭터 아셋 매니저 함수들
+    function openCharacterManager() {
+      document.getElementById('characterManagerModal').style.display = 'flex';
+      loadCharacters();
+      setupCharacterUploads();
+    }
+
+    function closeCharacterManager() {
+      document.getElementById('characterManagerModal').style.display = 'none';
+    }
+
+    function loadCharacters() {
+      var characters = getCharacters();
+      characters.forEach(function(char) {
+        var slot = document.querySelector('[data-role="' + char.role + '"][data-index="' + char.index + '"]');
+        if (slot) {
+          var placeholder = slot.querySelector('.character-slot-placeholder');
+          var image = slot.querySelector('.character-slot-image');
+          var info = slot.querySelector('.character-slot-info');
+          var name = slot.querySelector('.character-slot-name');
+          
+          if (char.imageUrl) {
+            placeholder.style.display = 'none';
+            image.src = char.imageUrl;
+            image.style.display = 'block';
+            info.style.display = 'block';
+            name.textContent = char.name || (char.role === 'narrator' ? 'Narrator' : (char.role === 'main' ? 'Main ' + String.fromCharCode(65 + char.index) : 'Sub ' + String.fromCharCode(65 + char.index)));
+          }
+
+          // 립싱크 토글 상태 복원 (성우만)
+          if (char.role === 'narrator') {
+            loadLipsyncToggleState(char.role, char.index);
+          }
+        }
+      });
+
+      // 성우 슬롯의 립싱크 토글 상태 복원 (캐릭터가 없어도)
+      loadLipsyncToggleState('narrator', 0);
+    }
+
+    function setupCharacterUploads() {
+      document.querySelectorAll('.character-upload-input').forEach(function(input) {
+        input.onchange = function(e) {
+          var file = e.target.files[0];
+          if (!file) return;
+          
+          var role = this.dataset.role;
+          var index = parseInt(this.dataset.index);
+          
+          uploadCharacterImage(file, role, index);
+        };
+      });
+
+      document.querySelectorAll('.character-slot-upload').forEach(function(upload) {
+        upload.onclick = function(e) {
+          if (e.target.classList.contains('character-slot-delete')) return;
+          var input = this.querySelector('.character-upload-input');
+          if (input) input.click();
+        };
+      });
+    }
+
+    async function uploadCharacterImage(file, role, index) {
+      try {
+        var formData = new FormData();
+        formData.append('image', file);
+        formData.append('role', role);
+        formData.append('index', index);
+
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/characters/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('업로드 실패');
+        }
+
+        var data = await response.json();
+        
+        // 캐릭터 정보 저장
+        var character = {
+          role: role,
+          index: index,
+          name: data.name || '',
+          imageUrl: data.image_url,
+          characterId: data.character_id,
+          embeddingData: data.embedding_data,
+          createdAt: new Date().toISOString()
+        };
+
+        saveCharacter(character);
+        loadCharacters();
+        alert('캐릭터가 등록되었습니다. 얼굴 특징이 추출되어 저장되었습니다.');
+      } catch (e) {
+        console.error('캐릭터 업로드 실패:', e);
+        alert('캐릭터 업로드에 실패했습니다. 다시 시도해 주세요.');
+      }
+    }
+
+    function deleteCharacter(role, index) {
+      if (!confirm('이 캐릭터를 삭제하시겠습니까?')) return;
+
+      var characters = getCharacters();
+      characters = characters.filter(function(char) {
+        return !(char.role === role && char.index === index);
+      });
+      saveCharacters(characters);
+
+      // UI 업데이트
+      var slot = document.querySelector('[data-role="' + role + '"][data-index="' + index + '"]');
+      if (slot) {
+        var placeholder = slot.querySelector('.character-slot-placeholder');
+        var image = slot.querySelector('.character-slot-image');
+        var info = slot.querySelector('.character-slot-info');
+        
+        placeholder.style.display = 'flex';
+        image.style.display = 'none';
+        info.style.display = 'none';
+      }
+
+      // 백엔드에 삭제 요청
+      fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/characters/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: role, index: index })
+      }).catch(function(e) {
+        console.error('캐릭터 삭제 API 호출 실패:', e);
+      });
+    }
+
+    function getCharacters() {
+      var chars = localStorage.getItem('characters');
+      return chars ? JSON.parse(chars) : [];
+    }
+
+    function saveCharacter(character) {
+      var characters = getCharacters();
+      var existingIndex = characters.findIndex(function(c) {
+        return c.role === character.role && c.index === character.index;
+      });
+      
+      if (existingIndex !== -1) {
+        characters[existingIndex] = character;
+      } else {
+        characters.push(character);
+      }
+      
+      saveCharacters(characters);
+    }
+
+    function saveCharacters(characters) {
+      localStorage.setItem('characters', JSON.stringify(characters));
+    }
+
+    // AI 립싱크 토글 함수
+    function toggleLipsync(role, index) {
+      if (role !== 'narrator') {
+        console.warn('AI 립싱크는 성우 전용 기능입니다.');
+        return;
+      }
+
+      var toggle = document.getElementById('lipsyncToggle' + role.charAt(0).toUpperCase() + role.slice(1) + index);
+      if (!toggle) return;
+
+      var isActive = toggle.classList.contains('active');
+      var newState = !isActive;
+
+      // UI 업데이트
+      if (newState) {
+        toggle.classList.add('active');
+      } else {
+        toggle.classList.remove('active');
+      }
+
+      // 캐릭터 데이터 업데이트
+      var characters = getCharacters();
+      var charIndex = characters.findIndex(function(c) {
+        return c.role === role && c.index === index;
+      });
+
+      if (charIndex !== -1) {
+        characters[charIndex].enable_lipsync_video = newState;
+        saveCharacters(characters);
+
+        // 백엔드에 상태 저장
+        saveLipsyncSetting(role, index, newState);
+      } else {
+        // 캐릭터가 아직 등록되지 않은 경우, 임시로 설정 저장
+        var tempSetting = JSON.parse(localStorage.getItem('lipsyncSettings') || '{}');
+        tempSetting[role + '-' + index] = newState;
+        localStorage.setItem('lipsyncSettings', JSON.stringify(tempSetting));
+      }
+    }
+
+    // 립싱크 설정 백엔드 저장
+    async function saveLipsyncSetting(role, index, enabled) {
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/characters/lipsync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            role: role,
+            index: index,
+            enable_lipsync_video: enabled
+          })
+        });
+
+        if (!response.ok) {
+          console.error('립싱크 설정 저장 실패');
+        }
+      } catch (e) {
+        console.error('립싱크 설정 저장 중 오류:', e);
+      }
+    }
+
+    // 캐릭터 로드 시 립싱크 토글 상태 복원
+    function loadLipsyncToggleState(role, index) {
+      if (role !== 'narrator') return;
+
+      var characters = getCharacters();
+      var char = characters.find(function(c) {
+        return c.role === role && c.index === index;
+      });
+
+      var toggle = document.getElementById('lipsyncToggle' + role.charAt(0).toUpperCase() + role.slice(1) + index);
+      if (!toggle) return;
+
+      var enabled = false;
+      if (char && char.enable_lipsync_video !== undefined) {
+        enabled = char.enable_lipsync_video;
+      } else {
+        // 캐릭터가 없으면 임시 설정 확인
+        var tempSetting = JSON.parse(localStorage.getItem('lipsyncSettings') || '{}');
+        enabled = tempSetting[role + '-' + index] || false;
+      }
+
+      if (enabled) {
+        toggle.classList.add('active');
+      } else {
+        toggle.classList.remove('active');
+      }
+    }

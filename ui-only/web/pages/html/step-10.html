@@ -1,0 +1,2287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>9. 최종 제작</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+      display: flex;
+      gap: 24px;
+    }
+    
+    /* 2분할 와이드 레이아웃 */
+    .split-layout {
+      display: flex;
+      gap: 24px;
+      width: 100%;
+      height: 100%;
+    }
+    .preview-panel {
+      flex: 1;
+      min-width: 0;
+    }
+    .editor-panel {
+      flex: 1;
+      min-width: 0;
+      max-width: 600px;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { flex: 1; }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    .content-card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .field-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    /* 좌측 미리보기 영역 */
+    .preview-panel .content-card {
+      margin-bottom: 16px;
+    }
+    .preview-item {
+      background: #f7fafc;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 16px;
+    }
+    .preview-item:last-child {
+      margin-bottom: 0;
+    }
+    .preview-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 12px;
+    }
+    .video-player-wrapper {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .video-player-wrapper video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .shorts-preview-wrapper {
+      width: 100%;
+      aspect-ratio: 9/16;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .shorts-preview-wrapper video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    /* BGM 핫스팟 타임라인 */
+    .bgm-timeline {
+      width: 100%;
+      height: 40px;
+      background: #1a1a1a;
+      border-radius: 6px;
+      position: relative;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .bgm-timeline-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #9333ea 0%, #ec4899 50%, #f472b6 100%);
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+    .bgm-hotspot-marker {
+      position: absolute;
+      top: 0;
+      width: 4px;
+      height: 100%;
+      background: #fbbf24;
+      box-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
+      z-index: 10;
+    }
+    .bgm-hotspot-marker::before {
+      content: '🔥';
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+    }
+    .timeline-label {
+      position: absolute;
+      top: 50%;
+      left: 8px;
+      transform: translateY(-50%);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      z-index: 5;
+    }
+
+    /* Metadata Card */
+    .metadata-card {
+      background: #fff7fb;
+      border-color: #fed7e2;
+    }
+    .metadata-item {
+      margin-bottom: 16px;
+    }
+    .metadata-item:last-child {
+      margin-bottom: 0;
+    }
+    .metadata-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #d53f8c;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .metadata-textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px 12px;
+      border: 1px solid #fed7e2;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+      box-sizing: border-box;
+      line-height: 1.6;
+      background: rgba(255,255,255,0.8);
+    }
+    .metadata-textarea.title {
+      min-height: 50px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .metadata-textarea.hashtags {
+      min-height: 60px;
+    }
+    .btn-copy {
+      padding: 4px 10px;
+      background: #805ad5;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-copy:hover { background: #6b46c1; }
+
+    /* Export Center */
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .btn-export {
+      padding: 10px 16px;
+      background: #4a5568;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-export:hover { background: #2d3748; }
+    .btn-export-primary {
+      background: #e53935;
+    }
+    .btn-export-primary:hover { background: #c62828; }
+
+    /* AI Analysis Report */
+    .ai-report-card {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+      margin-top: 20px;
+    }
+    .ai-report-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0369a1;
+      margin-bottom: 8px;
+    }
+    .ai-report-content {
+      font-size: 13px;
+      color: #0c4a6e;
+      line-height: 1.6;
+      padding: 8px 0;
+    }
+
+    .btn-primary {
+      padding: 10px 16px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #c62828; }
+    .btn-secondary {
+      padding: 10px 16px;
+      background: #805ad5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .btn-secondary:hover { background: #6b46c1; }
+    
+    /* 지능형 씬 카드 에디터 */
+    .scene-editor-card {
+      margin-bottom: 16px;
+      border: 1px solid #e2e8f0;
+    }
+    .scene-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: #f7fafc;
+      border-bottom: 1px solid #e2e8f0;
+      cursor: pointer;
+    }
+    .scene-card-header:hover {
+      background: #edf2f7;
+    }
+    .scene-card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+    .scene-card-toggle {
+      font-size: 12px;
+      color: #718096;
+    }
+    .scene-card-body {
+      padding: 16px;
+      display: none;
+    }
+    .scene-card-body.expanded {
+      display: block;
+    }
+    .scene-script-editor {
+      width: 100%;
+      min-height: 120px;
+      padding: 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      line-height: 1.6;
+      resize: vertical;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+    }
+    .scene-script-editor-wrapper {
+      position: relative;
+      margin-bottom: 12px;
+    }
+    .scene-script-display {
+      width: 100%;
+      min-height: 120px;
+      padding: 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      line-height: 1.6;
+      background: #fff;
+      margin-bottom: 8px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .numerical-highlight {
+      background: #fef3c7;
+      color: #92400e;
+      font-weight: 600;
+      padding: 2px 4px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+    .numerical-warning {
+      font-size: 11px;
+      color: #f59e0b;
+      margin-top: 4px;
+      display: none;
+    }
+    .numerical-warning.show {
+      display: block;
+    }
+    /* 최적화 프롬프트 접이식 메뉴 */
+    .optimization-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+    .optimization-toggle:hover {
+      background: #e0f2fe;
+    }
+    .optimization-content {
+      display: none;
+      padding: 12px;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .optimization-content.expanded {
+      display: block;
+    }
+    .optimization-prompt-textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px;
+      border: 1px solid #bae6fd;
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    /* 씬 재생성 버튼 */
+    .btn-regenerate-scene {
+      padding: 8px 16px;
+      background: #805ad5;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn-regenerate-scene:hover {
+      background: #6b46c1;
+    }
+    /* 오디오 파형 표시 */
+    .audio-waveform {
+      width: 100%;
+      height: 60px;
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .waveform-canvas {
+      width: 100%;
+      height: 100%;
+    }
+    /* 썸네일 A/B 매칭 아이콘 */
+    .thumbnail-ab-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: #d1fae5;
+      border: 1px solid #10b981;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #047857;
+    }
+    .thumbnail-ab-indicator.missing {
+      background: #fee2e2;
+      border-color: #ef4444;
+      color: #991b1b;
+    }
+    /* 채널 매니저 퀵 패스 버튼 */
+    .btn-quick-pass {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 16px 24px;
+      background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(147, 51, 234, 0.4);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-quick-pass:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(147, 51, 234, 0.5);
+    }
+
+    /* 시니어 전용 자막 시스템 */
+    .video-player-wrapper {
+      position: relative;
+    }
+    .subtitle-overlay {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 10;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .subtitle-container {
+      display: none;
+      max-width: 90%;
+      text-align: center;
+    }
+    .subtitle-container.active {
+      display: block;
+    }
+    /* 쇼츠 자막 스타일 (60pt 이상) */
+    .subtitle-container.shorts {
+      font-size: 60px;
+      line-height: 1.3;
+      font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      color: #fff;
+      text-shadow: 
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000,
+        0 0 8px rgba(0,0,0,0.8);
+      padding: 16px 24px;
+      background: rgba(0,0,0,0.75);
+      border-radius: 12px;
+      margin-bottom: 15%;
+    }
+    /* 롱폼 자막 스타일 (45-50pt) */
+    .subtitle-container.longform {
+      font-size: 48px;
+      line-height: 1.4;
+      font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      color: #fff;
+      text-shadow: 
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000,
+        0 0 8px rgba(0,0,0,0.8);
+      padding: 14px 20px;
+      background: rgba(0,0,0,0.75);
+      border-radius: 10px;
+      margin-bottom: 8%;
+    }
+    /* 키워드 강조 (노란색) */
+    .subtitle-keyword {
+      color: #fbbf24;
+      font-weight: 800;
+      text-shadow: 
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000,
+        0 0 12px rgba(251, 191, 36, 0.8);
+    }
+    /* 수치 강조 (주황색) */
+    .subtitle-numerical {
+      color: #fb923c;
+      font-weight: 800;
+      text-shadow: 
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000,
+        0 0 12px rgba(251, 146, 60, 0.8);
+    }
+    /* 자막 텍스트 에디터 */
+    .subtitle-editor-card {
+      margin-top: 20px;
+      border: 1px solid #e2e8f0;
+    }
+    .subtitle-editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: #f7fafc;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .subtitle-editor-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+    .subtitle-list {
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .subtitle-item {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding: 12px;
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+    }
+    .subtitle-item-time {
+      flex-shrink: 0;
+      width: 80px;
+      font-size: 12px;
+      color: #718096;
+      font-weight: 600;
+      padding-top: 4px;
+    }
+    .subtitle-item-text {
+      flex: 1;
+    }
+    .subtitle-item-text input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .subtitle-item-text input:focus {
+      outline: none;
+      border-color: #805ad5;
+      box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1);
+    }
+    .subtitle-item-actions {
+      flex-shrink: 0;
+      display: flex;
+      gap: 6px;
+    }
+    .btn-subtitle-action {
+      padding: 6px 12px;
+      background: #805ad5;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-subtitle-action:hover {
+      background: #6b46c1;
+    }
+    .btn-subtitle-action.secondary {
+      background: #4a5568;
+    }
+    .btn-subtitle-action.secondary:hover {
+      background: #2d3748;
+    }
+    .subtitle-controls {
+      display: flex;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #f7fafc;
+      border-top: 1px solid #e2e8f0;
+    }
+    .subtitle-size-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .subtitle-size-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    .subtitle-size-slider {
+      width: 150px;
+      height: 6px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .subtitle-size-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #805ad5;
+      cursor: pointer;
+    }
+    .subtitle-size-value {
+      font-size: 12px;
+      font-weight: 600;
+      color: #553c9a;
+      min-width: 50px;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item active">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>9. 최종 제작</h1>
+          <p class="subtitle">완성된 영상과 메타데이터를 확인하고 다운로드합니다</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2분할 와이드 레이아웃 -->
+      <div class="split-layout">
+        <!-- 좌측: 미리보기 영역 -->
+        <div class="preview-panel">
+          <!-- 롱폼 영상 미리보기 -->
+          <div class="content-card">
+            <div class="preview-label">롱폼 영상 (16:9)</div>
+            <div class="video-player-wrapper" id="videoPlayerWrapper">
+              <video id="finalVideo" controls></video>
+              <div class="subtitle-overlay" id="subtitleOverlay">
+                <div class="subtitle-container" id="subtitleContainer"></div>
+              </div>
+            </div>
+            <!-- BGM 핫스팟 타임라인 -->
+            <div class="bgm-timeline" id="bgmTimeline">
+              <div class="timeline-label">BGM 타임라인</div>
+              <div class="bgm-timeline-bar" id="bgmTimelineBar"></div>
+              <div class="bgm-hotspot-marker" id="bgmHotspotMarker" style="display: none;"></div>
+            </div>
+          </div>
+
+          <!-- 쇼츠 미리보기 -->
+          <div class="content-card">
+            <div class="preview-label">쇼츠 영상 (9:16)</div>
+            <div class="shorts-preview-wrapper" id="shortsPreviewWrapper">
+              <video id="shortsVideo" controls style="display: none;"></video>
+              <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 13px;">쇼츠 영상이 없습니다</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 우측: 메타데이터 및 씬 편집 -->
+        <div class="editor-panel">
+          <!-- 메타데이터 Card -->
+          <div class="content-card metadata-card">
+            <div class="field-label">
+              유튜브 메타데이터
+              <span class="thumbnail-ab-indicator" id="thumbnailABIndicator" style="margin-left: 8px; display: none;">
+                ✓ A/B 썸네일 매칭됨
+              </span>
+            </div>
+            <p class="section-desc">제목, 설명, 해시태그를 편집할 수 있습니다.</p>
+
+            <div class="metadata-item">
+              <div class="metadata-label">
+                <span>유튜브 제목</span>
+                <button class="btn-copy" type="button" onclick="copyToClipboard('titleTextarea')">복사하기</button>
+              </div>
+              <textarea class="metadata-textarea title" id="titleTextarea" placeholder="유튜브 제목을 입력하세요..."></textarea>
+            </div>
+
+            <div class="metadata-item">
+              <div class="metadata-label">
+                <span>영상 설명 (타임스탬프 포함)</span>
+                <button class="btn-copy" type="button" onclick="copyToClipboard('descriptionTextarea')">복사하기</button>
+              </div>
+              <textarea class="metadata-textarea" id="descriptionTextarea" placeholder="영상 설명을 입력하세요..."></textarea>
+            </div>
+
+            <div class="metadata-item">
+              <div class="metadata-label">
+                <span>해시태그</span>
+                <button class="btn-copy" type="button" onclick="copyToClipboard('hashtagsTextarea')">복사하기</button>
+              </div>
+              <textarea class="metadata-textarea hashtags" id="hashtagsTextarea" placeholder="해시태그를 입력하세요..."></textarea>
+            </div>
+          </div>
+
+          <!-- 자막 텍스트 에디터 -->
+          <div class="content-card subtitle-editor-card">
+            <div class="subtitle-editor-header">
+              <div class="subtitle-editor-title">자막 텍스트 에디터</div>
+              <button class="btn-subtitle-action secondary" type="button" id="btnToggleSubtitles">자막 표시</button>
+            </div>
+            <div class="subtitle-list" id="subtitleList">
+              <!-- 동적으로 생성됩니다 -->
+            </div>
+            <div class="subtitle-controls">
+              <div class="subtitle-size-control">
+                <span class="subtitle-size-label">자막 크기</span>
+                <input type="range" class="subtitle-size-slider" id="subtitleSizeSlider" min="40" max="80" value="48" />
+                <span class="subtitle-size-value" id="subtitleSizeValue">48pt</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 지능형 씬 카드 에디터 -->
+          <div class="content-card">
+            <div class="field-label">씬별 상세 편집</div>
+            <p class="section-desc">각 씬의 대본과 이미지 프롬프트를 확인하고 수정할 수 있습니다.</p>
+            <div id="sceneEditorList"></div>
+          </div>
+        </div>
+      </div>
+
+        </div>
+      </div>
+
+      <!-- 원클릭 패키징 및 다운로드 -->
+      <div class="content-card">
+        <div class="field-label">파일 다운로드</div>
+        <p class="section-desc">개별 파일을 다운로드하거나 모든 파일을 패키지로 저장할 수 있습니다.</p>
+
+        <div class="export-grid">
+          <button class="btn-export" type="button" id="btnDownloadVideo">
+            📹 영상 다운로드 (MP4)
+          </button>
+          <button class="btn-export" type="button" id="btnDownloadThumbnail">
+            🖼️ 썸네일 다운로드 (JPG)
+          </button>
+        </div>
+
+        <button class="btn-export btn-export-primary" type="button" id="btnDownloadAll" style="width: 100%; margin-top: 12px;">
+          📦 모든 파일 패키지(.zip)로 저장하기
+        </button>
+      </div>
+
+      <!-- AI 제작 분석 리포트 -->
+      <div class="content-card ai-report-card">
+        <div class="ai-report-title">AI 제작 분석 리포트</div>
+        <div class="ai-report-content" id="aiReportContent">
+          <!-- 동적으로 생성됩니다 -->
+        </div>
+      </div>
+
+      <!-- 쇼츠 변환 및 새 작업 시작 -->
+      <div style="margin-top: 24px; display: flex; gap: 12px;">
+        <button class="btn-primary" type="button" id="btnGoToShorts" style="flex: 1;">쇼츠 자동 변환하기</button>
+        <button class="btn-secondary" type="button" id="btnStartNew" style="flex: 1;">새로운 주제로 시작하기</button>
+      </div>
+
+      <!-- 채널 매니저로 퀵 패스 버튼 (고정) -->
+      <button class="btn-quick-pass" type="button" id="btnQuickPass">
+        🚀 채널 매니저로 보내기
+      </button>
+    </main>
+  </div>
+
+  <script>
+    var videoData = null;
+    var titleData = null;
+    var thumbnailData = null;
+    var blueprintData = null;
+    var step3Data = null;
+    var ttsData = null;
+    var jsonData = null;
+    var bgmData = null;
+    var shortsData = null;
+    
+    // 자막 관련 변수
+    var subtitleData = [];
+    var subtitleEnabled = true;
+    var currentSubtitleIndex = -1;
+    var videoFormat = 'longform'; // 'shorts' or 'longform'
+    var requiredKeywords = [];
+    var numericalDataRegex = /\d+(\.\d+)?\s*(분|시간|km|m|kg|g|리터|L|회|개|번|step|보|세|살|%|도)/g;
+
+    // 데이터 로드
+    (function() {
+      try {
+        var videoPayloadRaw = localStorage.getItem('step7VideoData');
+        var titlePayloadRaw = localStorage.getItem('step8TitleData');
+        var thumbnailPayloadRaw = localStorage.getItem('step9ThumbnailData');
+        var blueprintPayloadRaw = localStorage.getItem('step2Payload');
+        var jsonPayloadRaw = localStorage.getItem('step42JsonData');
+        var ttsPayloadRaw = localStorage.getItem('step6TTSData');
+        var bgmPayloadRaw = localStorage.getItem('step52BGMData');
+        var shortsPayloadRaw = localStorage.getItem('step11ShortsData');
+
+        if (videoPayloadRaw) {
+          videoData = JSON.parse(videoPayloadRaw);
+        }
+        if (titlePayloadRaw) {
+          titleData = JSON.parse(titlePayloadRaw);
+        }
+        if (thumbnailPayloadRaw) {
+          thumbnailData = JSON.parse(thumbnailPayloadRaw);
+        }
+        if (blueprintPayloadRaw) {
+          blueprintData = JSON.parse(blueprintPayloadRaw);
+        }
+        if (jsonPayloadRaw) {
+          jsonData = JSON.parse(jsonPayloadRaw);
+        }
+        if (ttsPayloadRaw) {
+          ttsData = JSON.parse(ttsPayloadRaw);
+        }
+        if (bgmPayloadRaw) {
+          bgmData = JSON.parse(bgmPayloadRaw);
+        }
+        if (shortsPayloadRaw) {
+          shortsData = JSON.parse(shortsPayloadRaw);
+        }
+        
+        // Step 3 데이터 로드 (형식 및 키워드 정보)
+        var step3PayloadRaw = localStorage.getItem('step3Blueprint');
+        if (step3PayloadRaw) {
+          step3Data = JSON.parse(step3PayloadRaw);
+          if (step3Data.format) videoFormat = step3Data.format;
+          if (step3Data.keywords) requiredKeywords = step3Data.keywords;
+        }
+        
+        // localStorage에서 직접 읽기
+        var savedFormat = localStorage.getItem('currentFormat');
+        if (savedFormat) videoFormat = savedFormat;
+
+        renderPreview();
+        renderMetadata();
+        renderSceneEditors();
+        renderBGMTimeline();
+        checkThumbnailAB();
+        generateAiReport();
+        initSubtitleSystem();
+        saveToArchive(); // 프로젝트를 보관함에 자동 저장
+      } catch (e) {
+        console.error('데이터 로드 실패:', e);
+      }
+    })();
+
+    // 프로젝트를 보관함에 저장
+    function saveToArchive() {
+      try {
+        if (!titleData || !titleData.selectedTitle) {
+          return; // 제목이 없으면 저장하지 않음
+        }
+
+        var archivedProjectsRaw = localStorage.getItem('archivedProjects');
+        var archivedProjects = archivedProjectsRaw ? JSON.parse(archivedProjectsRaw) : [];
+
+        // 이미 저장된 프로젝트인지 확인 (같은 제목으로 중복 저장 방지)
+        var existingIndex = archivedProjects.findIndex(function(p) {
+          return p.title === titleData.selectedTitle && p.completedDate === new Date().toISOString().split('T')[0];
+        });
+
+        // 쇼츠 변환 데이터 로드
+        var shortsData = null;
+        try {
+          var shortsDataRaw = localStorage.getItem('step11ShortsData');
+          if (shortsDataRaw) {
+            shortsData = JSON.parse(shortsDataRaw);
+          }
+        } catch (e) {
+          console.error('쇼츠 데이터 로드 실패:', e);
+        }
+
+        // JSON, TTS, BGM 데이터 로드
+        var jsonData = null;
+        var ttsData = null;
+        var bgmData = null;
+        try {
+          var jsonDataRaw = localStorage.getItem('step42JsonData');
+          if (jsonDataRaw) {
+            jsonData = JSON.parse(jsonDataRaw);
+          }
+          var ttsDataRaw = localStorage.getItem('step6TTSData');
+          if (ttsDataRaw) {
+            ttsData = JSON.parse(ttsDataRaw);
+          }
+          var bgmDataRaw = localStorage.getItem('step52BGMData');
+          if (bgmDataRaw) {
+            bgmData = JSON.parse(bgmDataRaw);
+          }
+        } catch (e) {
+          console.error('추가 데이터 로드 실패:', e);
+        }
+
+        var projectData = {
+          id: 'project-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+          title: titleData.selectedTitle,
+          thumbnailUrl: thumbnailData ? thumbnailData.thumbnailImageUrl : '',
+          videoUrl: videoData && videoData.videos && videoData.videos.length ? (videoData.videos[0].video_url || videoData.videos[0].videoUrl) : '',
+          completedDate: new Date().toISOString(),
+          status: 'draft', // 'draft' | 'uploaded' | 'published'
+          youtube_stats: {
+            views: null, // YouTube Data API 연동 시 업데이트
+            subscribers: null, // YouTube Data API 연동 시 업데이트
+            ctr: null, // CTR (클릭률)
+            video_id: null, // YouTube 비디오 ID (업로드 후 설정)
+            last_updated: null // 마지막 업데이트 시간
+          },
+          metadata: {
+            title: titleData.selectedTitle || '',
+            description: titleData.description || '',
+            hashtags: titleData.hashtags || []
+          },
+          // 전체 데이터 백업 (다시 열기 기능을 위해)
+          videoData: videoData,
+          titleData: titleData,
+          thumbnailData: thumbnailData,
+          blueprintData: blueprintData,
+          jsonData: jsonData, // JSON 데이터 포함 (이미지 프롬프트)
+          ttsData: ttsData, // TTS 데이터 포함
+          bgmData: bgmData, // BGM 데이터 포함
+          shortsData: shortsData // 쇼츠 변환 데이터 포함 (비트 드롭 효과 정보 포함)
+        };
+
+        if (existingIndex >= 0) {
+          // 기존 프로젝트 업데이트
+          archivedProjects[existingIndex] = projectData;
+        } else {
+          // 새 프로젝트 추가
+          archivedProjects.unshift(projectData); // 최신순으로 앞에 추가
+        }
+
+        // 최대 100개까지만 저장 (메모리 관리)
+        if (archivedProjects.length > 100) {
+          archivedProjects = archivedProjects.slice(0, 100);
+        }
+
+        localStorage.setItem('archivedProjects', JSON.stringify(archivedProjects));
+      } catch (e) {
+        console.error('보관함 저장 실패:', e);
+      }
+    }
+
+    // 미리보기 렌더링
+    function renderPreview() {
+      // 롱폼 영상 플레이어
+      if (videoData && videoData.videos && videoData.videos.length) {
+        var videoUrl = videoData.videos[0].video_url || videoData.videos[0].videoUrl;
+        if (videoUrl) {
+          var videoEl = document.getElementById('finalVideo');
+          videoEl.src = videoUrl;
+          videoEl.style.display = 'block';
+          
+          // 자막 동기화 이벤트 리스너 추가
+          videoEl.addEventListener('timeupdate', function() {
+            updateSubtitles(videoEl.currentTime);
+          });
+        }
+      }
+
+      // 쇼츠 영상 플레이어
+      if (shortsData && shortsData.shortsVideoUrl) {
+        var shortsVideoEl = document.getElementById('shortsVideo');
+        shortsVideoEl.src = shortsData.shortsVideoUrl;
+        shortsVideoEl.style.display = 'block';
+        var shortsWrapper = document.getElementById('shortsPreviewWrapper');
+        var shortsPlaceholder = shortsWrapper.querySelector('div');
+        if (shortsPlaceholder) {
+          shortsPlaceholder.style.display = 'none';
+        }
+      }
+    }
+
+    // 자막 시스템 초기화
+    function initSubtitleSystem() {
+      if (!ttsData || !jsonData) {
+        console.warn('TTS 또는 JSON 데이터가 없어 자막을 생성할 수 없습니다.');
+        return;
+      }
+
+      // 자막 데이터 생성
+      generateSubtitleData();
+      
+      // 자막 리스트 렌더링
+      renderSubtitleList();
+      
+      // 자막 컨트롤 이벤트
+      setupSubtitleControls();
+      
+      // 자막 오버레이 스타일 설정
+      updateSubtitleStyle();
+    }
+
+    // 자막 데이터 생성 (TTS 타임라인 기반)
+    function generateSubtitleData() {
+      subtitleData = [];
+      var currentTime = 0;
+      
+      if (jsonData && jsonData.scenes && ttsData && ttsData.scenes) {
+        jsonData.scenes.forEach(function(scene, idx) {
+          var script = scene.script || '';
+          var ttsScene = ttsData.scenes[idx];
+          var sceneDuration = ttsScene ? (ttsScene.duration || 30) : 30; // 기본 30초
+          
+          // 자연스러운 문장 끊기 (2줄 이내)
+          var sentences = splitIntoSentences(script);
+          
+          sentences.forEach(function(sentence) {
+            if (!sentence.trim()) return;
+            
+            // 문장 길이에 따라 시간 배분 (대략 분당 200자 기준)
+            var charCount = sentence.replace(/\s+/g, '').length;
+            var sentenceDuration = Math.max(2, charCount / 200 * 60); // 최소 2초
+            
+            subtitleData.push({
+              start: currentTime,
+              end: currentTime + sentenceDuration,
+              text: sentence.trim(),
+              sceneNum: scene.scene_num || (idx + 1)
+            });
+            
+            currentTime += sentenceDuration;
+          });
+        });
+      }
+    }
+
+    // 자연스러운 문장 끊기
+    function splitIntoSentences(text) {
+      // 마침표, 쉼표, 의미 단위로 나누기
+      var sentences = text.split(/([.!?。！？]\s*)/);
+      var result = [];
+      var currentSentence = '';
+      
+      for (var i = 0; i < sentences.length; i++) {
+        currentSentence += sentences[i];
+        
+        // 2줄 이내로 제한 (대략 50자)
+        if (currentSentence.length > 50 || 
+            (sentences[i].match(/[.!?。！？]/) && currentSentence.trim())) {
+          if (currentSentence.trim()) {
+            result.push(currentSentence.trim());
+          }
+          currentSentence = '';
+        }
+      }
+      
+      if (currentSentence.trim()) {
+        result.push(currentSentence.trim());
+      }
+      
+      return result.filter(function(s) { return s.length > 0; });
+    }
+
+    // 자막 리스트 렌더링
+    function renderSubtitleList() {
+      var container = document.getElementById('subtitleList');
+      if (!container) return;
+      
+      if (subtitleData.length === 0) {
+        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">자막 데이터가 없습니다.</div>';
+        return;
+      }
+      
+      container.innerHTML = subtitleData.map(function(subtitle, idx) {
+        var startTime = formatTime(subtitle.start);
+        var endTime = formatTime(subtitle.end);
+        
+        return (
+          '<div class="subtitle-item" data-index="' + idx + '">' +
+          '<div class="subtitle-item-time">' + startTime + '<br>' + endTime + '</div>' +
+          '<div class="subtitle-item-text">' +
+          '<input type="text" value="' + escapeHtml(subtitle.text) + '" data-index="' + idx + '" />' +
+          '</div>' +
+          '<div class="subtitle-item-actions">' +
+          '<button class="btn-subtitle-action secondary" type="button" onclick="deleteSubtitle(' + idx + ')">삭제</button>' +
+          '</div>' +
+          '</div>'
+        );
+      }).join('');
+      
+      // 입력 이벤트 리스너 추가
+      container.querySelectorAll('input').forEach(function(input) {
+        input.addEventListener('input', function() {
+          var idx = parseInt(this.getAttribute('data-index'));
+          if (subtitleData[idx]) {
+            subtitleData[idx].text = this.value;
+            updateSubtitleDisplay();
+          }
+        });
+      });
+    }
+
+    // 키워드 및 수치 강조
+    function highlightKeywordsAndNumerical(text) {
+      var result = text;
+      
+      // 수치 데이터 강조
+      result = result.replace(numericalDataRegex, function(match) {
+        return '<span class="subtitle-numerical">' + match + '</span>';
+      });
+      
+      // 필수 키워드 강조
+      requiredKeywords.forEach(function(keyword) {
+        var regex = new RegExp('(' + escapeRegex(keyword) + ')', 'gi');
+        result = result.replace(regex, function(match) {
+          return '<span class="subtitle-keyword">' + match + '</span>';
+        });
+      });
+      
+      return result;
+    }
+
+    // 자막 표시 업데이트
+    function updateSubtitleDisplay() {
+      var container = document.getElementById('subtitleContainer');
+      if (!container || !subtitleEnabled || currentSubtitleIndex < 0) {
+        if (container) container.classList.remove('active');
+        return;
+      }
+      
+      var subtitle = subtitleData[currentSubtitleIndex];
+      if (!subtitle) {
+        container.classList.remove('active');
+        return;
+      }
+      
+      var highlightedText = highlightKeywordsAndNumerical(subtitle.text);
+      container.innerHTML = highlightedText;
+      container.classList.add('active');
+      container.classList.remove('shorts', 'longform');
+      container.classList.add(videoFormat === 'shorts' ? 'shorts' : 'longform');
+    }
+
+    // 자막 동기화 (비디오 재생 시간에 맞춰)
+    function updateSubtitles(currentTime) {
+      if (!subtitleEnabled) return;
+      
+      var newIndex = -1;
+      for (var i = 0; i < subtitleData.length; i++) {
+        if (currentTime >= subtitleData[i].start && currentTime < subtitleData[i].end) {
+          newIndex = i;
+          break;
+        }
+      }
+      
+      if (newIndex !== currentSubtitleIndex) {
+        currentSubtitleIndex = newIndex;
+        updateSubtitleDisplay();
+      }
+    }
+
+    // 자막 컨트롤 설정
+    function setupSubtitleControls() {
+      var toggleBtn = document.getElementById('btnToggleSubtitles');
+      var sizeSlider = document.getElementById('subtitleSizeSlider');
+      var sizeValue = document.getElementById('subtitleSizeValue');
+      
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+          subtitleEnabled = !subtitleEnabled;
+          this.textContent = subtitleEnabled ? '자막 숨기기' : '자막 표시';
+          if (!subtitleEnabled) {
+            var container = document.getElementById('subtitleContainer');
+            if (container) container.classList.remove('active');
+          }
+        });
+      }
+      
+      if (sizeSlider && sizeValue) {
+        sizeSlider.addEventListener('input', function() {
+          var size = parseInt(this.value);
+          sizeValue.textContent = size + 'pt';
+          updateSubtitleSize(size);
+        });
+      }
+    }
+
+    // 자막 크기 업데이트
+    function updateSubtitleSize(size) {
+      var container = document.getElementById('subtitleContainer');
+      if (!container) return;
+      
+      if (videoFormat === 'shorts') {
+        container.style.fontSize = Math.max(60, size) + 'px';
+      } else {
+        container.style.fontSize = Math.max(45, Math.min(50, size)) + 'px';
+      }
+    }
+
+    // 자막 스타일 업데이트
+    function updateSubtitleStyle() {
+      var container = document.getElementById('subtitleContainer');
+      if (!container) return;
+      
+      container.classList.remove('shorts', 'longform');
+      container.classList.add(videoFormat === 'shorts' ? 'shorts' : 'longform');
+      
+      var sizeSlider = document.getElementById('subtitleSizeSlider');
+      if (sizeSlider) {
+        updateSubtitleSize(parseInt(sizeSlider.value || 48));
+      }
+    }
+
+    // 자막 삭제
+    function deleteSubtitle(index) {
+      if (confirm('이 자막을 삭제하시겠습니까?')) {
+        subtitleData.splice(index, 1);
+        renderSubtitleList();
+        updateSubtitleDisplay();
+      }
+    }
+
+    // 시간 포맷팅 (초 -> MM:SS)
+    function formatTime(seconds) {
+      var mins = Math.floor(seconds / 60);
+      var secs = Math.floor(seconds % 60);
+      return (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+    }
+
+    // HTML 이스케이프
+    function escapeHtml(text) {
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 정규식 이스케이프
+    function escapeRegex(text) {
+      return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    
+    // BGM 핫스팟 타임라인 렌더링
+    function renderBGMTimeline() {
+      if (!bgmData || !bgmData.bgm_hotspot) return;
+      
+      var timeline = document.getElementById('bgmTimeline');
+      var marker = document.getElementById('bgmHotspotMarker');
+      var bar = document.getElementById('bgmTimelineBar');
+      
+      if (!timeline || !marker || !bar) return;
+      
+      var hotspotTime = bgmData.bgm_hotspot;
+      var totalDuration = bgmData.total_duration || 60; // 기본 60초
+      var hotspotPercent = (hotspotTime / totalDuration) * 100;
+      
+      marker.style.left = hotspotPercent + '%';
+      marker.style.display = 'block';
+      
+      // 비디오 재생 시 타임라인 업데이트
+      var videoEl = document.getElementById('finalVideo');
+      if (videoEl) {
+        videoEl.addEventListener('timeupdate', function() {
+          if (videoEl.duration) {
+            var currentPercent = (videoEl.currentTime / videoEl.duration) * 100;
+            bar.style.width = currentPercent + '%';
+          }
+        });
+      }
+    }
+    
+    // 썸네일 A/B 매칭 확인
+    function checkThumbnailAB() {
+      var indicator = document.getElementById('thumbnailABIndicator');
+      if (!indicator) return;
+      
+      // A/B 테스트 데이터 확인
+      var abTestData = null;
+      try {
+        var abTestRaw = localStorage.getItem('abTestData');
+        if (abTestRaw) {
+          abTestData = JSON.parse(abTestRaw);
+        }
+      } catch (e) {
+        console.error('A/B 테스트 데이터 로드 실패:', e);
+      }
+      
+      if (abTestData && abTestData.thumbnailA && abTestData.thumbnailB) {
+        indicator.style.display = 'inline-flex';
+        indicator.classList.remove('missing');
+      } else {
+        indicator.style.display = 'inline-flex';
+        indicator.classList.add('missing');
+        indicator.innerHTML = '⚠️ A/B 썸네일 미매칭';
+      }
+    }
+    
+    // 지능형 씬 카드 에디터 렌더링
+    function renderSceneEditors() {
+      var container = document.getElementById('sceneEditorList');
+      if (!container || !jsonData || !jsonData.scenes) {
+        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">씬 데이터가 없습니다.</div>';
+        return;
+      }
+      
+      container.innerHTML = jsonData.scenes.map(function(scene, idx) {
+        var scriptText = scene.script || '';
+        var highlightedScript = highlightNumericalData(scriptText);
+        var imagePrompt = scene.image_prompt || '';
+        var visualDesc = scene.visual_description || '';
+        var ttsUrl = '';
+        var audioDuration = 0;
+        
+        // TTS 데이터 매칭
+        if (ttsData && ttsData.audios && ttsData.audios[idx]) {
+          ttsUrl = ttsData.audios[idx].audio_url || ttsData.audios[idx].audioUrl || '';
+          audioDuration = ttsData.audios[idx].duration || 0;
+        }
+        
+        return (
+          '<div class="scene-editor-card content-card">' +
+          '<div class="scene-card-header" onclick="toggleSceneCard(' + idx + ')">' +
+          '<span class="scene-card-title">씬 ' + scene.scene_num + '</span>' +
+          '<span class="scene-card-toggle" id="sceneToggle' + idx + '">▼ 펼치기</span>' +
+          '</div>' +
+          '<div class="scene-card-body" id="sceneBody' + idx + '">' +
+          '<div class="field-label" style="margin-bottom: 8px;">대본 (수치 보호됨)</div>' +
+          '<div class="scene-script-editor-wrapper">' +
+          '<div class="scene-script-display" id="sceneScriptDisplay' + idx + '">' + 
+          highlightNumericalDataHTML(scriptText) + 
+          '</div>' +
+          '<textarea class="scene-script-editor" id="sceneScript' + idx + '" data-scene-num="' + scene.scene_num + '" style="display: none;">' + 
+          escapeHtml(scriptText) + 
+          '</textarea>' +
+          '<div class="numerical-warning" id="numericalWarning' + idx + '">⚠️ 수치 데이터가 수정되었습니다.</div>' +
+          '<button type="button" style="padding: 4px 8px; font-size: 11px; background: #e2e8f0; border: none; border-radius: 4px; cursor: pointer; margin-top: 4px;" onclick="toggleScriptEdit(' + idx + ')">편집 모드</button>' +
+          '</div>' +
+          '<div class="optimization-toggle" onclick="toggleOptimization(' + idx + ')">' +
+          '<span style="font-size: 12px; font-weight: 600; color: #0369a1;">[AI 최적화 묘사]</span>' +
+          '<span id="optToggle' + idx + '">▼</span>' +
+          '</div>' +
+          '<div class="optimization-content" id="optContent' + idx + '">' +
+          '<div style="font-size: 11px; color: #666; margin-bottom: 6px;">Subject, Action, Setting 자동 추출 결과:</div>' +
+          '<textarea class="optimization-prompt-textarea" id="optPrompt' + idx + '" data-scene-num="' + scene.scene_num + '">' + 
+          escapeHtml(imagePrompt) + 
+          '</textarea>' +
+          '<div style="font-size: 11px; color: #666; margin-top: 6px; margin-bottom: 6px;">시각적 묘사:</div>' +
+          '<textarea class="optimization-prompt-textarea" id="optVisual' + idx + '" data-scene-num="' + scene.scene_num + '" style="min-height: 60px;">' + 
+          escapeHtml(visualDesc) + 
+          '</textarea>' +
+          '</div>' +
+          (ttsUrl ? (
+            '<div class="audio-waveform" id="waveform' + idx + '">' +
+            '<canvas class="waveform-canvas" id="waveformCanvas' + idx + '"></canvas>' +
+            '</div>'
+          ) : '<div style="font-size: 11px; color: #999; margin-top: 8px;">TTS 데이터 없음</div>') +
+          '<button class="btn-regenerate-scene" onclick="regenerateSceneImage(' + idx + ')">이미지 재제작</button>' +
+          '</div>' +
+          '</div>'
+        );
+      }).join('');
+      
+      // 수치 하이라이트 적용 및 이벤트 리스너
+      jsonData.scenes.forEach(function(scene, idx) {
+        var scriptEditor = document.getElementById('sceneScript' + idx);
+        if (scriptEditor) {
+          scriptEditor.addEventListener('input', function() {
+            var warning = document.getElementById('numericalWarning' + idx);
+            if (warning) {
+              warning.classList.add('show');
+            }
+            // 실시간 검사는 하지 않고, 저장 시에만 검사
+          });
+        }
+      });
+      
+      // 오디오 파형 렌더링
+      if (ttsData && ttsData.audios) {
+        ttsData.audios.forEach(function(audio, idx) {
+          if (audio.audio_url || audio.audioUrl) {
+            renderAudioWaveform(idx, audio.audio_url || audio.audioUrl);
+          }
+        });
+      }
+    }
+    
+    // 수치 데이터 하이라이트 (HTML)
+    function highlightNumericalDataHTML(text) {
+      if (!text) return '';
+      var html = escapeHtml(text);
+      return html.replace(NUMERICAL_PATTERN, function(match) {
+        return '<span class="numerical-highlight">' + escapeHtml(match) + '</span>';
+      });
+    }
+    
+    // 수치 데이터 하이라이트 (텍스트)
+    function highlightNumericalData(text) {
+      if (!text) return '';
+      return text.replace(NUMERICAL_PATTERN, function(match) {
+        return '[' + match + ']';
+      });
+    }
+    
+    // 대본 편집 모드 토글
+    function toggleScriptEdit(idx) {
+      var display = document.getElementById('sceneScriptDisplay' + idx);
+      var editor = document.getElementById('sceneScript' + idx);
+      var btn = event.target;
+      
+      if (display && editor) {
+        if (display.style.display !== 'none') {
+          // 편집 모드로 전환
+          display.style.display = 'none';
+          editor.style.display = 'block';
+          btn.textContent = '보기 모드';
+          editor.focus();
+        } else {
+          // 보기 모드로 전환
+          var newText = editor.value;
+          display.innerHTML = highlightNumericalDataHTML(newText);
+          display.style.display = 'block';
+          editor.style.display = 'none';
+          btn.textContent = '편집 모드';
+          
+          // 수치 무결성 검사
+          checkNumericalIntegrity(editor, parseInt(editor.getAttribute('data-scene-num')));
+        }
+      }
+    }
+    
+    // 수치 무결성 검사
+    function checkNumericalIntegrity(textarea, sceneNum) {
+      var newText = textarea.value;
+      var originalText = '';
+      
+      // 원본 대본 찾기
+      if (jsonData && jsonData.scenes) {
+        var scene = jsonData.scenes.find(function(s) {
+          return s.scene_num === sceneNum;
+        });
+        if (scene) {
+          originalText = scene.script || '';
+        }
+      }
+      
+      if (!originalText) return true; // 원본이 없으면 검사 불가
+      
+      // 원본 수치 추출
+      var originalNumerics = [];
+      var match;
+      NUMERICAL_PATTERN.lastIndex = 0;
+      while ((match = NUMERICAL_PATTERN.exec(originalText)) !== null) {
+        originalNumerics.push(match[0]);
+      }
+      
+      if (originalNumerics.length === 0) return true; // 수치가 없으면 검사 불필요
+      
+      // 새 텍스트 수치 추출
+      NUMERICAL_PATTERN.lastIndex = 0;
+      var newNumerics = [];
+      while ((match = NUMERICAL_PATTERN.exec(newText)) !== null) {
+        newNumerics.push(match[0]);
+      }
+      
+      // 누락된 수치 확인
+      var missing = originalNumerics.filter(function(n) {
+        return !newNumerics.some(function(m) {
+          return m === n || m.includes(n.split(/\s/)[0]);
+        });
+      });
+      
+      if (missing.length > 0) {
+        var message = '⚠️ 전문가가 제안한 핵심 수치(' + missing.join(', ') + ')가 누락되었습니다. 수정을 진행하시겠습니까?';
+        if (!confirm(message)) {
+          // 원본으로 복원
+          textarea.value = originalText;
+          var display = document.getElementById('sceneScriptDisplay' + (sceneNum - 1));
+          if (display) {
+            display.innerHTML = highlightNumericalDataHTML(originalText);
+          }
+          return false;
+        }
+      }
+      
+      return true;
+    }
+    
+    // 씬 카드 토글
+    function toggleSceneCard(idx) {
+      var body = document.getElementById('sceneBody' + idx);
+      var toggle = document.getElementById('sceneToggle' + idx);
+      if (body && toggle) {
+        body.classList.toggle('expanded');
+        toggle.textContent = body.classList.contains('expanded') ? '▲ 접기' : '▼ 펼치기';
+      }
+    }
+    
+    // 최적화 프롬프트 토글
+    function toggleOptimization(idx) {
+      var content = document.getElementById('optContent' + idx);
+      var toggle = document.getElementById('optToggle' + idx);
+      if (content && toggle) {
+        content.classList.toggle('expanded');
+        toggle.textContent = content.classList.contains('expanded') ? '▲' : '▼';
+      }
+    }
+    
+    // 씬 이미지 재생성
+    function regenerateSceneImage(idx) {
+      if (!jsonData || !jsonData.scenes || !jsonData.scenes[idx]) {
+        alert('씬 데이터를 찾을 수 없습니다.');
+        return;
+      }
+      
+      var scene = jsonData.scenes[idx];
+      var prompt = document.getElementById('optPrompt' + idx);
+      var imagePrompt = prompt ? prompt.value : scene.image_prompt;
+      
+      if (!imagePrompt) {
+        alert('이미지 프롬프트가 없습니다.');
+        return;
+      }
+      
+      if (!confirm('씬 ' + scene.scene_num + '의 이미지를 재생성하시겠습니까?')) {
+        return;
+      }
+      
+      // API 호출
+      fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: imagePrompt,
+          engine: 'nano_basic',
+          scene_num: scene.scene_num
+        })
+      })
+      .then(function(response) {
+        return response.json();
+      })
+      .then(function(data) {
+        if (data.image_url) {
+          // 씬 데이터 업데이트
+          scene.image_url = data.image_url;
+          localStorage.setItem('step42JsonData', JSON.stringify(jsonData));
+          alert('이미지가 재생성되었습니다.');
+          // 페이지 새로고침 또는 이미지 업데이트
+        } else {
+          alert('이미지 생성에 실패했습니다.');
+        }
+      })
+      .catch(function(error) {
+        console.error('이미지 재생성 실패:', error);
+        alert('이미지 재생성에 실패했습니다.');
+      });
+    }
+    
+    // 오디오 파형 렌더링
+    function renderAudioWaveform(idx, audioUrl) {
+      var canvas = document.getElementById('waveformCanvas' + idx);
+      if (!canvas || !audioUrl) return;
+      
+      var ctx = canvas.getContext('2d');
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      
+      // 간단한 파형 시뮬레이션 (실제로는 Web Audio API 사용)
+      ctx.fillStyle = '#9333ea';
+      var barWidth = 2;
+      var barGap = 1;
+      var maxHeight = canvas.height;
+      
+      for (var i = 0; i < canvas.width; i += barWidth + barGap) {
+        var barHeight = Math.random() * maxHeight * 0.3 + maxHeight * 0.2;
+        ctx.fillRect(i, (maxHeight - barHeight) / 2, barWidth, barHeight);
+      }
+    }
+    
+    // HTML 이스케이프
+    function escapeHtml(text) {
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 메타데이터 렌더링
+    function renderMetadata() {
+      if (titleData) {
+        if (titleData.selectedTitle) {
+          document.getElementById('titleTextarea').value = titleData.selectedTitle;
+        }
+        if (titleData.description) {
+          document.getElementById('descriptionTextarea').value = titleData.description;
+        }
+        if (titleData.hashtags && titleData.hashtags.length) {
+          document.getElementById('hashtagsTextarea').value = titleData.hashtags.join(' ');
+        }
+      }
+    }
+
+    // AI 제작 분석 리포트 생성
+    function generateAiReport() {
+      var reportContent = '';
+      var target = '';
+      var tone = '';
+
+      if (blueprintData) {
+        target = blueprintData.target || '';
+        tone = blueprintData.hook || '';
+      }
+
+      // 타겟 시청자 분석
+      var targetAnalysis = '';
+      if (target) {
+        if (target.includes('5070') || target.includes('50대') || target.includes('60대') || target.includes('시니어')) {
+          targetAnalysis = '5070 시청자';
+        } else if (target.includes('2030') || target.includes('20대') || target.includes('30대') || target.includes('밀레니얼')) {
+          targetAnalysis = '2030 시청자';
+        } else {
+          targetAnalysis = '시청자';
+        }
+      } else {
+        targetAnalysis = '시청자';
+      }
+
+      // 톤 분석
+      var toneAnalysis = '';
+      if (tone) {
+        if (tone.includes('전문') || tone.includes('전문가') || tone.includes('시니어')) {
+          toneAnalysis = '전문적인 톤';
+        } else if (tone.includes('친근') || tone.includes('편안')) {
+          toneAnalysis = '친근한 톤';
+        } else if (tone.includes('유머') || tone.includes('재미')) {
+          toneAnalysis = '유머러스한 톤';
+        } else {
+          toneAnalysis = '균형잡힌 톤';
+        }
+      } else {
+        toneAnalysis = '전문적인 톤';
+      }
+
+      // 주제 분석
+      var topicAnalysis = '';
+      if (titleData && titleData.selectedTitle) {
+        var title = titleData.selectedTitle.toLowerCase();
+        if (title.includes('건강') || title.includes('의료') || title.includes('질병')) {
+          topicAnalysis = '건강 관심';
+        } else if (title.includes('투자') || title.includes('재테크') || title.includes('자산')) {
+          topicAnalysis = '재테크 관심';
+        } else if (title.includes('기술') || title.includes('테크') || title.includes('AI')) {
+          topicAnalysis = '기술 관심';
+        } else {
+          topicAnalysis = '관심';
+        }
+      } else {
+        topicAnalysis = '관심';
+      }
+
+      reportContent = '이 영상은 ' + targetAnalysis + '의 ' + topicAnalysis + '을 끌 수 있도록 ' + toneAnalysis + '으로 제작되었습니다.';
+
+      document.getElementById('aiReportContent').textContent = reportContent;
+    }
+
+    // 클립보드 복사
+    function copyToClipboard(textareaId) {
+      var textarea = document.getElementById(textareaId);
+      if (!textarea) return;
+
+      var text = textarea.value.trim();
+      if (!text) {
+        alert('복사할 내용이 없습니다.');
+        return;
+      }
+
+      navigator.clipboard
+        .writeText(text)
+        .then(function() {
+          alert('클립보드에 복사되었습니다.');
+        })
+        .catch(function(err) {
+          console.error('복사 실패:', err);
+          textarea.select();
+          document.execCommand('copy');
+          alert('클립보드에 복사되었습니다.');
+        });
+    }
+
+    // 영상 다운로드
+    (function() {
+      var btnVideo = document.getElementById('btnDownloadVideo');
+      if (btnVideo) {
+        btnVideo.addEventListener('click', function() {
+          if (!videoData || !videoData.videos || !videoData.videos.length) {
+            alert('다운로드할 영상이 없습니다.');
+            return;
+          }
+
+          var videoUrl = videoData.videos[0].video_url || videoData.videos[0].videoUrl;
+          if (videoUrl) {
+            var link = document.createElement('a');
+            link.href = videoUrl;
+            link.download = 'video-' + Date.now() + '.mp4';
+            link.click();
+          } else {
+            alert('영상 URL을 찾을 수 없습니다.');
+          }
+        });
+      }
+    })();
+
+    // 썸네일 다운로드
+    (function() {
+      var btnThumbnail = document.getElementById('btnDownloadThumbnail');
+      if (btnThumbnail) {
+        btnThumbnail.addEventListener('click', function() {
+          if (!thumbnailData || !thumbnailData.thumbnailImageUrl) {
+            alert('다운로드할 썸네일이 없습니다.');
+            return;
+          }
+
+          var imgUrl = thumbnailData.thumbnailImageUrl;
+          var link = document.createElement('a');
+          link.href = imgUrl;
+          link.download = 'thumbnail-' + Date.now() + '.jpg';
+          link.click();
+        });
+      }
+    })();
+
+    // 모든 파일 패키지 다운로드
+    (function() {
+      var btnAll = document.getElementById('btnDownloadAll');
+      if (btnAll) {
+        btnAll.addEventListener('click', function() {
+          downloadAllFiles();
+        });
+      }
+    })();
+
+    // 모든 파일 ZIP으로 다운로드
+    async function downloadAllFiles() {
+      try {
+        var files = [];
+        var title = document.getElementById('titleTextarea').value.trim() || 'video';
+        var description = document.getElementById('descriptionTextarea').value.trim() || '';
+        var hashtags = document.getElementById('hashtagsTextarea').value.trim() || '';
+
+        // 영상 파일
+        if (videoData && videoData.videos && videoData.videos.length) {
+          var videoUrl = videoData.videos[0].video_url || videoData.videos[0].videoUrl;
+          if (videoUrl) {
+            files.push({ url: videoUrl, name: 'video.mp4' });
+          }
+        }
+
+        // 썸네일 파일
+        if (thumbnailData && thumbnailData.thumbnailImageUrl) {
+          files.push({ url: thumbnailData.thumbnailImageUrl, name: 'thumbnail.jpg' });
+        }
+
+        // 메타데이터 파일 (텍스트)
+        var metadataText = '제목:\n' + title + '\n\n설명:\n' + description + '\n\n해시태그:\n' + hashtags;
+        var metadataBlob = new Blob([metadataText], { type: 'text/plain' });
+        files.push({ blob: metadataBlob, name: 'metadata.txt' });
+
+        // ZIP 파일 생성 (JSZip 라이브러리 필요하지만, 간단한 방법으로 대체)
+        if (files.length === 0) {
+          alert('다운로드할 파일이 없습니다.');
+          return;
+        }
+
+        // 서버 API를 통해 ZIP 생성 (또는 클라이언트에서 JSZip 사용)
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/create-package', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            files: files.map(function(f) {
+              return f.url ? { url: f.url, name: f.name } : null;
+            }).filter(function(f) {
+              return f !== null;
+            }),
+            metadata: {
+              title: title,
+              description: description,
+              hashtags: hashtags
+            }
+          })
+        });
+
+        if (response.ok) {
+          var blob = await response.blob();
+          var link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = 'video-package-' + Date.now() + '.zip';
+          link.click();
+        } else {
+          throw new Error('패키지 생성 실패');
+        }
+      } catch (e) {
+        console.error('패키지 다운로드 실패:', e);
+        alert('패키지 다운로드에 실패했습니다. 개별 파일을 다운로드해 주세요.');
+      }
+    }
+
+    // 쇼츠 변환 페이지로 이동
+    (function() {
+      var btnShorts = document.getElementById('btnGoToShorts');
+      if (btnShorts) {
+        btnShorts.addEventListener('click', function() {
+          window.location.href = 'step-11.html';
+        });
+      }
+    })();
+
+    // 새로운 주제로 시작하기
+    (function() {
+      var btnNew = document.getElementById('btnStartNew');
+      if (btnNew) {
+        btnNew.addEventListener('click', function() {
+          if (!confirm('정말 새로운 주제로 시작하시겠습니까? 현재 작업 데이터가 모두 초기화됩니다.')) {
+            return;
+          }
+
+          // 전역 상태 초기화
+          localStorage.removeItem('globalState');
+          localStorage.removeItem('step2Payload');
+          localStorage.removeItem('step3Blueprint');
+          localStorage.removeItem('step4JsonPayload');
+          localStorage.removeItem('step42JsonData');
+          localStorage.removeItem('step5ImageData');
+          localStorage.removeItem('step6TTSData');
+          localStorage.removeItem('step52BGMData');
+          localStorage.removeItem('step7VideoData');
+          localStorage.removeItem('step8TitleData');
+          localStorage.removeItem('step9ThumbnailData');
+          localStorage.removeItem('step11ShortsData');
+          localStorage.removeItem('chosenAiTopic');
+          localStorage.removeItem('expertSummary');
+          localStorage.removeItem('aiTopics');
+
+          // 1. 주제 추천 페이지로 이동
+          window.location.href = 'ai-automation-project.html';
+        });
+      }
+    })();
+    
+    // 채널 매니저로 퀵 패스
+    (function() {
+      var btnQuickPass = document.getElementById('btnQuickPass');
+      if (btnQuickPass) {
+        btnQuickPass.addEventListener('click', function() {
+          // 모든 데이터를 채널 매니저로 전달
+          var finalData = {
+            videoData: videoData,
+            titleData: titleData,
+            thumbnailData: thumbnailData,
+            blueprintData: blueprintData,
+            jsonData: jsonData,
+            ttsData: ttsData,
+            bgmData: bgmData,
+            shortsData: shortsData,
+            metadata: {
+              title: document.getElementById('titleTextarea').value.trim(),
+              description: document.getElementById('descriptionTextarea').value.trim(),
+              hashtags: document.getElementById('hashtagsTextarea').value.trim().split(/\s+/).filter(function(t) { return t; })
+            }
+          };
+          
+          localStorage.setItem('channelManagerData', JSON.stringify(finalData));
+          window.location.href = 'step-12.html';
+        });
+      }
+    })();
+
+    // 로그온 시스템
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 입력하세요.');
+        return;
+      }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) {
+        return u.id === id && u.password === pw;
+      });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) {
+          logout();
+          alert('로그아웃되었습니다.');
+        }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+    checkLoginStatus();
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+  </script>
+</body>
+</html>

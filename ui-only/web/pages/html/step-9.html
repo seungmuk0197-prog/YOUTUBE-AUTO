@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>8. 썸네일 생성기</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { flex: 1; }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    .content-card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .field-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    /* Rendering progress */
+    .render-progress-card {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+    }
+    .render-progress-bar {
+      width: 100%;
+      height: 14px;
+      background: #e2e8f0;
+      border-radius: 7px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .render-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #38bdf8 0%, #6366f1 100%);
+      transition: width 0.4s ease;
+    }
+    .render-progress-text {
+      font-size: 12px;
+      color: #0f172a;
+      margin-top: 6px;
+    }
+    .render-progress-text strong {
+      font-weight: 700;
+    }
+
+    /* Sidebar widget */
+    .progress-widget {
+      border: 1px solid #e2e8f0;
+    }
+    .progress-widget-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 8px;
+    }
+    .progress-widget-status {
+      font-size: 12px;
+      color: #64748b;
+    }
+    .progress-widget-bar {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .progress-widget-fill {
+      height: 100%;
+      width: 0%;
+      background: #38bdf8;
+      transition: width 0.4s ease;
+    }
+
+    /* Title Recap */
+    .title-recap-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #2d3748;
+      box-sizing: border-box;
+    }
+
+    /* Image Source Selection */
+    .image-source-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .image-source-item {
+      position: relative;
+      aspect-ratio: 16/9;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .image-source-item:hover {
+      border-color: #805ad5;
+      transform: scale(1.02);
+    }
+    .image-source-item.selected {
+      border-color: #805ad5;
+      box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.2);
+    }
+    .image-source-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .image-source-item .source-label {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      font-size: 11px;
+      padding: 4px;
+      text-align: center;
+    }
+    .btn-generate-new {
+      padding: 8px 16px;
+      background: #805ad5;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    .btn-generate-new:hover { background: #6b46c1; }
+
+    /* Thumbnail Preview Canvas */
+    .preview-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px 0;
+      padding: 20px;
+      background: #f7fafc;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .preview-canvas-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 800px;
+      aspect-ratio: 16/9;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    #previewCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* AI Layout Button */
+    .btn-ai-layout {
+      padding: 10px 16px;
+      background: #805ad5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+    .btn-ai-layout:hover { background: #6b46c1; }
+
+    /* Custom Settings */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .setting-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .setting-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    .setting-select {
+      padding: 8px 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 13px;
+      background: #fff;
+      cursor: pointer;
+    }
+    .switch-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: #cbd5e0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .switch.active {
+      background: #805ad5;
+    }
+    .switch-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .switch.active .switch-thumb {
+      transform: translateX(20px);
+    }
+    .switch-label {
+      font-size: 12px;
+      color: #4a5568;
+    }
+
+    .btn-primary {
+      padding: 10px 16px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #c62828; }
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      padding: 10px 16px;
+      background: #4a5568;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+    .btn-secondary:hover { background: #2d3748; }
+
+    /* A/B 테스트 프리뷰 */
+    .ab-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-top: 20px;
+    }
+    .ab-preview-item {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .ab-preview-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      text-align: center;
+      padding: 8px;
+      background: #f7fafc;
+      border-radius: 8px;
+    }
+    .ab-preview-canvas-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    .ab-preview-canvas-wrapper canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .ab-preview-text-editor {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ab-text-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .ab-text-input:focus {
+      outline: none;
+      border-color: #805ad5;
+      box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1);
+    }
+    .btn-regenerate-image {
+      padding: 8px 16px;
+      background: #4a5568;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-regenerate-image:hover {
+      background: #2d3748;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item active">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-card progress-widget" id="renderingWidget" style="display: none;">
+        <div class="progress-widget-title">진행 중인 작업</div>
+        <div class="progress-widget-status" id="renderingWidgetStatus">대기 중</div>
+        <div class="progress-widget-bar">
+          <div class="progress-widget-fill" id="renderingWidgetFill"></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>8. 썸네일 생성기</h1>
+          <p class="subtitle">유튜브 최적화 썸네일을 생성합니다</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 렌더링 진행 상황 -->
+      <div class="content-card render-progress-card" id="renderProgressCard" style="display: none;">
+        <div class="field-label">렌더링 진행 상황</div>
+        <p class="section-desc">전체 씬 개수 대비 현재 렌더링된 씬 수를 기준으로 진행률을 표시합니다.</p>
+        <div class="render-progress-bar">
+          <div class="render-progress-fill" id="renderProgressFill"></div>
+        </div>
+        <div class="render-progress-text" id="renderProgressText">렌더링 대기 중</div>
+      </div>
+
+      <!-- AI 썸네일 자동 생성 -->
+      <div class="content-card">
+        <div class="field-label">AI 썸네일 자동 생성</div>
+        <p class="section-desc">Step 1의 키워드와 Step 3의 대본 분위기를 기반으로 썸네일을 자동 생성합니다.</p>
+        <button class="btn-primary" type="button" id="btnAutoGenerateThumbnail" style="width: 100%; margin-top: 12px;">
+          🎨 AI 썸네일 자동 생성하기 (A/B 테스트용 2개)
+        </button>
+      </div>
+
+      <!-- A/B 테스트 프리뷰 -->
+      <div class="content-card">
+        <div class="field-label">A/B 테스트 썸네일 프리뷰</div>
+        <p class="section-desc">옵션 A (감성형)와 옵션 B (정보형) 두 가지 버전을 비교할 수 있습니다.</p>
+        
+        <div class="ab-preview-grid" id="abPreviewGrid">
+          <!-- 옵션 A -->
+          <div class="ab-preview-item">
+            <div class="ab-preview-label">옵션 A (감성형)</div>
+            <div class="ab-preview-canvas-wrapper">
+              <canvas id="previewCanvasA"></canvas>
+            </div>
+            <div class="ab-preview-text-editor">
+              <input type="text" class="ab-text-input" id="hookTextA" placeholder="미끼 문구를 입력하세요..." />
+              <button class="btn-regenerate-image" type="button" onclick="regenerateImage('A')">이미지 재생성</button>
+            </div>
+          </div>
+          
+          <!-- 옵션 B -->
+          <div class="ab-preview-item">
+            <div class="ab-preview-label">옵션 B (정보형)</div>
+            <div class="ab-preview-canvas-wrapper">
+              <canvas id="previewCanvasB"></canvas>
+            </div>
+            <div class="ab-preview-text-editor">
+              <input type="text" class="ab-text-input" id="hookTextB" placeholder="미끼 문구를 입력하세요..." />
+              <button class="btn-regenerate-image" type="button" onclick="regenerateImage('B')">이미지 재생성</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 제목 리캡 (기존 유지, 숨김 처리) -->
+      <div class="content-card" style="display: none;">
+        <div class="field-label">썸네일용 제목</div>
+        <p class="section-desc">7단계에서 확정된 제목을 썸네일용으로 짧게 수정할 수 있습니다.</p>
+        <input type="text" class="title-recap-input" id="thumbnailTitle" placeholder="썸네일용 제목을 입력하세요..." />
+      </div>
+
+      <!-- 이미지 소스 선택 (기존 유지, 숨김 처리) -->
+      <div class="content-card" style="display: none;">
+        <div class="field-label">이미지 소스 선택</div>
+        <p class="section-desc">4-2단계에서 생성된 이미지 중 하나를 선택하거나, 새로운 썸네일 전용 이미지를 생성할 수 있습니다.</p>
+        <div class="image-source-grid" id="imageSourceGrid">
+          <!-- 동적으로 채워집니다 -->
+        </div>
+        <button class="btn-generate-new" type="button" id="btnGenerateNewImage">새 썸네일 이미지 생성하기</button>
+      </div>
+
+      <!-- 텍스트 레이아웃 및 스타일 설정 -->
+      <div class="content-card">
+        <div class="field-label">텍스트 레이아웃 및 스타일 설정</div>
+        <p class="section-desc">AI가 제목의 중요도에 따라 텍스트의 크기, 위치, 강조색을 자동으로 배치합니다.</p>
+        
+        <button class="btn-ai-layout" type="button" id="btnAiLayout">AI 썸네일 구도 추천</button>
+
+        <!-- 실시간 미리보기 -->
+        <div class="preview-container">
+          <div class="preview-canvas-wrapper">
+            <canvas id="previewCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- 커스텀 설정 -->
+        <div class="settings-grid">
+          <div class="setting-item">
+            <div class="setting-label">폰트 스타일</div>
+            <select class="setting-select" id="fontStyle">
+              <option value="bold">굵은 글씨 (Bold) - 기본</option>
+              <option value="extra-bold">초굵은 글씨 (Extra Bold)</option>
+              <option value="black">블랙 (Black)</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">글자 테두리 (Stroke)</div>
+            <div class="switch-row">
+              <div class="switch" id="strokeSwitch" onclick="toggleSwitch(this)">
+                <div class="switch-thumb"></div>
+              </div>
+              <span class="switch-label">활성화</span>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">그림자 (Shadow)</div>
+            <div class="switch-row">
+              <div class="switch active" id="shadowSwitch" onclick="toggleSwitch(this)">
+                <div class="switch-thumb"></div>
+              </div>
+              <span class="switch-label">활성화</span>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="setting-label">배경 박스</div>
+            <div class="switch-row">
+              <div class="switch" id="backgroundBoxSwitch" onclick="toggleSwitch(this)">
+                <div class="switch-thumb"></div>
+              </div>
+              <span class="switch-label">활성화</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 생성 및 다운로드 -->
+      <div class="content-card">
+        <button class="btn-primary" type="button" id="btnGenerateThumbnail" style="display: none;">AI 썸네일 완성하기</button>
+        <button class="btn-secondary" type="button" id="btnDownload" style="display: none;">다운로드</button>
+      </div>
+
+      <!-- 확정 및 다음 단계 -->
+      <div style="margin-top: 24px; display: flex; gap: 12px;">
+        <button class="btn-primary" type="button" id="btnConfirmThumbnails" style="flex: 1; display: none;">
+          ✅ 이대로 확정 및 다음 단계
+        </button>
+        <button class="btn-secondary" type="button" id="btnGoToStep9" style="flex: 1;">9. 최종 제작 단계로 이동</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    var thumbnailTitle = '';
+    var selectedImageUrl = '';
+    var imageSources = [];
+    var canvas = null;
+    var ctx = null;
+    var thumbnailImage = null;
+    var textLayout = {
+      fontSize: 48,
+      x: 40,
+      y: 100,
+      color: '#ffffff',
+      strokeColor: '#000000',
+      strokeWidth: 3,
+      shadowBlur: 8,
+      shadowColor: 'rgba(0,0,0,0.5)',
+      hasBackgroundBox: false,
+      backgroundBoxColor: 'rgba(0,0,0,0.6)'
+    };
+
+    // 렌더링 진행률 모니터링
+    function getActiveProjectId() {
+      var projectId = localStorage.getItem('project_id')
+        || localStorage.getItem('currentProjectId')
+        || localStorage.getItem('projectId');
+      if (!projectId) {
+        try {
+          var globalStateRaw = localStorage.getItem('globalState');
+          if (globalStateRaw) {
+            var globalState = JSON.parse(globalStateRaw);
+            projectId = globalState.project_id || globalState.projectId;
+          }
+        } catch (e) {}
+      }
+      return projectId;
+    }
+
+    function updateRenderProgressUI(state) {
+      var renderCard = document.getElementById('renderProgressCard');
+      var renderFill = document.getElementById('renderProgressFill');
+      var renderText = document.getElementById('renderProgressText');
+      var widget = document.getElementById('renderingWidget');
+      var widgetFill = document.getElementById('renderingWidgetFill');
+      var widgetStatus = document.getElementById('renderingWidgetStatus');
+
+      if (!renderCard || !renderFill || !renderText) return;
+
+      if (!state || !state.show) {
+        renderCard.style.display = 'none';
+        if (widget) widget.style.display = 'none';
+        return;
+      }
+
+      renderCard.style.display = 'block';
+      if (widget) widget.style.display = 'block';
+
+      renderFill.style.width = state.percent + '%';
+      renderText.innerHTML = '렌더링 중... <strong>' + state.completed + '/' + state.total + ' 씬</strong> 완료 (' + state.percent + '%)';
+
+      if (widgetFill) widgetFill.style.width = state.percent + '%';
+      if (widgetStatus) widgetStatus.textContent = '렌더링 중... ' + state.completed + '/' + state.total + ' 씬';
+    }
+
+    async function pollRenderStatus() {
+      var projectId = getActiveProjectId();
+      if (!projectId) return;
+
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/auto-workflow/status/' + projectId);
+        if (!response.ok) return;
+        var status = await response.json();
+
+        var resultData = status.result_data || {};
+        var step8 = resultData.step8 || {};
+        var totalScenes = step8.render_total_scenes
+          || (resultData.step4 && resultData.step4.scenes ? resultData.step4.scenes.length : 0)
+          || (resultData.step5 && resultData.step5.length ? resultData.step5.length : 0);
+
+        if (status.status === 'processing' && status.current_step === 8 && totalScenes > 0) {
+          var start = step8.render_started_at ? new Date(step8.render_started_at).getTime() : null;
+          var end = step8.estimated_completion ? new Date(step8.estimated_completion).getTime() : null;
+          var now = Date.now();
+          var percent = 0;
+          if (start && end && end > start) {
+            percent = Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)));
+          } else if (status.progress) {
+            percent = Math.min(100, Math.max(0, status.progress));
+          }
+          var completed = Math.min(totalScenes, Math.round((percent / 100) * totalScenes));
+          updateRenderProgressUI({
+            show: true,
+            percent: percent,
+            completed: completed,
+            total: totalScenes
+          });
+        } else if (status.status === 'completed') {
+          updateRenderProgressUI({
+            show: true,
+            percent: 100,
+            completed: totalScenes || 0,
+            total: totalScenes || 0
+          });
+
+          // 완료 알림
+          var notifiedKey = 'rendering_notified_' + projectId;
+          if (!localStorage.getItem(notifiedKey)) {
+            localStorage.setItem(notifiedKey, 'true');
+            if ('Notification' in window) {
+              if (Notification.permission === 'granted') {
+                new Notification('HANRA STUDIO', {
+                  body: '40분 영상 제작이 완료되었습니다! 최종 검토를 시작하세요.',
+                });
+              } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(function(permission) {
+                  if (permission === 'granted') {
+                    new Notification('HANRA STUDIO', {
+                      body: '40분 영상 제작이 완료되었습니다! 최종 검토를 시작하세요.',
+                    });
+                  }
+                });
+              }
+            }
+          }
+        } else {
+          updateRenderProgressUI({ show: false });
+        }
+      } catch (e) {
+        console.warn('렌더링 상태 조회 실패:', e);
+      }
+    }
+
+    // Step8 -> Step9 데이터 로드
+    (function() {
+      try {
+        var titlePayloadRaw = localStorage.getItem('step8TitleData');
+        var imagePayloadRaw = localStorage.getItem('step5ImageData');
+
+        if (titlePayloadRaw) {
+          var titleData = JSON.parse(titlePayloadRaw);
+          thumbnailTitle = titleData.selectedTitle || '';
+          document.getElementById('thumbnailTitle').value = thumbnailTitle;
+        }
+
+        if (imagePayloadRaw) {
+          var imageData = JSON.parse(imagePayloadRaw);
+          if (imageData.scenes && imageData.scenes.length) {
+            imageSources = imageData.scenes.map(function(scene) {
+              return {
+                url: scene.image_url || scene.imageUrl,
+                sceneNum: scene.scene_num || scene.sceneNum,
+                label: '씬 ' + (scene.scene_num || scene.sceneNum)
+              };
+            }).filter(function(item) {
+              return item.url;
+            });
+            renderImageSources();
+          }
+        }
+
+        initCanvas();
+      } catch (e) {
+        console.error('데이터 로드 실패:', e);
+      }
+    })();
+
+    // 이미지 소스 렌더링
+    function renderImageSources() {
+      var container = document.getElementById('imageSourceGrid');
+      if (!container) return;
+
+      if (!imageSources.length) {
+        container.innerHTML = '<div style="grid-column: 1/-1; padding: 20px; text-align: center; color: #999;">사용 가능한 이미지가 없습니다.</div>';
+        return;
+      }
+
+      container.innerHTML = imageSources
+        .map(function(source, idx) {
+          return (
+            '<div class="image-source-item" data-index="' +
+            idx +
+            '" onclick="selectImageSource(' +
+            idx +
+            ')">' +
+            '<img src="' +
+            source.url +
+            '" alt="' +
+            source.label +
+            '" />' +
+            '<div class="source-label">' +
+            source.label +
+            '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
+    }
+
+    // 이미지 소스 선택
+    function selectImageSource(index) {
+      if (!imageSources[index]) return;
+      selectedImageUrl = imageSources[index].url;
+
+      document.querySelectorAll('.image-source-item').forEach(function(item) {
+        item.classList.remove('selected');
+      });
+      var selectedItem = document.querySelector('[data-index="' + index + '"]');
+      if (selectedItem) {
+        selectedItem.classList.add('selected');
+      }
+
+      loadImageAndRender();
+    }
+
+    // 새 이미지 생성
+    (function() {
+      var btnGen = document.getElementById('btnGenerateNewImage');
+      if (btnGen) {
+        btnGen.addEventListener('click', function() {
+          var title = document.getElementById('thumbnailTitle').value.trim();
+          if (!title) {
+            alert('썸네일용 제목을 먼저 입력해 주세요.');
+            return;
+          }
+
+          generateThumbnailImage(title);
+        });
+      }
+    })();
+
+    // 썸네일 이미지 생성 (API 호출)
+    async function generateThumbnailImage(title) {
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-thumbnail-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: 'High-quality YouTube thumbnail image for: ' + title + '. Professional, eye-catching, 16:9 aspect ratio.',
+            title: title
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('이미지 생성 실패');
+        }
+
+        var data = await response.json();
+        if (data.image_url) {
+          selectedImageUrl = data.image_url;
+          loadImageAndRender();
+          alert('새 썸네일 이미지가 생성되었습니다.');
+        }
+      } catch (e) {
+        console.error('이미지 생성 실패:', e);
+        alert('이미지 생성에 실패했습니다. 기존 이미지를 선택해 주세요.');
+      }
+    }
+
+    // Canvas 초기화
+    function initCanvas() {
+      canvas = document.getElementById('previewCanvas');
+      if (!canvas) return;
+
+      var wrapper = canvas.parentElement;
+      var width = wrapper.clientWidth;
+      var height = Math.floor(width * 9 / 16);
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx = canvas.getContext('2d');
+
+      renderPreview();
+    }
+
+    // 이미지 로드 및 렌더링
+    function loadImageAndRender() {
+      if (!selectedImageUrl) return;
+
+      thumbnailImage = new Image();
+      thumbnailImage.crossOrigin = 'anonymous';
+      thumbnailImage.onload = function() {
+        renderPreview();
+      };
+      thumbnailImage.onerror = function() {
+        console.error('이미지 로드 실패');
+      };
+      thumbnailImage.src = selectedImageUrl;
+    }
+
+    // 미리보기 렌더링
+    function renderPreview() {
+      if (!canvas || !ctx) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 배경 이미지
+      if (thumbnailImage && thumbnailImage.complete) {
+        ctx.drawImage(thumbnailImage, 0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#999';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('이미지를 선택해 주세요', canvas.width / 2, canvas.height / 2);
+      }
+
+      // 텍스트 렌더링
+      var title = document.getElementById('thumbnailTitle').value.trim();
+      if (title) {
+        renderText(title);
+      }
+    }
+
+    // 텍스트 렌더링
+    function renderText(text) {
+      if (!ctx) return;
+
+      var fontSize = textLayout.fontSize;
+      var x = textLayout.x;
+      var y = textLayout.y;
+      var maxWidth = canvas.width - x * 2;
+
+      ctx.save();
+
+      // 폰트 설정
+      var fontStyle = document.getElementById('fontStyle').value;
+      var fontWeight = fontStyle === 'bold' ? 'bold' : fontStyle === 'extra-bold' ? '900' : '900';
+      ctx.font = fontWeight + ' ' + fontSize + 'px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+
+      // 배경 박스
+      if (textLayout.hasBackgroundBox) {
+        var metrics = ctx.measureText(text);
+        var textHeight = fontSize * 1.2;
+        var padding = 16;
+        ctx.fillStyle = textLayout.backgroundBoxColor;
+        ctx.fillRect(
+          x - padding,
+          y - padding,
+          Math.min(metrics.width, maxWidth) + padding * 2,
+          textHeight + padding * 2
+        );
+      }
+
+      // 그림자
+      if (document.getElementById('shadowSwitch').classList.contains('active')) {
+        ctx.shadowBlur = textLayout.shadowBlur;
+        ctx.shadowColor = textLayout.shadowColor;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+      } else {
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
+
+      // 텍스트 색상
+      ctx.fillStyle = textLayout.color;
+      ctx.fillText(text, x, y, maxWidth);
+
+      // 테두리
+      if (document.getElementById('strokeSwitch').classList.contains('active')) {
+        ctx.strokeStyle = textLayout.strokeColor;
+        ctx.lineWidth = textLayout.strokeWidth;
+        ctx.strokeText(text, x, y, maxWidth);
+      }
+
+      ctx.restore();
+    }
+
+    // AI 레이아웃 추천
+    (function() {
+      var btnAi = document.getElementById('btnAiLayout');
+      if (btnAi) {
+        btnAi.addEventListener('click', function() {
+          var title = document.getElementById('thumbnailTitle').value.trim();
+          if (!title) {
+            alert('썸네일용 제목을 먼저 입력해 주세요.');
+            return;
+          }
+          if (!selectedImageUrl) {
+            alert('이미지를 먼저 선택해 주세요.');
+            return;
+          }
+
+          generateAiLayout(title);
+        });
+      }
+    })();
+
+    // AI 레이아웃 생성
+    async function generateAiLayout(title) {
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-thumbnail-layout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_url: selectedImageUrl,
+            title: title,
+            smart_overlap: true,
+            instructions: 'AI should automatically detect persons or key subjects in the image and place text in areas that do not overlap with them. Use Smart Overlap technology to ensure text readability while maintaining visual balance.'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('레이아웃 생성 실패');
+        }
+
+        var data = await response.json();
+        if (data.layout) {
+          textLayout = Object.assign(textLayout, data.layout);
+          renderPreview();
+          alert('AI가 최적의 레이아웃을 추천했습니다.');
+        }
+      } catch (e) {
+        console.error('레이아웃 생성 실패:', e);
+        // Fallback: 기본 레이아웃 적용
+        applyDefaultLayout();
+      }
+    }
+
+    // 기본 레이아웃 적용
+    function applyDefaultLayout() {
+      textLayout.fontSize = 48;
+      textLayout.x = 40;
+      textLayout.y = Math.floor(canvas.height * 0.6);
+      textLayout.color = '#ffffff';
+      renderPreview();
+    }
+
+    // 스위치 토글
+    function toggleSwitch(el) {
+      el.classList.toggle('active');
+      if (el.id === 'backgroundBoxSwitch') {
+        textLayout.hasBackgroundBox = el.classList.contains('active');
+      }
+      renderPreview();
+    }
+
+    // 제목 입력 이벤트
+    (function() {
+      var titleInput = document.getElementById('thumbnailTitle');
+      if (titleInput) {
+        titleInput.addEventListener('input', function() {
+          thumbnailTitle = this.value;
+          renderPreview();
+        });
+      }
+    })();
+
+    // 폰트 스타일 변경
+    (function() {
+      var fontSelect = document.getElementById('fontStyle');
+      if (fontSelect) {
+        fontSelect.addEventListener('change', function() {
+          renderPreview();
+        });
+      }
+    })();
+
+    // 썸네일 완성하기
+    (function() {
+      var btnGen = document.getElementById('btnGenerateThumbnail');
+      if (btnGen) {
+        btnGen.addEventListener('click', function() {
+          var title = document.getElementById('thumbnailTitle').value.trim();
+          if (!title) {
+            alert('썸네일용 제목을 입력해 주세요.');
+            return;
+          }
+          if (!selectedImageUrl) {
+            alert('이미지를 선택해 주세요.');
+            return;
+          }
+
+          generateFinalThumbnail(title);
+        });
+      }
+    })();
+
+    // 최종 썸네일 생성
+    async function generateFinalThumbnail(title) {
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-final-thumbnail', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_url: selectedImageUrl,
+            title: title,
+            layout: textLayout,
+            font_style: document.getElementById('fontStyle').value,
+            has_stroke: document.getElementById('strokeSwitch').classList.contains('active'),
+            has_shadow: document.getElementById('shadowSwitch').classList.contains('active'),
+            has_background_box: textLayout.hasBackgroundBox,
+            smart_overlap: true,
+            instructions: 'AI should automatically detect persons or key subjects in the image and place text in areas that do not overlap with them. Use Smart Overlap technology to ensure text readability while maintaining visual balance. The final thumbnail should be optimized for YouTube with 16:9 aspect ratio.'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('썸네일 생성 실패');
+        }
+
+        var data = await response.json();
+        if (data.thumbnail_url) {
+          thumbnailImage = new Image();
+          thumbnailImage.crossOrigin = 'anonymous';
+          thumbnailImage.onload = function() {
+            renderPreview();
+            document.getElementById('btnDownload').style.display = 'inline-block';
+            alert('썸네일이 생성되었습니다!');
+          };
+          thumbnailImage.src = data.thumbnail_url;
+          selectedImageUrl = data.thumbnail_url;
+        }
+      } catch (e) {
+        console.error('썸네일 생성 실패:', e);
+        alert('썸네일 생성에 실패했습니다. 다시 시도해 주세요.');
+      }
+    }
+
+    // 다운로드
+    (function() {
+      var btnDownload = document.getElementById('btnDownload');
+      if (btnDownload) {
+        btnDownload.addEventListener('click', function() {
+          if (!canvas) return;
+
+          var link = document.createElement('a');
+          link.download = 'thumbnail-' + Date.now() + '.png';
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        });
+      }
+    })();
+
+    // 9단계로 이동
+    (function() {
+      var btnNext = document.getElementById('btnGoToStep9');
+      if (btnNext) {
+        btnNext.addEventListener('click', function() {
+          var title = document.getElementById('thumbnailTitle').value.trim();
+          if (!title) {
+            alert('썸네일용 제목을 입력해 주세요.');
+            return;
+          }
+          if (!selectedImageUrl) {
+            alert('이미지를 선택하거나 생성해 주세요.');
+            return;
+          }
+
+          var payload = {
+            thumbnailTitle: title,
+            thumbnailImageUrl: selectedImageUrl,
+            layout: textLayout
+          };
+          localStorage.setItem('step9ThumbnailData', JSON.stringify(payload));
+          window.location.href = 'step-10.html';
+        });
+      }
+    })();
+
+    // 윈도우 리사이즈 처리
+    window.addEventListener('resize', function() {
+      initCanvas();
+      if (selectedImageUrl) {
+        loadImageAndRender();
+      }
+    });
+
+    // 로그온 시스템
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 입력하세요.');
+        return;
+      }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) {
+        return u.id === id && u.password === pw;
+      });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) {
+          logout();
+          alert('로그아웃되었습니다.');
+        }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+    checkLoginStatus();
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+
+    // A/B 캔버스 초기화
+    function initABCanvases() {
+      // 캔버스 A 초기화
+      thumbnailA.canvas = document.getElementById('previewCanvasA');
+      if (thumbnailA.canvas) {
+        var wrapperA = thumbnailA.canvas.parentElement;
+        var widthA = wrapperA.clientWidth;
+        var heightA = Math.floor(widthA * 9 / 16);
+        thumbnailA.canvas.width = widthA;
+        thumbnailA.canvas.height = heightA;
+        thumbnailA.ctx = thumbnailA.canvas.getContext('2d');
+      }
+
+      // 캔버스 B 초기화
+      thumbnailB.canvas = document.getElementById('previewCanvasB');
+      if (thumbnailB.canvas) {
+        var wrapperB = thumbnailB.canvas.parentElement;
+        var widthB = wrapperB.clientWidth;
+        var heightB = Math.floor(widthB * 9 / 16);
+        thumbnailB.canvas.width = widthB;
+        thumbnailB.canvas.height = heightB;
+        thumbnailB.ctx = thumbnailB.canvas.getContext('2d');
+      }
+    }
+
+    // 자동 생성 버튼 설정
+    function setupAutoGenerateButton() {
+      var btnAuto = document.getElementById('btnAutoGenerateThumbnail');
+      if (btnAuto) {
+        btnAuto.addEventListener('click', function() {
+          generateABThumbnails();
+        });
+      }
+
+      // 확정 버튼 설정
+      var btnConfirm = document.getElementById('btnConfirmThumbnails');
+      if (btnConfirm) {
+        btnConfirm.addEventListener('click', function() {
+          confirmThumbnails();
+        });
+      }
+
+      // 텍스트 입력 이벤트
+      var hookTextA = document.getElementById('hookTextA');
+      var hookTextB = document.getElementById('hookTextB');
+      if (hookTextA) {
+        hookTextA.addEventListener('input', function() {
+          thumbnailA.hookText = this.value;
+          renderThumbnail('A');
+        });
+      }
+      if (hookTextB) {
+        hookTextB.addEventListener('input', function() {
+          thumbnailB.hookText = this.value;
+          renderThumbnail('B');
+        });
+      }
+    }
+
+    // A/B 썸네일 자동 생성
+    async function generateABThumbnails() {
+      try {
+        // Step 1 키워드 및 Step 3 데이터 확인
+        if (!step1Data && !step3Data) {
+          alert('Step 1 또는 Step 3 데이터가 없습니다. 먼저 해당 단계를 완료해 주세요.');
+          return;
+        }
+
+        var keywords = step1Data ? step1Data.keywords : [];
+        var topic = step1Data ? step1Data.topic : (blueprintData ? blueprintData.title : '');
+        var script = step3Data ? (step3Data.script || '') : '';
+        var tone = step3Data ? (step3Data.tone || 'senior-expert') : 'senior-expert';
+
+        // 로딩 표시
+        var btnAuto = document.getElementById('btnAutoGenerateThumbnail');
+        if (btnAuto) {
+          btnAuto.disabled = true;
+          btnAuto.textContent = '생성 중...';
+        }
+
+        // 1. AI 미끼 문구 추출 (2가지 버전)
+        var hookTexts = await extractHookTexts(script, topic);
+        thumbnailA.hookText = hookTexts[0] || '걷기, 그냥 하면 독?!';
+        thumbnailB.hookText = hookTexts[1] || '딱 30분! 기적의 변화';
+
+        // 2. AI 배경 이미지 생성 (A/B 각각)
+        var imagePromptA = buildImagePrompt(keywords, topic, tone, 'emotional');
+        var imagePromptB = buildImagePrompt(keywords, topic, tone, 'informative');
+
+        thumbnailA.imageUrl = await generateThumbnailImage(imagePromptA, 'A');
+        thumbnailB.imageUrl = await generateThumbnailImage(imagePromptB, 'B');
+
+        // 3. 이미지 로드 및 텍스트 합성
+        await loadAndComposeThumbnail('A');
+        await loadAndComposeThumbnail('B');
+
+        // UI 업데이트
+        document.getElementById('hookTextA').value = thumbnailA.hookText;
+        document.getElementById('hookTextB').value = thumbnailB.hookText;
+        document.getElementById('btnConfirmThumbnails').style.display = 'block';
+
+        if (btnAuto) {
+          btnAuto.disabled = false;
+          btnAuto.textContent = '🎨 AI 썸네일 자동 생성하기 (A/B 테스트용 2개)';
+        }
+
+        alert('A/B 테스트용 썸네일이 생성되었습니다!');
+      } catch (e) {
+        console.error('썸네일 생성 실패:', e);
+        alert('썸네일 생성에 실패했습니다. 다시 시도해 주세요.');
+        var btnAuto = document.getElementById('btnAutoGenerateThumbnail');
+        if (btnAuto) {
+          btnAuto.disabled = false;
+          btnAuto.textContent = '🎨 AI 썸네일 자동 생성하기 (A/B 테스트용 2개)';
+        }
+      }
+    }
+
+    // AI 미끼 문구 추출
+    async function extractHookTexts(script, topic) {
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/extract-hook-texts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            script: script,
+            topic: topic,
+            count: 2, // 2가지 버전
+            maxLength: 15 // 15자 이내
+          })
+        });
+
+        if (response.ok) {
+          var data = await response.json();
+          return data.hookTexts || [];
+        }
+      } catch (e) {
+        console.error('미끼 문구 추출 실패:', e);
+      }
+
+      // Fallback: 기본 문구 생성
+      return [
+        topic + ', 그냥 하면 독?!',
+        '딱 30분! 기적의 변화'
+      ];
+    }
+
+    // 이미지 프롬프트 생성
+    function buildImagePrompt(keywords, topic, tone, style) {
+      var prompt = 'High-quality YouTube thumbnail image, bright and eye-catching, 16:9 aspect ratio, 8k resolution, clean background without text, ';
+      
+      // 주제 반영
+      if (topic) {
+        prompt += 'main subject: ' + topic + ' in a positive and healthy way, ';
+      }
+      
+      // 키워드 반영
+      if (keywords && keywords.length > 0) {
+        prompt += 'keywords: ' + keywords.join(', ') + ', ';
+      }
+      
+      // 톤앤매너 반영
+      var toneStyle = '';
+      if (tone === 'senior-expert' || tone === 'professional-analyst') {
+        toneStyle = 'professional, trustworthy, reliable composition and color scheme';
+      } else if (tone === 'friendly-neighbor' || tone === 'grandchild-friendly') {
+        toneStyle = 'warm, friendly, approachable composition and color scheme';
+      } else if (tone === 'emotional-storyteller') {
+        toneStyle = 'emotional, touching, heartwarming composition and color scheme';
+      } else {
+        toneStyle = 'professional and trustworthy composition and color scheme';
+      }
+      
+      // 스타일 반영 (A/B)
+      if (style === 'emotional') {
+        prompt += 'emotional and touching atmosphere, warm colors, ' + toneStyle;
+      } else {
+        prompt += 'informative and clear atmosphere, professional colors, ' + toneStyle;
+      }
+      
+      return prompt;
+    }
+
+    // 썸네일 이미지 생성
+    async function generateThumbnailImage(prompt, version) {
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-thumbnail-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: prompt,
+            version: version
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('이미지 생성 실패');
+        }
+
+        var data = await response.json();
+        return data.image_url || '';
+      } catch (e) {
+        console.error('이미지 생성 실패:', e);
+        // Fallback: 플레이스홀더 이미지
+        return '';
+      }
+    }
+
+    // 이미지 로드 및 텍스트 합성
+    async function loadAndComposeThumbnail(version) {
+      var thumb = version === 'A' ? thumbnailA : thumbnailB;
+      if (!thumb.imageUrl || !thumb.canvas || !thumb.ctx) return;
+
+      return new Promise(function(resolve, reject) {
+        var img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+          thumb.image = img;
+          renderThumbnail(version);
+          resolve();
+        };
+        img.onerror = function() {
+          console.error('이미지 로드 실패:', thumb.imageUrl);
+          reject();
+        };
+        img.src = thumb.imageUrl;
+      });
+    }
+
+    // 썸네일 렌더링 (시니어 맞춤형 텍스트 합성)
+    function renderThumbnail(version) {
+      var thumb = version === 'A' ? thumbnailA : thumbnailB;
+      if (!thumb.canvas || !thumb.ctx) return;
+
+      var ctx = thumb.ctx;
+      var canvas = thumb.canvas;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 배경 이미지
+      if (thumb.image && thumb.image.complete) {
+        ctx.drawImage(thumb.image, 0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // 텍스트 렌더링
+      if (thumb.hookText) {
+        renderSeniorFriendlyText(ctx, canvas, thumb.hookText, thumb.image);
+      }
+    }
+
+    // 시니어 맞춤형 텍스트 렌더링
+    function renderSeniorFriendlyText(ctx, canvas, text, bgImage) {
+      ctx.save();
+
+      // 배경 밝기 감지 (간단한 추정)
+      var isDarkBackground = true; // 기본값: 어두운 배경
+      if (bgImage && bgImage.complete) {
+        // 이미지 중앙 샘플링으로 밝기 추정
+        var sampleX = Math.floor(canvas.width * 0.5);
+        var sampleY = Math.floor(canvas.height * 0.5);
+        var imageData = ctx.getImageData(sampleX, sampleY, 1, 1);
+        var r = imageData.data[0];
+        var g = imageData.data[1];
+        var b = imageData.data[2];
+        var brightness = (r + g + b) / 3;
+        isDarkBackground = brightness < 128;
+      }
+
+      // 시니어 맞춤형 스타일
+      var fontSize = Math.floor(canvas.width * 0.08); // 화면 너비의 8%
+      var fontFamily = 'Impact, "격동고딕", "Malgun Gothic", sans-serif';
+      var fontWeight = '900'; // 매우 두꺼운
+      
+      // 색상 결정
+      var textColor = isDarkBackground ? '#ffffff' : '#fbbf24'; // 어두운 배경: 흰색, 밝은 배경: 노란색
+      var strokeColor = '#000000'; // 검은색 테두리
+      var strokeWidth = Math.max(4, fontSize * 0.08); // 폰트 크기의 8%
+
+      // 폰트 설정
+      ctx.font = fontWeight + ' ' + fontSize + 'px ' + fontFamily;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+
+      // 텍스트 위치 (좌측 상단 또는 중앙, 우측 하단 비워둠)
+      var x = Math.floor(canvas.width * 0.05); // 좌측 5%
+      var y = Math.floor(canvas.height * 0.15); // 상단 15%
+      var maxWidth = Math.floor(canvas.width * 0.6); // 최대 너비 60% (우측 하단 비워둠)
+
+      // 텍스트 측정
+      var metrics = ctx.measureText(text);
+      var textHeight = fontSize * 1.2;
+
+      // 배경 박스 (선택적)
+      var padding = Math.floor(fontSize * 0.3);
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(
+        x - padding,
+        y - padding,
+        Math.min(metrics.width, maxWidth) + padding * 2,
+        textHeight + padding * 2
+      );
+
+      // 그림자
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowOffsetX = 3;
+      ctx.shadowOffsetY = 3;
+
+      // 텍스트 테두리 (검은색)
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      ctx.lineJoin = 'round';
+      ctx.miterLimit = 2;
+      ctx.strokeText(text, x, y, maxWidth);
+
+      // 텍스트 채우기
+      ctx.fillStyle = textColor;
+      ctx.fillText(text, x, y, maxWidth);
+
+      ctx.restore();
+    }
+
+    // 이미지 재생성
+    async function regenerateImage(version) {
+      if (!step1Data && !step3Data) {
+        alert('Step 1 또는 Step 3 데이터가 없습니다.');
+        return;
+      }
+
+      var keywords = step1Data ? step1Data.keywords : [];
+      var topic = step1Data ? step1Data.topic : (blueprintData ? blueprintData.title : '');
+      var tone = step3Data ? (step3Data.tone || 'senior-expert') : 'senior-expert';
+      var style = version === 'A' ? 'emotional' : 'informative';
+
+      var prompt = buildImagePrompt(keywords, topic, tone, style);
+      var thumb = version === 'A' ? thumbnailA : thumbnailB;
+
+      thumb.imageUrl = await generateThumbnailImage(prompt, version);
+      await loadAndComposeThumbnail(version);
+    }
+
+    // 썸네일 확정
+    function confirmThumbnails() {
+      if (!thumbnailA.imageUrl || !thumbnailB.imageUrl) {
+        alert('A/B 썸네일을 모두 생성해 주세요.');
+        return;
+      }
+
+      // A/B 테스트 데이터 저장
+      var abTestData = {
+        thumbnailA: {
+          imageUrl: thumbnailA.imageUrl,
+          hookText: thumbnailA.hookText,
+          style: thumbnailA.style
+        },
+        thumbnailB: {
+          imageUrl: thumbnailB.imageUrl,
+          hookText: thumbnailB.hookText,
+          style: thumbnailB.style
+        },
+        createdAt: new Date().toISOString()
+      };
+
+      localStorage.setItem('abTestData', JSON.stringify(abTestData));
+
+      // Step 9 데이터 저장
+      var thumbnailData = {
+        thumbnailImageUrl: thumbnailA.imageUrl, // 기본값으로 A 사용
+        thumbnailBImageUrl: thumbnailB.imageUrl,
+        hookText: thumbnailA.hookText,
+        abTestData: abTestData
+      };
+
+      localStorage.setItem('step9ThumbnailData', JSON.stringify(thumbnailData));
+
+      alert('썸네일이 확정되었습니다. 다음 단계로 이동합니다.');
+      window.location.href = 'step-10.html';
+    }
+
+    // 렌더링 진행률 모니터링 시작
+    (function initRenderMonitoring() {
+      pollRenderStatus();
+      setInterval(pollRenderStatus, 10000);
+    })();
+  </script>
+</body>
+</html>

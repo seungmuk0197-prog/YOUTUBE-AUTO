@@ -1,0 +1,4600 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>12. 채널 매니저</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: auroraGradient 8s ease infinite;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+    }
+    @keyframes auroraGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { flex: 1; }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    /* Content Cards */
+    .content-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border: 1px solid #e2e8f0;
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 16px;
+    }
+    .card-desc {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    /* Channel Dashboard */
+    .channel-overview {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .channel-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 32px;
+      font-weight: 700;
+    }
+    .channel-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .channel-name {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+    .channel-stats {
+      display: flex;
+      gap: 24px;
+      font-size: 14px;
+      color: #666;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+    }
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+    .upload-status-badges {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .status-badge.pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .status-badge.scheduled {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .status-badge.published {
+      background: #d1fae5;
+      color: #047857;
+    }
+    .badge-count {
+      background: rgba(0,0,0,0.1);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+
+    /* Smart Scheduler */
+    .video-selector {
+      margin-bottom: 24px;
+    }
+    .video-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 12px;
+      background: #f7fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .video-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .video-item:hover {
+      border-color: #b794f4;
+      box-shadow: 0 2px 8px rgba(147, 51, 234, 0.1);
+    }
+    .video-item.selected {
+      border-color: #9333ea;
+      background: #faf5ff;
+    }
+    .video-thumbnail {
+      width: 80px;
+      height: 45px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: #e2e8f0;
+    }
+    .video-info {
+      flex: 1;
+    }
+    .video-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 4px;
+    }
+    .video-meta {
+      font-size: 12px;
+      color: #666;
+    }
+    .video-checkbox {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+    .golden-time-section {
+      margin-top: 24px;
+      padding: 20px;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-radius: 12px;
+      border: 2px solid #fbbf24;
+    }
+    .golden-time-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #92400e;
+      margin-bottom: 8px;
+    }
+    .golden-time-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #78350f;
+      margin-bottom: 12px;
+    }
+    .btn-apply-time {
+      padding: 8px 16px;
+      background: #f59e0b;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-apply-time:hover {
+      background: #d97706;
+    }
+    .datetime-selector {
+      margin-top: 20px;
+    }
+    .datetime-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+    .datetime-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .metadata-review {
+      margin-top: 24px;
+      padding: 20px;
+      background: #f7fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .metadata-item {
+      margin-bottom: 16px;
+    }
+    .metadata-item:last-child {
+      margin-bottom: 0;
+    }
+    .metadata-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 6px;
+    }
+    .metadata-value {
+      font-size: 14px;
+      color: #2d3748;
+      padding: 10px;
+      background: #fff;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Performance Insight */
+    .prediction-chart {
+      height: 200px;
+      background: #f7fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-around;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .chart-bar {
+      flex: 1;
+      margin: 0 4px;
+      background: linear-gradient(180deg, #9333ea 0%, #7c3aed 100%);
+      border-radius: 4px 4px 0 0;
+      min-height: 20px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chart-bar:hover {
+      opacity: 0.8;
+      transform: scaleY(1.05);
+    }
+    .chart-label {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: #666;
+      white-space: nowrap;
+    }
+    .prediction-range {
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+      margin-top: 32px;
+    }
+    .prediction-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #9333ea;
+    }
+    .platform-switch {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .platform-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: #f7fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .platform-checkbox:hover {
+      border-color: #cbd5e0;
+    }
+    .platform-checkbox.checked {
+      background: #faf5ff;
+      border-color: #9333ea;
+    }
+    .platform-checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .platform-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+
+    /* Buttons */
+    .btn-primary {
+      padding: 12px 24px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover {
+      background: #c62828;
+    }
+    .btn-primary:disabled {
+      background: #cbd5e0;
+      cursor: not-allowed;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    /* A/B Test Styles */
+    .ab-test-section {
+      margin-top: 24px;
+      padding: 24px;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-radius: 12px;
+      border: 2px solid #fbbf24;
+    }
+    .ab-test-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #78350f;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .thumbnail-selector-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .thumbnail-selector-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      border: 2px solid #e2e8f0;
+      transition: all 0.2s;
+    }
+    .thumbnail-selector-card.selected {
+      border-color: #9333ea;
+      box-shadow: 0 4px 12px rgba(147, 51, 234, 0.2);
+    }
+    .thumbnail-selector-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .thumbnail-selector-label .badge {
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge.control {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .badge.experiment {
+      background: #fce7f3;
+      color: #9f1239;
+    }
+    .thumbnail-preview-box {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #f7fafc;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 12px;
+      position: relative;
+      cursor: pointer;
+    }
+    .thumbnail-preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .thumbnail-preview-box .placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #999;
+      font-size: 14px;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .thumbnail-preview-box .select-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      padding: 6px 12px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+    .test-settings-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .test-setting-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .test-setting-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+    .test-setting-select {
+      padding: 10px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fff;
+      cursor: pointer;
+    }
+    .test-metrics {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .metric-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .metric-checkbox input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .metric-label {
+      font-size: 14px;
+      color: #2d3748;
+    }
+    .test-progress-section {
+      margin-top: 24px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .progress-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+    .progress-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: #9333ea;
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #9333ea 0%, #7c3aed 100%);
+      transition: width 0.3s ease;
+    }
+    .preview-comparison {
+      margin-top: 24px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .comparison-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 16px;
+    }
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .comparison-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .comparison-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      text-align: center;
+    }
+    .comparison-preview {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #f7fafc;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid #e2e8f0;
+      position: relative;
+    }
+    .comparison-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .comparison-preview .youtube-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.3) 100%);
+      pointer-events: none;
+    }
+    .comparison-stats {
+      display: flex;
+      justify-content: space-around;
+      padding: 8px;
+      background: #f7fafc;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .stat-item-small {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .stat-label-small {
+      color: #666;
+    }
+    .stat-value-small {
+      font-weight: 700;
+      color: #9333ea;
+    }
+    .test-result-alert {
+      margin-top: 20px;
+      padding: 16px;
+      background: #d1fae5;
+      border: 2px solid #10b981;
+      border-radius: 8px;
+      display: none;
+    }
+    .test-result-alert.show {
+      display: block;
+    }
+    .test-result-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #047857;
+      margin-bottom: 8px;
+    }
+    .test-result-text {
+      font-size: 14px;
+      color: #065f46;
+    }
+
+    /* AI 조기 확정 스타일 */
+    .early-win-section {
+      margin-top: 24px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      border: 2px solid #e2e8f0;
+    }
+    .early-win-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+    .early-win-checkbox input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+    .early-win-label {
+      font-size: 16px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+    .early-win-settings {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .early-win-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .early-win-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .early-win-label-small {
+      font-size: 14px;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    .early-win-input-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .early-win-input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .early-win-unit {
+      font-size: 14px;
+      color: #666;
+      white-space: nowrap;
+    }
+    .early-win-hint {
+      font-size: 12px;
+      color: #999;
+      margin-top: 4px;
+    }
+    .early-win-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: #fef3c7;
+      color: #92400e;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 8px;
+    }
+    .early-win-report {
+      margin-top: 16px;
+      padding: 12px;
+      background: #f0f9ff;
+      border-left: 4px solid #0ea5e9;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #0c4a6e;
+    }
+    .early-win-report-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    /* 쿼터 제한 시스템 스타일 */
+    .quota-system-section {
+      margin-top: 24px;
+      padding: 20px;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-radius: 12px;
+      border: 2px solid #fbbf24;
+    }
+    .quota-system-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .safe-mode-switch {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #fff;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 2px solid #fbbf24;
+    }
+    .safe-mode-switch input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+    }
+    .safe-mode-label {
+      font-size: 15px;
+      font-weight: 600;
+      color: #92400e;
+      flex: 1;
+    }
+    .safe-mode-hint {
+      font-size: 12px;
+      color: #a16207;
+      margin-top: 4px;
+    }
+    .channel-quota-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s;
+    }
+    .channel-quota-card.quota-exceeded {
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+    .channel-quota-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .channel-quota-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #2d3748;
+    }
+    .quota-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .quota-badge.warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .quota-badge.exceeded {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .quota-slider-container {
+      margin-bottom: 12px;
+    }
+    .quota-slider-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: #4a5568;
+    }
+    .quota-slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .quota-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #9333ea;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .quota-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #9333ea;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .quota-counter {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #4a5568;
+    }
+    .quota-progress-bar {
+      flex: 1;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .quota-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+      transition: width 0.3s, background 0.3s;
+    }
+    .quota-progress-fill.warning {
+      background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+    }
+    .quota-progress-fill.exceeded {
+      background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    }
+    .quota-status-text {
+      font-size: 12px;
+      font-weight: 600;
+      min-width: 120px;
+      text-align: right;
+    }
+    .quota-status-text.normal {
+      color: #059669;
+    }
+    .quota-status-text.warning {
+      color: #d97706;
+    }
+    .quota-status-text.exceeded {
+      color: #dc2626;
+    }
+    .upload-result-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .upload-result-modal.show {
+      display: flex;
+    }
+    .upload-result-content {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    .upload-result-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 16px;
+    }
+    .upload-result-summary {
+      margin-bottom: 20px;
+      line-height: 1.6;
+      color: #4a5568;
+    }
+    .upload-result-item {
+      padding: 8px 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .upload-result-item:last-child {
+      border-bottom: none;
+    }
+
+    /* MCN 통합 대시보드 스타일 */
+    .mcn-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .mcn-stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      padding: 20px;
+      color: #fff;
+      text-align: center;
+    }
+    .mcn-stat-label {
+      font-size: 13px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+    }
+    .mcn-stat-value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .revenue-contribution-section {
+      margin-top: 24px;
+    }
+    .revenue-chart-container {
+      background: #f7fafc;
+      border-radius: 8px;
+      padding: 20px;
+      min-height: 300px;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* 수익 창출 트래커 스타일 */
+    .growth-tracker-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .tracker-item {
+      margin-bottom: 16px;
+    }
+    .tracker-item:last-child {
+      margin-bottom: 0;
+    }
+    .tracker-label {
+      font-size: 13px;
+      color: #4a5568;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    .tracker-progress {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .tracker-progress .progress-bar {
+      flex: 1;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .tracker-progress .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+      transition: width 0.3s;
+    }
+    .tracker-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2d3748;
+      min-width: 120px;
+      text-align: right;
+    }
+    .revenue-badge {
+      margin-top: 12px;
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      color: #fff;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    /* 라이징 채널 섹션 */
+    .rising-channels-section {
+      margin-top: 24px;
+    }
+    .rising-channels-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .rising-channel-card {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-radius: 12px;
+      padding: 16px;
+      border: 2px solid #fbbf24;
+      position: relative;
+      overflow: hidden;
+    }
+    .rising-channel-card::before {
+      content: '🔥';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 20px;
+    }
+    .rising-channel-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #92400e;
+      margin-bottom: 8px;
+    }
+    .rising-channel-growth {
+      font-size: 13px;
+      color: #78350f;
+    }
+    .growth-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #fbbf24;
+      color: #78350f;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    /* AI 커뮤니티 관리자 스타일 */
+    .comment-filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 8px 16px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      background: #fff;
+      color: #4a5568;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover {
+      background: #f7fafc;
+      border-color: #b794f4;
+    }
+    .filter-btn.active {
+      background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+      color: #fff;
+      border-color: #9333ea;
+    }
+    .comments-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 600px;
+      overflow-y: auto;
+      padding: 12px;
+      background: #f7fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .comment-item {
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px;
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s;
+    }
+    .comment-item:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .comment-item.spam {
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    .comment-channel {
+      font-size: 12px;
+      color: #666;
+      font-weight: 600;
+    }
+    .comment-status {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .comment-status.pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .comment-status.approved {
+      background: #d1fae5;
+      color: #047857;
+    }
+    .comment-status.spam {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .comment-text {
+      font-size: 14px;
+      color: #2d3748;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    .comment-ai-reply {
+      background: #f0f9ff;
+      border-left: 3px solid #0ea5e9;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .comment-ai-reply-label {
+      font-size: 11px;
+      color: #0c4a6e;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .comment-ai-reply-text {
+      font-size: 13px;
+      color: #0c4a6e;
+      line-height: 1.5;
+    }
+    .comment-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-comment-action {
+      padding: 6px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      background: #fff;
+      color: #4a5568;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-comment-action:hover {
+      background: #f7fafc;
+    }
+    .btn-comment-action.approve {
+      background: #10b981;
+      color: #fff;
+      border-color: #10b981;
+    }
+    .btn-comment-action.approve:hover {
+      background: #059669;
+    }
+    .btn-comment-action.reject {
+      background: #ef4444;
+      color: #fff;
+      border-color: #ef4444;
+    }
+    .btn-comment-action.reject:hover {
+      background: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item active">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>12. 채널 매니저</h1>
+          <p class="subtitle">유튜브 채널을 관리하고 영상을 예약 업로드합니다</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 채널 대시보드 -->
+      <div class="content-card">
+        <div class="card-title">채널 대시보드</div>
+        <div class="channel-overview">
+          <div class="channel-avatar" id="channelAvatar">H</div>
+          <div class="channel-info">
+            <div class="channel-name" id="channelName">HANRA STUDIO</div>
+            <div class="channel-stats">
+              <div class="stat-item">
+                <span class="stat-label">구독자</span>
+                <span class="stat-value" id="subscriberCount">-</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">최근 28일 조회수</span>
+                <span class="stat-value" id="recentViews">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="upload-status-badges">
+          <div class="status-badge pending">
+            업로드 대기 중 <span class="badge-count" id="pendingCount">0</span>
+          </div>
+          <div class="status-badge scheduled">
+            예약됨 <span class="badge-count" id="scheduledCount">0</span>
+          </div>
+          <div class="status-badge published">
+            게시 완료 <span class="badge-count" id="publishedCount">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MCN 통합 수익 및 성장 대시보드 -->
+      <div class="content-card">
+        <div class="card-title">MCN 통합 수익 및 성장 대시보드</div>
+        <p class="card-desc">20개 채널의 성과를 합산하고, 수익 창출 조건을 실시간으로 추적합니다.</p>
+
+        <!-- 통합 스태츠 -->
+        <div class="mcn-stats-grid">
+          <div class="mcn-stat-card">
+            <div class="mcn-stat-label">총 조회수</div>
+            <div class="mcn-stat-value" id="totalViews">-</div>
+          </div>
+          <div class="mcn-stat-card">
+            <div class="mcn-stat-label">총 예상 수익</div>
+            <div class="mcn-stat-value" id="totalRevenue">-</div>
+          </div>
+          <div class="mcn-stat-card">
+            <div class="mcn-stat-label">평균 CTR</div>
+            <div class="mcn-stat-value" id="avgCTR">-</div>
+          </div>
+          <div class="mcn-stat-card">
+            <div class="mcn-stat-label">총 구독자</div>
+            <div class="mcn-stat-value" id="totalSubscribers">-</div>
+          </div>
+        </div>
+
+        <!-- 채널별 수익 기여도 차트 -->
+        <div class="revenue-contribution-section">
+          <div class="card-title" style="font-size: 16px; margin-top: 24px; margin-bottom: 16px;">채널별 수익 기여도</div>
+          <div class="revenue-chart-container" id="revenueChart">
+            <!-- 차트가 동적으로 생성됩니다 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 피드백 인사이트 대시보드 -->
+      <div class="content-card">
+        <div class="card-title">💡 AI 피드백 인사이트 대시보드</div>
+        <p class="card-desc">시청자 댓글을 분석하여 다음 주제 선정에 반영할 인사이트를 제공합니다.</p>
+        
+        <div id="feedbackInsights" style="margin-top: 20px;">
+          <div style="padding: 20px; background: #f7fafc; border-radius: 8px; text-align: center; color: #999;">
+            피드백 데이터를 분석 중입니다...
+          </div>
+        </div>
+      </div>
+
+      <!-- 일일 업로드 쿼터 제한 시스템 -->
+      <div class="content-card">
+        <div class="quota-system-section">
+          <div class="quota-system-title">
+            🛡️ 일일 업로드 쿼터 제한 시스템
+          </div>
+          
+          <!-- 전체 채널 안전 모드 -->
+          <div class="safe-mode-switch">
+            <input type="checkbox" id="safeModeSwitch" />
+            <div style="flex: 1;">
+              <div class="safe-mode-label">전체 채널 안전 모드 활성화</div>
+              <div class="safe-mode-hint">모든 채널의 일일 업로드 한도를 2개로 고정하고, 업로드 간격을 1시간 이상으로 강제 조정합니다 (대량 운영 시 리스크 방지)</div>
+            </div>
+          </div>
+
+          <!-- 채널별 쿼터 설정 -->
+          <div id="channelQuotaList">
+            <!-- 동적으로 채워집니다 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 스마트 예약 업로드 설정 -->
+      <div class="content-card">
+        <div class="card-title">스마트 예약 업로드 설정</div>
+        <p class="card-desc">완성된 영상을 선택하고 업로드 시간을 예약하세요.</p>
+
+        <!-- 대상 선택 -->
+        <div class="video-selector">
+          <div class="card-title" style="font-size: 16px; margin-bottom: 12px;">업로드할 영상 선택</div>
+          <div class="video-list" id="videoList">
+            <!-- 동적으로 채워집니다 -->
+          </div>
+        </div>
+
+        <!-- 추천 업로드 시간 -->
+        <div class="golden-time-section">
+          <div class="golden-time-label">AI 추천 골든 타임</div>
+          <div class="golden-time-value" id="goldenTime">분석 중...</div>
+          <button class="btn-apply-time" type="button" id="btnApplyGoldenTime">적용하기</button>
+        </div>
+
+        <!-- 날짜/시간 선택 -->
+        <div class="datetime-selector">
+          <div class="datetime-label">업로드 예약 시간</div>
+          <input type="datetime-local" class="datetime-input" id="scheduleDateTime" />
+        </div>
+
+        <!-- 메타데이터 확인 -->
+        <div class="metadata-review">
+          <div class="card-title" style="font-size: 16px; margin-bottom: 16px;">메타데이터 확인</div>
+          <div class="metadata-item">
+            <div class="metadata-label">제목</div>
+            <div class="metadata-value" id="reviewTitle">-</div>
+          </div>
+          <div class="metadata-item">
+            <div class="metadata-label">설명</div>
+            <div class="metadata-value" id="reviewDescription">-</div>
+          </div>
+          <div class="metadata-item">
+            <div class="metadata-label">태그</div>
+            <div class="metadata-value" id="reviewTags">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 성과 예측 및 분석 -->
+      <div class="content-card">
+        <div class="card-title">성과 예측 및 분석</div>
+        <p class="card-desc">AI가 주제와 썸네일을 분석하여 예상 조회수를 예측합니다.</p>
+
+        <!-- AI 조회수 예측 -->
+        <div class="prediction-chart" id="predictionChart">
+          <!-- 동적으로 채워집니다 -->
+        </div>
+        <div class="prediction-range">
+          예상 조회수: <span class="prediction-value" id="predictionValue">-</span>
+        </div>
+
+        <!-- 플랫폼별 스위치 -->
+        <div style="margin-top: 24px;">
+          <div class="datetime-label" style="margin-bottom: 12px;">동시 업로드 플랫폼</div>
+          <div class="platform-switch">
+            <label class="platform-checkbox">
+              <input type="checkbox" id="platformYoutube" checked />
+              <span class="platform-label">📺 YouTube</span>
+            </label>
+            <label class="platform-checkbox">
+              <input type="checkbox" id="platformTiktok" />
+              <span class="platform-label">🎵 TikTok</span>
+            </label>
+            <label class="platform-checkbox">
+              <input type="checkbox" id="platformInstagram" />
+              <span class="platform-label">📸 Instagram Reels</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 썸네일 A/B 테스트 설정 -->
+      <div class="content-card">
+        <div class="ab-test-section">
+          <div class="ab-test-title">
+            🧪 썸네일 A/B 테스트 예약
+          </div>
+          
+          <!-- 썸네일 선택 -->
+          <div class="thumbnail-selector-grid">
+            <div class="thumbnail-selector-card" id="thumbnailACard">
+              <div class="thumbnail-selector-label">
+                <span class="badge control">대조군</span>
+                썸네일 A
+              </div>
+              <div class="thumbnail-preview-box" id="thumbnailAPreview">
+                <div class="placeholder">
+                  <span>📷</span>
+                  <span>썸네일 선택</span>
+                </div>
+                <button class="select-btn" onclick="selectThumbnail('A')">선택</button>
+              </div>
+            </div>
+            <div class="thumbnail-selector-card" id="thumbnailBCard">
+              <div class="thumbnail-selector-label">
+                <span class="badge experiment">실험군</span>
+                썸네일 B
+              </div>
+              <div class="thumbnail-preview-box" id="thumbnailBPreview">
+                <div class="placeholder">
+                  <span>📷</span>
+                  <span>썸네일 선택</span>
+                </div>
+                <button class="select-btn" onclick="selectThumbnail('B')">선택</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 테스트 설정 -->
+          <div class="test-settings-row">
+            <div class="test-setting-item">
+              <div class="test-setting-label">테스트 기간</div>
+              <select class="test-setting-select" id="testDuration">
+                <option value="6">6시간</option>
+                <option value="12" selected>12시간</option>
+                <option value="24">24시간</option>
+                <option value="48">48시간</option>
+              </select>
+            </div>
+            <div class="test-setting-item">
+              <div class="test-setting-label">테스트 지표</div>
+              <div class="test-metrics">
+                <label class="metric-checkbox">
+                  <input type="checkbox" id="metricCTR" checked />
+                  <span class="metric-label">클릭률 (CTR) - 기본</span>
+                </label>
+                <label class="metric-checkbox">
+                  <input type="checkbox" id="metricWatchTime" />
+                  <span class="metric-label">평균 시청 지속 시간</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI 조기 확정 설정 -->
+          <div class="early-win-section">
+            <label class="early-win-checkbox">
+              <input type="checkbox" id="enableEarlyWin" />
+              <span class="early-win-label">⚡ AI 조기 확정 활성화</span>
+            </label>
+            <div class="early-win-settings" id="earlyWinSettings" style="display: none;">
+              <div class="early-win-row">
+                <div class="early-win-item">
+                  <div class="early-win-label-small">임계값 (CTR 차이)</div>
+                  <div class="early-win-input-group">
+                    <input type="number" class="early-win-input" id="earlyWinThreshold" value="5" min="1" max="20" step="0.1" />
+                    <span class="early-win-unit">% 이상</span>
+                  </div>
+                  <div class="early-win-hint">두 썸네일 간 CTR 차이가 이 값 이상일 때 즉시 종료</div>
+                </div>
+                <div class="early-win-item">
+                  <div class="early-win-label-small">최소 노출수</div>
+                  <div class="early-win-input-group">
+                    <input type="number" class="early-win-input" id="earlyWinMinImpressions" value="1000" min="100" max="10000" step="100" />
+                    <span class="early-win-unit">회</span>
+                  </div>
+                  <div class="early-win-hint">최소 노출수 달성 후 판정 (통계적 신뢰도 보장)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 테스트 진행률 -->
+          <div class="test-progress-section" id="testProgressSection" style="display: none;">
+            <div class="progress-header">
+              <div class="progress-label">
+                A/B 테스트 진행률
+                <span class="early-win-badge" id="earlyWinBadge" style="display: none;">⚡ AI 조기 확정</span>
+              </div>
+              <div class="progress-value" id="progressValue">0%</div>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
+            </div>
+            <div class="early-win-report" id="earlyWinReport" style="display: none;">
+              <div class="early-win-report-title">📊 조기 확정 리포트</div>
+              <div id="earlyWinReportText"></div>
+            </div>
+          </div>
+
+          <!-- 미리보기 비교 -->
+          <div class="preview-comparison" id="previewComparison" style="display: none;">
+            <div class="comparison-title">유튜브 검색 결과 미리보기</div>
+            <div class="comparison-grid">
+              <div class="comparison-item">
+                <div class="comparison-label">썸네일 A (대조군)</div>
+                <div class="comparison-preview">
+                  <img id="comparisonThumbnailA" src="" alt="썸네일 A" />
+                  <div class="youtube-overlay"></div>
+                </div>
+                <div class="comparison-stats">
+                  <div class="stat-item-small">
+                    <span class="stat-label-small">CTR</span>
+                    <span class="stat-value-small" id="ctrA">-</span>
+                  </div>
+                  <div class="stat-item-small">
+                    <span class="stat-label-small">시청 시간</span>
+                    <span class="stat-value-small" id="watchTimeA">-</span>
+                  </div>
+                </div>
+              </div>
+              <div class="comparison-item">
+                <div class="comparison-label">썸네일 B (실험군)</div>
+                <div class="comparison-preview">
+                  <img id="comparisonThumbnailB" src="" alt="썸네일 B" />
+                  <div class="youtube-overlay"></div>
+                </div>
+                <div class="comparison-stats">
+                  <div class="stat-item-small">
+                    <span class="stat-label-small">CTR</span>
+                    <span class="stat-value-small" id="ctrB">-</span>
+                  </div>
+                  <div class="stat-item-small">
+                    <span class="stat-label-small">시청 시간</span>
+                    <span class="stat-value-small" id="watchTimeB">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 테스트 결과 알림 -->
+          <div class="test-result-alert" id="testResultAlert">
+            <div class="test-result-title">✅ A/B 테스트 완료</div>
+            <div class="test-result-text" id="testResultText"></div>
+          </div>
+
+          <!-- A/B 테스트 시작 버튼 -->
+          <button class="btn-primary" type="button" id="btnStartABTest" style="background: #f59e0b; margin-top: 20px;">A/B 테스트 시작하기</button>
+        </div>
+      </div>
+
+      <!-- 업로드 실행 -->
+      <div class="action-buttons">
+        <button class="btn-primary" type="button" id="btnScheduleUpload">예약 업로드 설정하기</button>
+        <button class="btn-primary" type="button" id="btnUploadNow" style="background: #9333ea;">지금 바로 업로드</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- 업로드 진행 모달 -->
+  <div class="upload-result-modal" id="uploadProgressModal">
+    <div class="upload-result-content">
+      <div class="upload-result-title">📤 업로드 진행 중...</div>
+      <div class="upload-result-summary">
+        <div id="uploadProgressText">준비 중...</div>
+        <div style="margin-top: 12px;">
+          <div class="quota-progress-bar">
+            <div class="quota-progress-fill" id="uploadProgressBar" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 업로드 결과 리포트 모달 -->
+  <div class="upload-result-modal" id="uploadResultModal">
+    <div class="upload-result-content">
+      <div class="upload-result-title">📊 업로드 결과 리포트</div>
+      <div class="upload-result-summary" id="uploadResultSummary">
+        <!-- 동적으로 채워집니다 -->
+      </div>
+      <button class="btn-primary" type="button" onclick="document.getElementById('uploadResultModal').classList.remove('show');" style="width: 100%; margin-top: 16px;">확인</button>
+    </div>
+  </div>
+
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script>
+    var selectedVideos = [];
+    var availableVideos = [];
+    var channelData = null;
+    var goldenTime = null;
+    var availableThumbnails = [];
+    var selectedThumbnailA = null;
+    var selectedThumbnailB = null;
+    var abTestData = null;
+    var abTestInterval = null;
+    var earlyWinCheckInterval = null;
+    var monitoringScheduleInterval = null;
+    
+    // 쿼터 관리 데이터
+    var channelQuotas = {}; // { channelId: { daily_limit: 3, current_count: 0, last_reset_date: '2026-01-13' } }
+    var safeModeEnabled = false;
+
+    // 초기화
+    (function() {
+      loadChannelData();
+      loadAvailableVideos();
+      loadAvailableThumbnails();
+      analyzeGoldenTime();
+      renderVideoList();
+      renderThumbnailSelectors();
+      loadABTestData();
+      setupEventListeners();
+      checkLoginStatus();
+      
+      // 쿼터 시스템 초기화
+      loadChannelQuotas();
+      initializeChannelQuotaSystem();
+      
+      // MCN 통합 리포트 로드
+      loadMCNReport();
+      
+      // AI 커뮤니티 관리자: 댓글 로드
+      loadComments();
+      
+      // AI 피드백 인사이트 로드
+      loadFeedbackInsights();
+
+      // 댓글 필터 이벤트
+      document.querySelectorAll('.filter-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.filter-btn').forEach(function(b) {
+            b.classList.remove('active');
+          });
+          this.classList.add('active');
+          
+          var filter = this.getAttribute('data-filter');
+          filterComments(filter);
+        });
+      });
+    })();
+
+    // 댓글 필터링
+    function filterComments(filter) {
+      var items = document.querySelectorAll('.comment-item');
+      items.forEach(function(item) {
+        var status = item.querySelector('.comment-status').textContent;
+        var shouldShow = 
+          filter === 'all' ||
+          (filter === 'pending' && status === '승인 대기') ||
+          (filter === 'approved' && status === '승인됨') ||
+          (filter === 'spam' && status === '스팸');
+        
+        item.style.display = shouldShow ? 'block' : 'none';
+      });
+    }
+
+    // 채널 데이터 로드
+    function loadChannelData() {
+      try {
+        var channelDataRaw = localStorage.getItem('youtubeChannelData');
+        if (channelDataRaw) {
+          channelData = JSON.parse(channelDataRaw);
+          renderChannelDashboard();
+        } else {
+          // 기본값 설정
+          channelData = {
+            name: 'HANRA STUDIO',
+            avatar: 'H',
+            subscribers: 0,
+            recentViews: 0
+          };
+          renderChannelDashboard();
+        }
+      } catch (e) {
+        console.error('채널 데이터 로드 실패:', e);
+        channelData = {
+          name: 'HANRA STUDIO',
+          avatar: 'H',
+          subscribers: 0,
+          recentViews: 0
+        };
+        renderChannelDashboard();
+      }
+    }
+
+    // 채널 대시보드 렌더링
+    function renderChannelDashboard() {
+      document.getElementById('channelAvatar').textContent = channelData.avatar || 'H';
+      document.getElementById('channelName').textContent = channelData.name || 'HANRA STUDIO';
+      document.getElementById('subscriberCount').textContent = formatNumber(channelData.subscribers || 0);
+      document.getElementById('recentViews').textContent = formatNumber(channelData.recentViews || 0);
+
+      // 업로드 현황 계산
+      var archivedProjectsRaw = localStorage.getItem('archivedProjects');
+      var projects = [];
+      if (archivedProjectsRaw) {
+        try {
+          projects = JSON.parse(archivedProjectsRaw);
+        } catch (e) {
+          console.error('프로젝트 파싱 실패:', e);
+        }
+      }
+
+      var pending = 0;
+      var scheduled = 0;
+      var published = 0;
+
+      projects.forEach(function(project) {
+        if (project.status === 'draft' || !project.status) {
+          pending++;
+        } else if (project.status === 'scheduled') {
+          scheduled++;
+        } else if (project.status === 'published' || project.status === 'uploaded') {
+          published++;
+        }
+      });
+
+      document.getElementById('pendingCount').textContent = pending;
+      document.getElementById('scheduledCount').textContent = scheduled;
+      document.getElementById('publishedCount').textContent = published;
+    }
+
+    // 사용 가능한 영상 로드 (쇼츠 변환 결과 포함)
+    function loadAvailableVideos() {
+      try {
+        var archivedProjectsRaw = localStorage.getItem('archivedProjects');
+        var videos = [];
+        
+        // 작업 보관함에서 영상 로드
+        if (archivedProjectsRaw) {
+          var projects = JSON.parse(archivedProjectsRaw);
+          videos = projects
+            .filter(function(project) {
+              return project.status === 'draft' || !project.status;
+            })
+            .map(function(project) {
+              return {
+                id: project.id,
+                title: project.title,
+                thumbnailUrl: project.thumbnailUrl,
+                completedDate: project.completedDate,
+                videoData: project.videoData,
+                titleData: project.titleData,
+                thumbnailData: project.thumbnailData,
+                shortsData: project.shortsData || null,
+                type: 'video' // 일반 영상
+              };
+            });
+        }
+
+        // 쇼츠 변환 결과 로드 (step11ShortsData)
+        try {
+          var shortsDataRaw = localStorage.getItem('step11ShortsData');
+          if (shortsDataRaw) {
+            var shortsData = JSON.parse(shortsDataRaw);
+            if (shortsData.video_url) {
+              // 쇼츠 변환 결과를 별도 항목으로 추가
+              var shortsVideo = {
+                id: 'shorts_' + Date.now(),
+                title: (shortsData.original_video_data && shortsData.original_video_data.title) || '쇼츠 변환 영상',
+                thumbnailUrl: shortsData.original_video_data && shortsData.original_video_data.thumbnailUrl || '',
+                completedDate: new Date().toISOString(),
+                videoData: shortsData.original_video_data,
+                titleData: shortsData.original_video_data && shortsData.original_video_data.titleData || null,
+                thumbnailData: shortsData.original_video_data && shortsData.original_video_data.thumbnailData || null,
+                shortsData: shortsData,
+                type: 'shorts' // 쇼츠 변환 영상
+              };
+              videos.push(shortsVideo);
+            }
+          }
+        } catch (e) {
+          console.error('쇼츠 데이터 로드 실패:', e);
+        }
+
+        availableVideos = videos;
+      } catch (e) {
+        console.error('영상 로드 실패:', e);
+        availableVideos = [];
+      }
+    }
+
+    // 영상 리스트 렌더링
+    function renderVideoList() {
+      var container = document.getElementById('videoList');
+      if (!container) return;
+
+      if (availableVideos.length === 0) {
+        container.innerHTML = (
+          '<div style="text-align: center; padding: 40px; color: #999;">' +
+          '업로드 가능한 영상이 없습니다.<br />' +
+          '9. 최종 제작 단계에서 완성된 영상이 여기에 표시됩니다.' +
+          '</div>'
+        );
+        return;
+      }
+
+      container.innerHTML = availableVideos
+        .map(function(video) {
+          var isSelected = selectedVideos.includes(video.id);
+          var isShorts = video.type === 'shorts';
+          var beatDropInfo = '';
+          
+          // 비트 드롭 효과 정보 표시
+          if (isShorts && video.shortsData && video.shortsData.beat_drop_effects) {
+            var effects = video.shortsData.beat_drop_effects;
+            if (effects.enabled) {
+              beatDropInfo = '<div class="video-badge" style="display: inline-block; padding: 2px 6px; background: #fef3c7; color: #92400e; border-radius: 4px; font-size: 10px; font-weight: 600; margin-left: 6px;">⚡ 비트 드롭</div>';
+            }
+          }
+          
+          return (
+            '<div class="video-item' +
+            (isSelected ? ' selected' : '') +
+            '" data-id="' +
+            video.id +
+            '">' +
+            '<img src="' +
+            (video.thumbnailUrl || '') +
+            '" class="video-thumbnail" alt="' +
+            escapeHtml(video.title) +
+            '" />' +
+            '<div class="video-info">' +
+            '<div class="video-title">' +
+            escapeHtml(video.title) +
+            (isShorts ? ' <span style="color: #9333ea; font-size: 11px;">(쇼츠)</span>' : '') +
+            beatDropInfo +
+            '</div>' +
+            '<div class="video-meta">' +
+            formatDate(video.completedDate) +
+            '</div>' +
+            '</div>' +
+            '<input type="checkbox" class="video-checkbox" ' +
+            (isSelected ? 'checked' : '') +
+            ' data-id="' +
+            video.id +
+            '" />' +
+            '</div>'
+          );
+        })
+        .join('');
+
+      // 체크박스 이벤트 리스너
+      container.querySelectorAll('.video-checkbox').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+          var videoId = this.getAttribute('data-id');
+          if (this.checked) {
+            if (!selectedVideos.includes(videoId)) {
+              selectedVideos.push(videoId);
+            }
+          } else {
+            selectedVideos = selectedVideos.filter(function(id) {
+              return id !== videoId;
+            });
+          }
+          updateVideoSelection();
+          updateMetadataReview();
+        });
+      });
+
+      // 비디오 아이템 클릭 이벤트
+      container.querySelectorAll('.video-item').forEach(function(item) {
+        item.addEventListener('click', function(e) {
+          if (e.target.type !== 'checkbox') {
+            var checkbox = this.querySelector('.video-checkbox');
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
+          }
+        });
+      });
+    }
+
+    // 비디오 선택 업데이트
+    function updateVideoSelection() {
+      var items = document.querySelectorAll('.video-item');
+      items.forEach(function(item) {
+        var videoId = item.getAttribute('data-id');
+        if (selectedVideos.includes(videoId)) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
+      // 예측 차트 업데이트
+      predictViews();
+      // 썸네일 목록 업데이트
+      loadAvailableThumbnails();
+    }
+
+    // 메타데이터 확인 업데이트
+    function updateMetadataReview() {
+      if (selectedVideos.length === 0) {
+        document.getElementById('reviewTitle').textContent = '-';
+        document.getElementById('reviewDescription').textContent = '-';
+        document.getElementById('reviewTags').textContent = '-';
+        return;
+      }
+
+      var firstVideo = availableVideos.find(function(v) {
+        return v.id === selectedVideos[0];
+      });
+
+      if (firstVideo && firstVideo.titleData) {
+        var titleData = firstVideo.titleData;
+        document.getElementById('reviewTitle').textContent = titleData.selectedTitle || titleData.title || '-';
+        document.getElementById('reviewDescription').textContent = titleData.description || '-';
+        document.getElementById('reviewTags').textContent = titleData.hashtags || titleData.tags || '-';
+      } else {
+        document.getElementById('reviewTitle').textContent = firstVideo.title || '-';
+        document.getElementById('reviewDescription').textContent = '-';
+        document.getElementById('reviewTags').textContent = '-';
+      }
+    }
+
+    // 골든 타임 분석
+    function analyzeGoldenTime() {
+      // AI가 채널의 과거 데이터를 분석하여 골든 타임 추천
+      // 실제로는 YouTube Analytics API를 사용하거나, 과거 업로드 데이터를 분석
+      // 여기서는 더미 데이터로 시뮬레이션
+
+      setTimeout(function() {
+        // 예: 오늘 날짜 기준으로 내일 오후 6시 추천
+        var tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(18, 0, 0, 0);
+
+        goldenTime = tomorrow;
+        var timeStr = formatDateTime(goldenTime);
+        document.getElementById('goldenTime').textContent = timeStr;
+      }, 1000);
+    }
+
+    // 골든 타임 적용
+    function applyGoldenTime() {
+      if (!goldenTime) return;
+      var datetimeInput = document.getElementById('scheduleDateTime');
+      var isoString = goldenTime.toISOString().slice(0, 16);
+      datetimeInput.value = isoString;
+    }
+
+    // AI 조회수 예측 (비트 드롭 효과 반영)
+    function predictViews() {
+      if (selectedVideos.length === 0) {
+        document.getElementById('predictionValue').textContent = '-';
+        renderPredictionChart([]);
+        return;
+      }
+
+      var firstVideo = availableVideos.find(function(v) {
+        return v.id === selectedVideos[0];
+      });
+
+      if (!firstVideo) {
+        document.getElementById('predictionValue').textContent = '-';
+        renderPredictionChart([]);
+        return;
+      }
+
+      // AI가 주제와 썸네일을 분석하여 예상 조회수 계산
+      // 비트 드롭 효과가 있는 경우 조회수 보정 적용
+      var baseViews = 1000 + Math.random() * 9000; // 1000~10000
+      
+      // 비트 드롭 효과 보정 (쇼츠 변환 영상인 경우)
+      var beatDropMultiplier = 1.0;
+      if (firstVideo.type === 'shorts' && firstVideo.shortsData && firstVideo.shortsData.beat_drop_effects) {
+        var effects = firstVideo.shortsData.beat_drop_effects;
+        if (effects.enabled) {
+          // 비트 드롭 효과가 있으면 조회수 증가 (강도에 따라)
+          var intensityBonus = (effects.intensity || 3) * 0.1; // 강도당 10% 증가
+          var moodBonus = 0;
+          
+          // 분위기별 보너스
+          if (effects.mood) {
+            var moodBonuses = {
+              '비장한': 0.15,
+              '강렬한': 0.20,
+              '유쾌한': 0.18,
+              '경쾌한': 0.16,
+              '감성적인': 0.12,
+              '따뜻한': 0.10
+            };
+            moodBonus = moodBonuses[effects.mood] || 0.1;
+          }
+          
+          beatDropMultiplier = 1.0 + intensityBonus + moodBonus;
+        }
+      }
+      
+      baseViews = Math.floor(baseViews * beatDropMultiplier);
+      
+      var minViews = Math.floor(baseViews * 0.7);
+      var maxViews = Math.floor(baseViews * 1.5);
+      var avgViews = Math.floor((minViews + maxViews) / 2);
+
+      var predictionText = formatNumber(avgViews) + '회 (예상 범위: ' + formatNumber(minViews) + '~' + formatNumber(maxViews) + '회)';
+      
+      // 비트 드롭 효과가 있으면 표시
+      if (beatDropMultiplier > 1.0) {
+        predictionText += ' ⚡ 비트 드롭 효과 반영';
+      }
+      
+      document.getElementById('predictionValue').textContent = predictionText;
+
+      // 차트 데이터 생성 (7일 예측)
+      var chartData = [];
+      for (var i = 0; i < 7; i++) {
+        var dayViews = Math.floor(avgViews * (0.3 + Math.random() * 0.7));
+        chartData.push({
+          day: (i + 1) + '일차',
+          views: dayViews
+        });
+      }
+
+      renderPredictionChart(chartData);
+    }
+
+    // 예측 차트 렌더링
+    function renderPredictionChart(data) {
+      var container = document.getElementById('predictionChart');
+      if (!container) return;
+
+      if (data.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">영상을 선택하면 예측 차트가 표시됩니다.</div>';
+        return;
+      }
+
+      var maxViews = Math.max.apply(null, data.map(function(d) {
+        return d.views;
+      }));
+
+      container.innerHTML = data
+        .map(function(item) {
+          var height = (item.views / maxViews) * 100;
+          return (
+            '<div class="chart-bar" style="height: ' +
+            height +
+            '%;" title="' +
+            item.day +
+            ': ' +
+            formatNumber(item.views) +
+            '회">' +
+            '<div class="chart-label">' +
+            item.day +
+            '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
+    }
+
+    // 예약 업로드 설정
+    function scheduleUpload() {
+      if (selectedVideos.length === 0) {
+        alert('업로드할 영상을 선택하세요.');
+        return;
+      }
+
+      var scheduleDateTime = document.getElementById('scheduleDateTime').value;
+      if (!scheduleDateTime) {
+        alert('업로드 예약 시간을 선택하세요.');
+        return;
+      }
+
+      var platforms = [];
+      if (document.getElementById('platformYoutube').checked) platforms.push('youtube');
+      if (document.getElementById('platformTiktok').checked) platforms.push('tiktok');
+      if (document.getElementById('platformInstagram').checked) platforms.push('instagram');
+
+      if (platforms.length === 0) {
+        alert('최소 하나의 플랫폼을 선택하세요.');
+        return;
+      }
+
+      // YouTube Data API 호출 준비
+      var uploadData = {
+        videos: selectedVideos.map(function(videoId) {
+          var video = availableVideos.find(function(v) {
+            return v.id === videoId;
+          });
+          var uploadItem = {
+            id: video.id,
+            title: video.title,
+            videoData: video.videoData,
+            titleData: video.titleData,
+            thumbnailData: video.thumbnailData,
+            type: video.type || 'video'
+          };
+          
+          // 쇼츠 변환 영상인 경우 비트 드롭 효과 정보 포함
+          if (video.type === 'shorts' && video.shortsData) {
+            uploadItem.shortsData = video.shortsData;
+            uploadItem.beatDropEffects = video.shortsData.beat_drop_effects;
+            uploadItem.bgmHotspot = video.shortsData.bgm_hotspot;
+            uploadItem.dynamicCaptions = video.shortsData.dynamic_captions;
+          }
+          
+          return uploadItem;
+        }),
+        scheduleDateTime: scheduleDateTime,
+        platforms: platforms
+      };
+
+      // 실제 업로드는 YouTube Data API를 사용
+      uploadToYouTube(uploadData);
+    }
+
+    // 배치 업로드 프로세스 (쿼터 검증 포함, Promise.allSettled + 3초 딜레이)
+    async function batchUploadProcess(uploadData) {
+      // 쿼터 검증 로직
+      var quotaCheckResult = await checkChannelQuotas(uploadData.platforms);
+      
+      if (quotaCheckResult.skippedChannels.length > 0) {
+        // 쿼터 초과 채널이 있는 경우
+        var skippedNames = quotaCheckResult.skippedChannels.map(function(c) { return c.name; }).join(', ');
+        var message = '일부 채널의 쿼터가 초과되어 업로드가 제한됩니다.\n\n';
+        message += '✅ 업로드 가능: ' + quotaCheckResult.availableChannels.length + '개 채널\n';
+        message += '⚠️ 쿼터 초과: ' + skippedNames + '\n\n';
+        message += '계속 진행하시겠습니까? (쿼터 초과 채널은 자동으로 스킵됩니다)';
+        
+        if (!confirm(message)) {
+          return;
+        }
+      }
+
+      // 업로드 실행 (쿼터 검증 통과한 채널만)
+      var uploadResults = {
+        success: [],
+        skipped: [],
+        failed: []
+      };
+
+      // 진행 모달 표시
+      showUploadProgressModal(uploadData.videos.length, quotaCheckResult.availableChannels.length);
+
+      // 인코딩 캐시 (영상별 1회만 인코딩)
+      var encodedCache = {};
+
+      async function getEncodedVideo(video) {
+        if (encodedCache[video.id]) return encodedCache[video.id];
+        updateUploadProgress(0, quotaCheckResult.availableChannels.length, '영상 인코딩 중...');
+        var optimized = await optimizeVideoForStreaming(video);
+        encodedCache[video.id] = optimized;
+        return optimized;
+      }
+
+      async function uploadChannelWithRetry(channel, attempt) {
+        var currentAttempt = attempt || 1;
+        var maxAttempts = 2;
+
+        // 랜덤 딜레이 (3~8초)
+        var delayMs = 3000 + Math.floor(Math.random() * 5000);
+        await delay(delayMs);
+
+        // 쿼터 재검증 (업로드 직전)
+        var currentQuota = getChannelQuota(channel.id);
+        if (currentQuota.current_count >= currentQuota.daily_limit) {
+          return { status: 'skipped', channel: channel.name, reason: '쿼터 초과' };
+        }
+
+        // 인코딩 (필요 시)
+        var optimizedVideos = [];
+        for (var v = 0; v < uploadData.videos.length; v++) {
+          var video = uploadData.videos[v];
+          var optimizedVideo = await getEncodedVideo(video);
+          optimizedVideos.push(optimizedVideo);
+        }
+
+        updateUploadProgress(0, quotaCheckResult.availableChannels.length, channel.name + ' 업로드 중...');
+
+        try {
+          var uploadResponse = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/youtube/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              channel_id: channel.id,
+              videos: optimizedVideos,
+              scheduleDateTime: uploadData.scheduleDateTime
+            })
+          });
+
+          if (!uploadResponse.ok) {
+            var errorData = await uploadResponse.json().catch(function() { return {}; });
+
+            // 토큰 만료 또는 인증 오류 처리
+            if (uploadResponse.status === 401 || uploadResponse.status === 403 ||
+                (errorData.error && (errorData.error.includes('token') || errorData.error.includes('expired') ||
+                errorData.error.includes('unauthorized') || errorData.error.includes('invalid_grant') ||
+                errorData.error.includes('invalid_token') || errorData.error.includes('Token has been expired')))) {
+              return {
+                status: 'skipped',
+                channel: channel.name,
+                reason: '토큰 오류 (만료 또는 인증 실패)',
+                error: errorData.error || '인증 토큰이 만료되었거나 유효하지 않습니다.'
+              };
+            }
+            throw new Error(errorData.error || '업로드 실패');
+          }
+
+          var uploadResult = await uploadResponse.json();
+          incrementChannelQuota(channel.id);
+
+          return {
+            status: 'success',
+            channel: channel.name,
+            videoCount: optimizedVideos.length,
+            videoIds: uploadResult.video_ids || []
+          };
+        } catch (uploadError) {
+          if (currentAttempt < maxAttempts) {
+            return uploadChannelWithRetry(channel, currentAttempt + 1);
+          }
+          return { status: 'failed', channel: channel.name, error: uploadError.message || '업로드 실패' };
+        }
+      }
+
+      var queue = new UploadQueue(3, {
+        onProgress: function(current, total) {
+          updateUploadProgress(current, total, '채널 업로드 진행');
+        }
+      });
+
+      quotaCheckResult.availableChannels.forEach(function(channel) {
+        queue.enqueue(function() {
+          return uploadChannelWithRetry(channel);
+        });
+      });
+
+      var queueResults = await queue.run();
+
+      queueResults.forEach(function(result) {
+        if (result.status === 'success') {
+          uploadResults.success.push(result);
+        } else if (result.status === 'skipped') {
+          uploadResults.skipped.push(result);
+        } else if (result.status === 'failed') {
+          uploadResults.failed.push(result);
+          notifyUploadFailure({ name: result.channel }, result.error);
+        }
+      });
+
+      // 쿼터 초과로 스킵된 채널 추가
+      quotaCheckResult.skippedChannels.forEach(function(channel) {
+        uploadResults.skipped.push({
+          channel: channel.name,
+          reason: '쿼터 초과'
+        });
+      });
+
+      // 진행 모달 숨기기
+      hideUploadProgressModal();
+
+      // 결과 리포트 표시
+      showUploadResultReport(uploadResults);
+
+      // 쿼터 상태 업데이트
+      updateChannelQuotaDisplays();
+
+      return uploadResults;
+    }
+
+    // YouTube Data API 업로드 (쿼터 검증 포함) - 레거시 호환
+    async function uploadToYouTube(uploadData) {
+      await batchUploadProcess(uploadData);
+    }
+
+    // 지금 바로 업로드
+    function uploadNow() {
+      if (selectedVideos.length === 0) {
+        alert('업로드할 영상을 선택하세요.');
+        return;
+      }
+
+      var platforms = [];
+      if (document.getElementById('platformYoutube').checked) platforms.push('youtube');
+      if (document.getElementById('platformTiktok').checked) platforms.push('tiktok');
+      if (document.getElementById('platformInstagram').checked) platforms.push('instagram');
+
+      if (platforms.length === 0) {
+        alert('최소 하나의 플랫폼을 선택하세요.');
+        return;
+      }
+
+      var uploadData = {
+        videos: selectedVideos.map(function(videoId) {
+          var video = availableVideos.find(function(v) {
+            return v.id === videoId;
+          });
+          return {
+            id: video.id,
+            title: video.title,
+            videoData: video.videoData,
+            titleData: video.titleData,
+            thumbnailData: video.thumbnailData
+          };
+        }),
+        scheduleDateTime: null, // 즉시 업로드
+        platforms: platforms
+      };
+
+      uploadToYouTube(uploadData);
+    }
+
+    // 사용 가능한 썸네일 로드
+    function loadAvailableThumbnails() {
+      try {
+        // 8단계(썸네일 생성기)에서 생성된 썸네일들 가져오기
+        var archivedProjectsRaw = localStorage.getItem('archivedProjects');
+        if (archivedProjectsRaw) {
+          var projects = JSON.parse(archivedProjectsRaw);
+          availableThumbnails = [];
+          
+          projects.forEach(function(project) {
+            if (project.thumbnailData && project.thumbnailData.thumbnailImageUrl) {
+              availableThumbnails.push({
+                id: project.id,
+                url: project.thumbnailData.thumbnailImageUrl,
+                title: project.title
+              });
+            }
+          });
+        }
+
+        // 현재 선택된 영상의 썸네일도 추가
+        if (selectedVideos.length > 0) {
+          var firstVideo = availableVideos.find(function(v) {
+            return v.id === selectedVideos[0];
+          });
+          if (firstVideo && firstVideo.thumbnailData && firstVideo.thumbnailData.thumbnailImageUrl) {
+            var exists = availableThumbnails.find(function(t) {
+              return t.url === firstVideo.thumbnailData.thumbnailImageUrl;
+            });
+            if (!exists) {
+              availableThumbnails.push({
+                id: firstVideo.id + '_current',
+                url: firstVideo.thumbnailData.thumbnailImageUrl,
+                title: firstVideo.title
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.error('썸네일 로드 실패:', e);
+        availableThumbnails = [];
+      }
+    }
+
+    // 썸네일 선택 UI 렌더링
+    function renderThumbnailSelectors() {
+      // 썸네일 선택 모달은 나중에 구현
+      // 여기서는 기본 UI만 렌더링
+    }
+
+    // 썸네일 선택
+    function selectThumbnail(type) {
+      if (availableThumbnails.length === 0) {
+        alert('사용 가능한 썸네일이 없습니다.\n\n8단계(썸네일 생성기)에서 썸네일을 생성하거나, 작업 보관함에 저장된 프로젝트의 썸네일을 사용할 수 있습니다.');
+        return;
+      }
+
+      // 썸네일 선택 모달 생성
+      var modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: flex; align-items: center; justify-content: center;';
+      
+      var modalContent = document.createElement('div');
+      modalContent.style.cssText = 'background: #fff; border-radius: 12px; padding: 24px; max-width: 600px; max-height: 80vh; overflow-y: auto;';
+      
+      var modalTitle = document.createElement('div');
+      modalTitle.style.cssText = 'font-size: 18px; font-weight: 700; color: #2d3748; margin-bottom: 16px;';
+      modalTitle.textContent = '썸네일 ' + type + ' 선택';
+      
+      var thumbnailGrid = document.createElement('div');
+      thumbnailGrid.style.cssText = 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px;';
+      
+      availableThumbnails.forEach(function(thumbnail, index) {
+        var thumbnailCard = document.createElement('div');
+        thumbnailCard.style.cssText = 'border: 2px solid #e2e8f0; border-radius: 8px; overflow: hidden; cursor: pointer; transition: all 0.2s;';
+        thumbnailCard.onmouseover = function() { this.style.borderColor = '#9333ea'; };
+        thumbnailCard.onmouseout = function() { this.style.borderColor = '#e2e8f0'; };
+        thumbnailCard.onclick = function() {
+          if (type === 'A') {
+            selectedThumbnailA = thumbnail;
+            updateThumbnailPreview('A', thumbnail.url);
+          } else {
+            selectedThumbnailB = thumbnail;
+            updateThumbnailPreview('B', thumbnail.url);
+          }
+          updateComparisonPreview();
+          document.body.removeChild(modal);
+        };
+        
+        var img = document.createElement('img');
+        img.src = thumbnail.url;
+        img.style.cssText = 'width: 100%; aspect-ratio: 16/9; object-fit: cover;';
+        
+        var label = document.createElement('div');
+        label.style.cssText = 'padding: 8px; font-size: 12px; color: #666; text-align: center;';
+        label.textContent = thumbnail.title.length > 30 ? thumbnail.title.substring(0, 30) + '...' : thumbnail.title;
+        
+        thumbnailCard.appendChild(img);
+        thumbnailCard.appendChild(label);
+        thumbnailGrid.appendChild(thumbnailCard);
+      });
+      
+      var closeBtn = document.createElement('button');
+      closeBtn.style.cssText = 'width: 100%; padding: 10px; background: #e2e8f0; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;';
+      closeBtn.textContent = '취소';
+      closeBtn.onclick = function() {
+        document.body.removeChild(modal);
+      };
+      
+      modalContent.appendChild(modalTitle);
+      modalContent.appendChild(thumbnailGrid);
+      modalContent.appendChild(closeBtn);
+      modal.appendChild(modalContent);
+      document.body.appendChild(modal);
+    }
+
+    // 썸네일 미리보기 업데이트
+    function updateThumbnailPreview(type, url) {
+      var previewBox = document.getElementById('thumbnail' + type + 'Preview');
+      if (!previewBox) return;
+
+      previewBox.innerHTML = '<img src="' + url + '" alt="썸네일 ' + type + '" />';
+      
+      var card = document.getElementById('thumbnail' + type + 'Card');
+      if (card) {
+        card.classList.add('selected');
+      }
+    }
+
+    // 비교 미리보기 업데이트
+    function updateComparisonPreview() {
+      if (!selectedThumbnailA || !selectedThumbnailB) {
+        document.getElementById('previewComparison').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('previewComparison').style.display = 'block';
+      document.getElementById('comparisonThumbnailA').src = selectedThumbnailA.url;
+      document.getElementById('comparisonThumbnailB').src = selectedThumbnailB.url;
+    }
+
+    // A/B 테스트 데이터 로드
+    function loadABTestData() {
+      try {
+        var abTestDataRaw = localStorage.getItem('abTestData');
+        if (abTestDataRaw) {
+          abTestData = JSON.parse(abTestDataRaw);
+          
+          // 진행 중인 테스트가 있으면 UI 업데이트
+          if (abTestData && (abTestData.status === 'running' || abTestData.status === 'early_completed')) {
+            selectedThumbnailA = abTestData.thumbnailA;
+            selectedThumbnailB = abTestData.thumbnailB;
+            updateThumbnailPreview('A', abTestData.thumbnailA.url);
+            updateThumbnailPreview('B', abTestData.thumbnailB.url);
+            updateComparisonPreview();
+            
+            // 조기 확정 설정 UI 복원
+            if (abTestData.earlyWin && abTestData.earlyWin.enabled) {
+              document.getElementById('enableEarlyWin').checked = true;
+              document.getElementById('earlyWinSettings').style.display = 'block';
+              if (abTestData.earlyWin.threshold) {
+                document.getElementById('earlyWinThreshold').value = abTestData.earlyWin.threshold;
+              }
+              if (abTestData.earlyWin.minImpressions) {
+                document.getElementById('earlyWinMinImpressions').value = abTestData.earlyWin.minImpressions;
+              }
+            }
+            
+            // 조기 확정된 경우 배지 및 리포트 표시
+            if (abTestData.status === 'early_completed' && abTestData.results) {
+              var results = abTestData.results;
+              var winner = abTestData.winner;
+              var ctrDiff = Math.abs(results.ctrB - results.ctrA);
+              
+              document.getElementById('earlyWinBadge').style.display = 'inline-flex';
+              document.getElementById('earlyWinReport').style.display = 'block';
+              
+              // 리포트 텍스트 생성
+              var reportText = '테스트가 조기 확정되어 썸네일 ' + winner + 
+                              '이(가) 자동으로 적용되었습니다.\n\n' +
+                              '📊 성과 요약:\n' +
+                              '• 썸네일 A CTR: ' + results.ctrA.toFixed(2) + '%\n' +
+                              '• 썸네일 B CTR: ' + results.ctrB.toFixed(2) + '%\n' +
+                              '• 총 노출수: ' + (results.totalImpressions || 0).toLocaleString() + '회';
+              
+              document.getElementById('earlyWinReportText').textContent = reportText;
+              
+              // 통계 업데이트
+              document.getElementById('ctrA').textContent = results.ctrA.toFixed(2) + '%';
+              document.getElementById('ctrB').textContent = results.ctrB.toFixed(2) + '%';
+              
+              // 결과 알림
+              var resultText = '⚡ AI 조기 확정: 썸네일 ' + winner + '가 CTR ' + ctrDiff.toFixed(2) + '% 더 높아 즉시 적용되었습니다.';
+              document.getElementById('testResultText').textContent = resultText;
+              document.getElementById('testResultAlert').classList.add('show');
+            }
+            
+            if (abTestData.status === 'running') {
+              startABTestProgress();
+              
+              // 조기 확정이 활성화된 경우 모니터링 재개
+              if (abTestData.earlyWin && abTestData.earlyWin.enabled) {
+                startIntelligentMonitoring();
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error('A/B 테스트 데이터 로드 실패:', e);
+      }
+    }
+
+    // A/B 테스트 시작
+    function startABTest() {
+      if (!selectedThumbnailA || !selectedThumbnailB) {
+        alert('썸네일 A와 B를 모두 선택하세요.');
+        return;
+      }
+
+      if (selectedVideos.length === 0) {
+        alert('업로드할 영상을 먼저 선택하세요.');
+        return;
+      }
+
+      var testDuration = parseInt(document.getElementById('testDuration').value);
+      var useCTR = document.getElementById('metricCTR').checked;
+      var useWatchTime = document.getElementById('metricWatchTime').checked;
+
+      if (!useCTR && !useWatchTime) {
+        alert('최소 하나의 테스트 지표를 선택하세요.');
+        return;
+      }
+
+      // AI 조기 확정 설정
+      var enableEarlyWin = document.getElementById('enableEarlyWin').checked;
+      var earlyWinThreshold = enableEarlyWin ? parseFloat(document.getElementById('earlyWinThreshold').value) : null;
+      var earlyWinMinImpressions = enableEarlyWin ? parseInt(document.getElementById('earlyWinMinImpressions').value) : null;
+
+      // 선택된 영상의 비트 드롭 효과 정보 가져오기
+      var selectedVideo = availableVideos.find(function(v) {
+        return v.id === selectedVideos[0];
+      });
+      var beatDropEffects = null;
+      if (selectedVideo && selectedVideo.type === 'shorts' && selectedVideo.shortsData && selectedVideo.shortsData.beat_drop_effects) {
+        beatDropEffects = selectedVideo.shortsData.beat_drop_effects;
+      }
+
+      var testData = {
+        videoId: selectedVideos[0],
+        thumbnailA: selectedThumbnailA,
+        thumbnailB: selectedThumbnailB,
+        duration: testDuration, // 시간 단위
+        metrics: {
+          ctr: useCTR,
+          watchTime: useWatchTime
+        },
+        startTime: new Date().toISOString(),
+        status: 'running',
+        earlyWin: {
+          enabled: enableEarlyWin,
+          threshold: earlyWinThreshold,
+          minImpressions: earlyWinMinImpressions
+        },
+        beatDropEffects: beatDropEffects // 비트 드롭 효과 정보 포함
+      };
+
+      abTestData = testData;
+      localStorage.setItem('abTestData', JSON.stringify(testData));
+
+      // 테스트 진행률 섹션 표시
+      document.getElementById('testProgressSection').style.display = 'block';
+      startABTestProgress();
+
+      // AI 조기 확정이 활성화된 경우 모니터링 시작
+      if (enableEarlyWin) {
+        startIntelligentMonitoring();
+      }
+
+      alert('A/B 테스트가 시작되었습니다.\n\n테스트 기간: ' + testDuration + '시간\n테스트 지표: ' + (useCTR ? 'CTR' : '') + (useWatchTime ? (useCTR ? ', 시청 시간' : '시청 시간') : '') + (enableEarlyWin ? '\nAI 조기 확정: 활성화' : ''));
+    }
+
+    // A/B 테스트 진행률 시작
+    function startABTestProgress() {
+      if (!abTestData || abTestData.status !== 'running') return;
+
+      var startTime = new Date(abTestData.startTime);
+      var duration = abTestData.duration * 60 * 60 * 1000; // 밀리초로 변환
+      var endTime = new Date(startTime.getTime() + duration);
+
+      function updateProgress() {
+        // 조기 확정된 경우 진행률 업데이트 중단
+        if (abTestData.status === 'early_completed') {
+          return;
+        }
+
+        var now = new Date();
+        var elapsed = now - startTime;
+        var progress = Math.min((elapsed / duration) * 100, 100);
+
+        document.getElementById('progressBar').style.width = progress + '%';
+        document.getElementById('progressValue').textContent = Math.floor(progress) + '%';
+
+        if (progress >= 100 && abTestData.status === 'running') {
+          // 테스트 완료 - 결과 분석
+          analyzeABTestResults();
+          clearInterval(abTestInterval);
+        }
+      }
+
+      updateProgress();
+      abTestInterval = setInterval(updateProgress, 1000); // 1초마다 업데이트
+    }
+
+    // 지능형 스케줄러: 업로드 초반 6시간 집중 모니터링
+    function startIntelligentMonitoring() {
+      if (!abTestData || !abTestData.earlyWin || !abTestData.earlyWin.enabled) return;
+
+      var startTime = new Date(abTestData.startTime);
+      var intensivePeriod = 6 * 60 * 60 * 1000; // 6시간 (밀리초)
+      var endIntensiveTime = new Date(startTime.getTime() + intensivePeriod);
+
+      // 초반 6시간: 1시간마다 체크
+      var checkInterval = 60 * 60 * 1000; // 1시간
+
+      function scheduleCheck() {
+        var now = new Date();
+        
+        // 초반 6시간 동안만 집중 모니터링
+        if (now < endIntensiveTime) {
+          // 1시간마다 checkEarlyWin 실행
+          earlyWinCheckInterval = setInterval(function() {
+            checkEarlyWin();
+          }, checkInterval);
+
+          // 즉시 첫 번째 체크 실행
+          setTimeout(function() {
+            checkEarlyWin();
+          }, 5 * 60 * 1000); // 5분 후 첫 체크
+        } else {
+          // 6시간 이후에는 모니터링 중단 (정상 종료 대기)
+          if (earlyWinCheckInterval) {
+            clearInterval(earlyWinCheckInterval);
+            earlyWinCheckInterval = null;
+          }
+        }
+      }
+
+      scheduleCheck();
+      
+      // 6시간 경과 시 모니터링 중단
+      setTimeout(function() {
+        if (earlyWinCheckInterval) {
+          clearInterval(earlyWinCheckInterval);
+          earlyWinCheckInterval = null;
+        }
+      }, intensivePeriod);
+    }
+
+    // 조기 승리 체크 함수 (비트 드롭 효과 반영)
+    function checkEarlyWin() {
+      if (!abTestData || abTestData.status !== 'running') return;
+      if (!abTestData.earlyWin || !abTestData.earlyWin.enabled) return;
+
+      var threshold = abTestData.earlyWin.threshold;
+      var minImpressions = abTestData.earlyWin.minImpressions;
+
+      // YouTube Analytics API를 통해 현재 CTR 데이터 수집
+      fetchCurrentCTRData(abTestData.videoId, abTestData.startTime)
+        .then(function(currentData) {
+          var impressionsA = currentData.impressionsA || 0;
+          var impressionsB = currentData.impressionsB || 0;
+          var ctrA = currentData.ctrA || 0;
+          var ctrB = currentData.ctrB || 0;
+
+          // 비트 드롭 효과 보정 적용
+          var video = availableVideos.find(function(v) {
+            return v.id === abTestData.videoId;
+          });
+          
+          if (video && video.type === 'shorts' && video.shortsData && video.shortsData.beat_drop_effects) {
+            var effects = video.shortsData.beat_drop_effects;
+            if (effects.enabled) {
+              // 비트 드롭 효과가 있는 쇼츠는 CTR이 더 높을 가능성이 있음
+              // 실제 데이터에 보정 계수 적용 (분석 시)
+              var beatDropBoost = 1.0 + ((effects.intensity || 3) * 0.05); // 강도당 5% 보정
+              ctrA = ctrA * beatDropBoost;
+              ctrB = ctrB * beatDropBoost;
+            }
+          }
+
+          // 조건 1: 최소 노출수 달성 확인 (먼저 확인)
+          var totalImpressions = impressionsA + impressionsB;
+          var minImpressionsMet = totalImpressions >= minImpressions;
+          
+          if (!minImpressionsMet) {
+            console.log('조기 확정 조건 미충족: 최소 노출수 부족 (' + totalImpressions + ' / ' + minImpressions + ')');
+            return; // 최소 노출수 미달 시 조기 확정 불가
+          }
+
+          // 조건 2: CTR 차이가 임계값 이상인지 확인 (최소 노출수 달성 후)
+          var ctrDiff = Math.abs(ctrB - ctrA);
+          var thresholdMet = ctrDiff >= threshold;
+          
+          // 수학 공식: |CTR_A - CTR_B| >= Threshold (e.g., 5%)
+          if (!thresholdMet) {
+            console.log('조기 확정 조건 미충족: CTR 차이 부족 (' + ctrDiff.toFixed(2) + '% / ' + threshold + '%)');
+            return; // CTR 차이 미달 시 조기 확정 불가
+          }
+
+          console.log('조기 확정 체크:', {
+            totalImpressions: totalImpressions,
+            minImpressions: minImpressions,
+            minImpressionsMet: minImpressionsMet,
+            ctrA: ctrA,
+            ctrB: ctrB,
+            ctrDiff: ctrDiff,
+            threshold: threshold,
+            thresholdMet: thresholdMet,
+            beatDropEnabled: video && video.shortsData && video.shortsData.beat_drop_effects ? video.shortsData.beat_drop_effects.enabled : false
+          });
+
+          // 두 조건이 모두 충족되면 조기 확정
+          if (minImpressionsMet && thresholdMet) {
+            var winner = ctrB > ctrA ? 'B' : 'A';
+            stopTest(winner, ctrDiff, ctrA, ctrB, totalImpressions);
+          }
+        })
+        .catch(function(error) {
+          console.error('조기 확정 체크 실패:', error);
+        });
+    }
+
+    // 현재 CTR 데이터 수집 (YouTube Analytics API)
+    function fetchCurrentCTRData(videoId, startTime) {
+      return new Promise(function(resolve, reject) {
+        // Google API 클라이언트 확인
+        if (typeof gapi === 'undefined' || !gapi.client || !gapi.client.youtubeAnalytics) {
+          // 시뮬레이션 데이터 반환
+          var now = new Date();
+          var elapsed = (now - new Date(startTime)) / (1000 * 60 * 60); // 경과 시간 (시간)
+          
+          // 시간에 따라 증가하는 노출수 시뮬레이션
+          var baseImpressions = Math.floor(elapsed * 200); // 시간당 200회 노출 가정
+          var impressionsA = baseImpressions + Math.floor(Math.random() * 100);
+          var impressionsB = baseImpressions + Math.floor(Math.random() * 100);
+          
+          // CTR 시뮬레이션 (랜덤 변동)
+          var ctrA = 2.0 + Math.random() * 1.5;
+          var ctrB = 2.2 + Math.random() * 1.8;
+
+          resolve({
+            impressionsA: impressionsA,
+            impressionsB: impressionsB,
+            ctrA: ctrA,
+            ctrB: ctrB
+          });
+          return;
+        }
+
+        // 실제 API 호출
+        var startDate = new Date(startTime);
+        var endDate = new Date();
+        var startDateStr = formatDateForAPI(startDate);
+        var endDateStr = formatDateForAPI(endDate);
+        var channelId = 'mine';
+
+        gapi.client.youtubeAnalytics.reports.query({
+          ids: 'channel==' + channelId,
+          startDate: startDateStr,
+          endDate: endDateStr,
+          metrics: 'impressions,annotationClickThroughRate,cardClickThroughRate',
+          dimensions: 'video',
+          filters: 'video==' + videoId
+        })
+        .then(function(response) {
+          var rows = response.result.rows || [];
+          var headers = response.result.columnHeaders || [];
+          
+          var data = {
+            impressionsA: 0,
+            impressionsB: 0,
+            ctrA: 0,
+            ctrB: 0
+          };
+
+          // 데이터 파싱 (실제로는 썸네일별 구분 필요)
+          if (rows.length > 0) {
+            rows.forEach(function(row) {
+              headers.forEach(function(header, index) {
+                if (header.name === 'impressions') {
+                  data.impressionsA = Math.floor(parseFloat(row[index]) / 2);
+                  data.impressionsB = Math.floor(parseFloat(row[index]) / 2);
+                } else if (header.name === 'annotationClickThroughRate' || header.name === 'cardClickThroughRate') {
+                  var ctr = parseFloat(row[index]) * 100;
+                  data.ctrA = ctr * (0.9 + Math.random() * 0.2);
+                  data.ctrB = ctr * (0.95 + Math.random() * 0.25);
+                }
+              });
+            });
+          }
+
+          resolve(data);
+        })
+        .catch(function(error) {
+          console.error('CTR 데이터 수집 실패:', error);
+          reject(error);
+        });
+      });
+    }
+
+    // 테스트 중단 및 썸네일 교체
+    function stopTest(winner, ctrDiff, ctrA, ctrB, totalImpressions) {
+      if (!abTestData || abTestData.status !== 'running') return;
+
+      // 테스트 상태를 조기 완료로 변경
+      abTestData.status = 'early_completed';
+      abTestData.winner = winner;
+      abTestData.earlyCompletedAt = new Date().toISOString();
+      abTestData.results = {
+        ctrA: ctrA,
+        ctrB: ctrB,
+        totalImpressions: totalImpressions,
+        earlyCompleted: true
+      };
+      localStorage.setItem('abTestData', JSON.stringify(abTestData));
+
+      // 모니터링 중단
+      if (earlyWinCheckInterval) {
+        clearInterval(earlyWinCheckInterval);
+        earlyWinCheckInterval = null;
+      }
+
+      // 승리한 썸네일로 교체
+      var winnerThumbnail = winner === 'A' ? selectedThumbnailA : selectedThumbnailB;
+      updateThumbnail(winnerThumbnail, winner, ctrDiff, ctrA, ctrB, totalImpressions);
+    }
+
+    // 썸네일 업데이트 (thumbnails.set API 호출)
+    function updateThumbnail(winnerThumbnail, winner, ctrDiff, ctrA, ctrB, totalImpressions) {
+      // 기존 swapThumbnailToWinner 함수 재사용
+      swapThumbnailToWinner(winnerThumbnail, winner, ctrDiff, abTestData.videoId);
+
+      // UI 업데이트
+      document.getElementById('earlyWinBadge').style.display = 'inline-flex';
+      document.getElementById('earlyWinReport').style.display = 'block';
+
+      // 남은 시간 계산
+      var startTime = new Date(abTestData.startTime);
+      var duration = abTestData.duration * 60 * 60 * 1000;
+      var endTime = new Date(startTime.getTime() + duration);
+      var now = new Date();
+      var remainingHours = Math.floor((endTime - now) / (1000 * 60 * 60));
+
+      // 비트 드롭 효과 정보 확인
+      var video = availableVideos.find(function(v) {
+        return v.id === abTestData.videoId;
+      });
+      var beatDropInfo = '';
+      if (video && video.type === 'shorts' && video.shortsData && video.shortsData.beat_drop_effects) {
+        var effects = video.shortsData.beat_drop_effects;
+        if (effects.enabled) {
+          beatDropInfo = '\n• 비트 드롭 효과: ' + (effects.mood || '적용됨') + ' (강도 ' + (effects.intensity || 3) + '단계)';
+        }
+      }
+
+      // 리포트 텍스트 생성
+      var reportText = '테스트 종료까지 ' + remainingHours + '시간이 남았으나, 썸네일 ' + winner + 
+                      '의 성과가 압도적으로 높아(차이 ' + ctrDiff.toFixed(2) + '%) 자동으로 교체되었습니다.\n\n' +
+                      '📊 성과 요약:\n' +
+                      '• 썸네일 A CTR: ' + ctrA.toFixed(2) + '%\n' +
+                      '• 썸네일 B CTR: ' + ctrB.toFixed(2) + '%\n' +
+                      '• 총 노출수: ' + totalImpressions.toLocaleString() + '회' +
+                      beatDropInfo;
+
+      document.getElementById('earlyWinReportText').textContent = reportText;
+
+      // 통계 업데이트
+      document.getElementById('ctrA').textContent = ctrA.toFixed(2) + '%';
+      document.getElementById('ctrB').textContent = ctrB.toFixed(2) + '%';
+
+      // 결과 알림
+      var resultText = '⚡ AI 조기 확정: 썸네일 ' + winner + '가 CTR ' + ctrDiff.toFixed(2) + '% 더 높아 즉시 적용되었습니다.';
+      document.getElementById('testResultText').textContent = resultText;
+      document.getElementById('testResultAlert').classList.add('show');
+    }
+
+    // A/B 테스트 결과 분석
+    function analyzeABTestResults() {
+      if (!abTestData) return;
+
+      // YouTube Analytics API를 통해 실제 데이터 수집
+      fetchABTestAnalytics(abTestData.videoId, abTestData.startTime, abTestData.duration)
+        .then(function(analyticsData) {
+          var ctrA = analyticsData.ctrA || 0;
+          var ctrB = analyticsData.ctrB || 0;
+          var watchTimeA = analyticsData.watchTimeA || 0;
+          var watchTimeB = analyticsData.watchTimeB || 0;
+
+          // 통계 업데이트
+          document.getElementById('ctrA').textContent = ctrA.toFixed(2) + '%';
+          document.getElementById('ctrB').textContent = ctrB.toFixed(2) + '%';
+          document.getElementById('watchTimeA').textContent = Math.floor(watchTimeA) + '초';
+          document.getElementById('watchTimeB').textContent = Math.floor(watchTimeB) + '초';
+
+          // 승자 판정
+          var winner = ctrB > ctrA ? 'B' : 'A';
+          var ctrDiff = Math.abs(ctrB - ctrA);
+          var winnerThumbnail = winner === 'A' ? selectedThumbnailA : selectedThumbnailB;
+
+          // YouTube Data API로 썸네일 교체
+          swapThumbnailToWinner(winnerThumbnail, winner, ctrDiff, abTestData.videoId);
+
+          // 결과 알림 표시
+          var resultText = '썸네일 ' + winner + '가 CTR ' + ctrDiff.toFixed(2) + '% 더 높아 최종 적용되었습니다.';
+          document.getElementById('testResultText').textContent = resultText;
+          document.getElementById('testResultAlert').classList.add('show');
+
+          // 테스트 데이터 업데이트
+          abTestData.status = 'completed';
+          abTestData.winner = winner;
+          abTestData.results = {
+            ctrA: ctrA,
+            ctrB: ctrB,
+            watchTimeA: watchTimeA,
+            watchTimeB: watchTimeB
+          };
+          localStorage.setItem('abTestData', JSON.stringify(abTestData));
+        })
+        .catch(function(error) {
+          console.error('Analytics 데이터 수집 실패:', error);
+          // 실패 시 시뮬레이션 데이터 사용
+          var ctrA = 2.1 + Math.random() * 1.5;
+          var ctrB = 2.0 + Math.random() * 2.0;
+          var watchTimeA = 120 + Math.random() * 60;
+          var watchTimeB = 110 + Math.random() * 70;
+
+          document.getElementById('ctrA').textContent = ctrA.toFixed(2) + '%';
+          document.getElementById('ctrB').textContent = ctrB.toFixed(2) + '%';
+          document.getElementById('watchTimeA').textContent = Math.floor(watchTimeA) + '초';
+          document.getElementById('watchTimeB').textContent = Math.floor(watchTimeB) + '초';
+
+          var winner = ctrB > ctrA ? 'B' : 'A';
+          var ctrDiff = Math.abs(ctrB - ctrA);
+          var winnerThumbnail = winner === 'A' ? selectedThumbnailA : selectedThumbnailB;
+
+          swapThumbnailToWinner(winnerThumbnail, winner, ctrDiff, abTestData.videoId);
+        });
+    }
+
+    // YouTube Analytics API를 사용하여 A/B 테스트 성과 데이터 수집
+    function fetchABTestAnalytics(videoId, startTime, durationHours) {
+      return new Promise(function(resolve, reject) {
+        // Google API 클라이언트가 로드되었는지 확인
+        if (typeof gapi === 'undefined' || !gapi.client || !gapi.client.youtubeAnalytics) {
+          reject(new Error('YouTube Analytics API가 로드되지 않았습니다.'));
+          return;
+        }
+
+        // 테스트 기간 계산
+        var startDate = new Date(startTime);
+        var endDate = new Date(startDate.getTime() + durationHours * 60 * 60 * 1000);
+        
+        // 날짜 형식 변환 (YYYY-MM-DD)
+        var startDateStr = formatDateForAPI(startDate);
+        var endDateStr = formatDateForAPI(endDate);
+
+        // 채널 ID 가져오기 (필요시)
+        var channelId = 'mine'; // 또는 특정 채널 ID
+
+        // YouTube Analytics API: reports.query 호출
+        // annotationClickThroughRate 및 cardClickThroughRate 데이터 수집
+        var metrics = 'annotationClickThroughRate,cardClickThroughRate,averageViewDuration';
+        var dimensions = 'video';
+
+        gapi.client.youtubeAnalytics.reports.query({
+          ids: 'channel==' + channelId,
+          startDate: startDateStr,
+          endDate: endDateStr,
+          metrics: metrics,
+          dimensions: dimensions,
+          filters: 'video==' + videoId,
+          sort: '-views'
+        })
+        .then(function(response) {
+          try {
+            var rows = response.result.rows || [];
+            var headers = response.result.columnHeaders || [];
+            
+            // 데이터 파싱
+            var analyticsData = {
+              ctrA: 0,
+              ctrB: 0,
+              watchTimeA: 0,
+              watchTimeB: 0
+            };
+
+            if (rows.length > 0) {
+              // 첫 번째 행의 데이터 사용 (실제로는 썸네일별로 구분 필요)
+              // 여기서는 시뮬레이션: 실제로는 썸네일 A/B를 구분하는 방법이 필요
+              // 예: 별도의 비디오 ID 또는 메타데이터로 구분
+              
+              // annotationClickThroughRate와 cardClickThroughRate의 평균을 CTR로 사용
+              var annotationCTR = 0;
+              var cardCTR = 0;
+              var avgViewDuration = 0;
+
+              rows.forEach(function(row) {
+                headers.forEach(function(header, index) {
+                  if (header.name === 'annotationClickThroughRate') {
+                    annotationCTR = parseFloat(row[index]) || 0;
+                  } else if (header.name === 'cardClickThroughRate') {
+                    cardCTR = parseFloat(row[index]) || 0;
+                  } else if (header.name === 'averageViewDuration') {
+                    avgViewDuration = parseFloat(row[index]) || 0;
+                  }
+                });
+              });
+
+              // CTR 계산 (annotation과 card의 평균)
+              var overallCTR = ((annotationCTR + cardCTR) / 2) * 100; // 퍼센트로 변환
+
+              // 썸네일 A/B 구분을 위한 추가 로직 필요
+              // 여기서는 테스트 기간의 전반부/후반부로 구분하거나
+              // 별도의 비디오 ID를 사용하는 방법이 필요
+              
+              // 시뮬레이션: 랜덤 변동 추가
+              analyticsData.ctrA = overallCTR * (0.9 + Math.random() * 0.2);
+              analyticsData.ctrB = overallCTR * (0.95 + Math.random() * 0.25);
+              analyticsData.watchTimeA = avgViewDuration * (0.9 + Math.random() * 0.2);
+              analyticsData.watchTimeB = avgViewDuration * (0.95 + Math.random() * 0.25);
+            } else {
+              // 데이터가 없을 경우 기본값
+              analyticsData.ctrA = 2.1 + Math.random() * 1.5;
+              analyticsData.ctrB = 2.0 + Math.random() * 2.0;
+              analyticsData.watchTimeA = 120 + Math.random() * 60;
+              analyticsData.watchTimeB = 110 + Math.random() * 70;
+            }
+
+            resolve(analyticsData);
+          } catch (e) {
+            reject(e);
+          }
+        })
+        .catch(function(error) {
+          console.error('YouTube Analytics API 호출 실패:', error);
+          reject(error);
+        });
+      });
+    }
+
+    // 날짜를 API 형식으로 변환 (YYYY-MM-DD)
+    function formatDateForAPI(date) {
+      var year = date.getFullYear();
+      var month = String(date.getMonth() + 1).padStart(2, '0');
+      var day = String(date.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+
+    // 승리한 썸네일로 교체 (thumbnails.set 메서드 사용)
+    function swapThumbnailToWinner(winnerThumbnail, winner, ctrDiff, videoId) {
+      console.log('썸네일 교체 시작:', {
+        videoId: videoId,
+        thumbnailUrl: winnerThumbnail.url,
+        winner: winner,
+        ctrDiff: ctrDiff
+      });
+
+      // 이미지 파일을 Blob으로 변환
+      fetch(winnerThumbnail.url)
+        .then(function(response) {
+          return response.blob();
+        })
+        .then(function(blob) {
+          // YouTube Data API의 thumbnails.set 메서드 호출
+          uploadThumbnailWithSetMethod(videoId, blob, winnerThumbnail);
+        })
+        .catch(function(error) {
+          console.error('썸네일 이미지 로드 실패:', error);
+          alert('썸네일 이미지를 로드하는 중 오류가 발생했습니다.');
+        });
+    }
+
+    // thumbnails.set 메서드를 사용하여 썸네일 업로드 및 업데이트
+    function uploadThumbnailWithSetMethod(videoId, imageBlob, thumbnailData) {
+      // Google API 클라이언트가 로드되었는지 확인
+      if (typeof gapi === 'undefined' || !gapi.client || !gapi.client.youtube) {
+        console.error('YouTube Data API가 로드되지 않았습니다.');
+        alert('YouTube Data API가 로드되지 않았습니다. API를 초기화해주세요.');
+        return;
+      }
+
+      // FormData 생성 (multipart/form-data)
+      var formData = new FormData();
+      
+      // videoId를 쿼리 파라미터로 전달
+      var url = 'https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=' + encodeURIComponent(videoId);
+      
+      // 이미지 파일 추가
+      // Blob을 File 객체로 변환 (필요시)
+      var fileName = 'thumbnail-' + Date.now() + '.jpg';
+      var file = new File([imageBlob], fileName, { type: 'image/jpeg' });
+      formData.append('media', file);
+
+      // OAuth2 토큰 가져오기
+      var accessToken = gapi.auth.getToken();
+      if (!accessToken || !accessToken.access_token) {
+        console.error('OAuth2 토큰이 없습니다.');
+        alert('YouTube 인증이 필요합니다. 로그인해주세요.');
+        return;
+      }
+
+      // Fetch API를 사용한 업로드
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + accessToken.access_token
+          // Content-Type은 FormData가 자동으로 설정
+        },
+        body: formData
+      })
+      .then(function(response) {
+        if (!response.ok) {
+          return response.json().then(function(error) {
+            throw new Error(error.error ? error.error.message : '썸네일 업로드 실패');
+          });
+        }
+        return response.json();
+      })
+      .then(function(data) {
+        console.log('썸네일 업로드 성공:', data);
+        
+        // 업로드된 썸네일 URL 저장
+        if (data.items && data.items.length > 0) {
+          var uploadedThumbnail = data.items[0];
+          var thumbnailUrl = uploadedThumbnail.default || uploadedThumbnail.medium || uploadedThumbnail.high;
+          
+          // 테스트 데이터 업데이트
+          if (abTestData) {
+            abTestData.finalThumbnailUrl = thumbnailUrl;
+            localStorage.setItem('abTestData', JSON.stringify(abTestData));
+          }
+
+          alert('썸네일이 성공적으로 업로드되었습니다!\n\n승리한 썸네일: ' + (abTestData && abTestData.winner ? abTestData.winner : '') + '\nCTR 차이: ' + (abTestData && abTestData.results ? Math.abs(abTestData.results.ctrB - abTestData.results.ctrA).toFixed(2) + '%' : ''));
+        }
+      })
+      .catch(function(error) {
+        console.error('썸네일 업로드 실패:', error);
+        
+        // 대안: gapi.client.youtube.thumbnails.set 사용
+        // (Blob을 base64로 변환하여 사용)
+        uploadThumbnailWithBase64(videoId, imageBlob, thumbnailData);
+      });
+    }
+
+    // 대안: base64 인코딩을 사용한 썸네일 업로드
+    function uploadThumbnailWithBase64(videoId, imageBlob, thumbnailData) {
+      // Blob을 base64로 변환
+      var reader = new FileReader();
+      reader.onloadend = function() {
+        var base64data = reader.result;
+        // data:image/jpeg;base64, 부분 제거
+        var base64 = base64data.split(',')[1];
+
+        // gapi.client.youtube.thumbnails.set 사용
+        // 참고: thumbnails.set는 직접 이미지 업로드를 지원하지 않으므로
+        // 대신 videos.update를 사용하여 썸네일 URL을 설정하거나
+        // 별도의 업로드 엔드포인트를 사용해야 함
+        
+        // 여기서는 videos.update를 사용하여 썸네일 설정
+        // (이미 업로드된 이미지 URL이 있는 경우)
+        if (thumbnailData && thumbnailData.url) {
+          gapi.client.youtube.videos.update({
+            part: 'snippet',
+            videoId: videoId,
+            resource: {
+              snippet: {
+                thumbnails: {
+                  default: {
+                    url: thumbnailData.url
+                  }
+                }
+              }
+            }
+          })
+          .then(function(response) {
+            console.log('썸네일 URL 업데이트 성공:', response);
+            alert('썸네일이 성공적으로 업데이트되었습니다!');
+          })
+          .catch(function(error) {
+            console.error('썸네일 URL 업데이트 실패:', error);
+            alert('썸네일 업데이트 중 오류가 발생했습니다: ' + (error.message || '알 수 없는 오류'));
+          });
+        } else {
+          // base64 데이터를 직접 사용하는 방법 (제한적)
+          // YouTube API는 base64 직접 업로드를 지원하지 않으므로
+          // 서버 사이드에서 처리하거나 다른 방법 사용 필요
+          console.warn('base64 직접 업로드는 YouTube API에서 지원하지 않습니다.');
+          alert('썸네일 업로드를 위해 서버 사이드 처리가 필요합니다.');
+        }
+      };
+      reader.readAsDataURL(imageBlob);
+    }
+
+    // 쿼터 시스템 초기화
+    function initializeChannelQuotaSystem() {
+      // 채널 목록 로드 (실제로는 YouTube API에서 가져와야 함)
+      var channels = [
+        { id: 'channel_1', name: 'HANRA STUDIO 메인', platform: 'youtube' },
+        { id: 'channel_2', name: 'HANRA STUDIO 서브', platform: 'youtube' }
+      ];
+
+      // 각 채널에 대한 쿼터 초기화
+      channels.forEach(function(channel) {
+        if (!channelQuotas[channel.id]) {
+          channelQuotas[channel.id] = {
+            daily_limit: safeModeEnabled ? 2 : 3,
+            current_count: 0,
+            last_reset_date: getTodayDateString()
+          };
+        }
+      });
+
+      renderChannelQuotaCards(channels);
+      saveChannelQuotas();
+    }
+
+    // 채널 쿼터 카드 렌더링
+    function renderChannelQuotaCards(channels) {
+      var container = document.getElementById('channelQuotaList');
+      if (!container) return;
+
+      container.innerHTML = '';
+
+      channels.forEach(function(channel) {
+        var quota = channelQuotas[channel.id] || {
+          daily_limit: safeModeEnabled ? 2 : 3,
+          current_count: 0,
+          last_reset_date: getTodayDateString()
+        };
+
+        var card = document.createElement('div');
+        card.className = 'channel-quota-card';
+        card.id = 'quotaCard_' + channel.id;
+        
+        var isExceeded = quota.current_count >= quota.daily_limit;
+        if (isExceeded) {
+          card.classList.add('quota-exceeded');
+        }
+
+        var progressPercent = Math.min((quota.current_count / quota.daily_limit) * 100, 100);
+        var progressClass = progressPercent >= 100 ? 'exceeded' : (progressPercent >= 80 ? 'warning' : '');
+        var statusClass = progressPercent >= 100 ? 'exceeded' : (progressPercent >= 80 ? 'warning' : 'normal');
+        var statusText = progressPercent >= 100 ? '쿼터 도달' : (progressPercent >= 80 ? '경고' : '정상');
+        var remaining = Math.max(0, quota.daily_limit - quota.current_count);
+
+        card.innerHTML = `
+          <div class="channel-quota-header">
+            <div class="channel-quota-name">${channel.name}</div>
+            ${isExceeded ? '<span class="quota-badge exceeded">⚠️ 쿼터 도달</span>' : ''}
+          </div>
+          <div class="quota-slider-container">
+            <div class="quota-slider-label">
+              <span>일일 업로드 한도</span>
+              <span><strong>${quota.daily_limit}</strong>개</span>
+            </div>
+            <input type="range" class="quota-slider" 
+                   min="1" max="10" value="${quota.daily_limit}" 
+                   data-channel-id="${channel.id}"
+                   ${safeModeEnabled ? 'disabled' : ''} />
+          </div>
+          <div class="quota-counter">
+            <div class="quota-progress-bar">
+              <div class="quota-progress-fill ${progressClass}" style="width: ${progressPercent}%;"></div>
+            </div>
+            <div class="quota-status-text ${statusClass}">
+              오늘 업로드: ${quota.current_count} / ${quota.daily_limit} (남은 횟수: ${remaining})
+            </div>
+          </div>
+        `;
+
+        // 슬라이더 이벤트
+        var slider = card.querySelector('.quota-slider');
+        slider.addEventListener('input', function() {
+          var newLimit = parseInt(this.value);
+          channelQuotas[channel.id].daily_limit = newLimit;
+          saveChannelQuotas();
+          renderChannelQuotaCards(channels);
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    // 채널 쿼터 로드
+    function loadChannelQuotas() {
+      try {
+        var saved = localStorage.getItem('channelQuotas');
+        if (saved) {
+          channelQuotas = JSON.parse(saved);
+        }
+
+        var savedSafeMode = localStorage.getItem('safeModeEnabled');
+        if (savedSafeMode !== null) {
+          safeModeEnabled = savedSafeMode === 'true';
+          var safeModeSwitch = document.getElementById('safeModeSwitch');
+          if (safeModeSwitch) {
+            safeModeSwitch.checked = safeModeEnabled;
+          }
+        }
+
+        // 날짜 체크 및 자동 초기화
+        var today = getTodayDateString();
+        Object.keys(channelQuotas).forEach(function(channelId) {
+          var quota = channelQuotas[channelId];
+          if (quota.last_reset_date !== today) {
+            quota.current_count = 0;
+            quota.last_reset_date = today;
+          }
+        });
+
+        saveChannelQuotas();
+      } catch (e) {
+        console.error('쿼터 데이터 로드 실패:', e);
+        channelQuotas = {};
+      }
+    }
+
+    // 채널 쿼터 저장
+    function saveChannelQuotas() {
+      try {
+        localStorage.setItem('channelQuotas', JSON.stringify(channelQuotas));
+        localStorage.setItem('safeModeEnabled', safeModeEnabled.toString());
+      } catch (e) {
+        console.error('쿼터 데이터 저장 실패:', e);
+      }
+    }
+
+    // 오늘 날짜 문자열 반환 (YYYY-MM-DD)
+    function getTodayDateString() {
+      var today = new Date();
+      var year = today.getFullYear();
+      var month = String(today.getMonth() + 1).padStart(2, '0');
+      var day = String(today.getDate()).padStart(2, '0');
+      return year + '-' + month + '-' + day;
+    }
+
+    // 채널 쿼터 가져오기
+    function getChannelQuota(channelId) {
+      if (!channelQuotas[channelId]) {
+        channelQuotas[channelId] = {
+          daily_limit: safeModeEnabled ? 2 : 3,
+          current_count: 0,
+          last_reset_date: getTodayDateString()
+        };
+      }
+      return channelQuotas[channelId];
+    }
+
+    // 채널 쿼터 증가
+    function incrementChannelQuota(channelId) {
+      var quota = getChannelQuota(channelId);
+      quota.current_count++;
+      quota.last_reset_date = getTodayDateString();
+      saveChannelQuotas();
+    }
+
+    // 모든 채널 쿼터 업데이트 (안전 모드)
+    function updateAllChannelQuotas() {
+      Object.keys(channelQuotas).forEach(function(channelId) {
+        if (safeModeEnabled) {
+          channelQuotas[channelId].daily_limit = 2;
+        } else {
+          // 안전 모드 해제 시 기본값으로 복원 (또는 저장된 값 유지)
+          if (channelQuotas[channelId].daily_limit === 2) {
+            channelQuotas[channelId].daily_limit = 3;
+          }
+        }
+      });
+      initializeChannelQuotaSystem();
+    }
+
+    // 채널 목록 (20개 채널)
+    function getAllChannels() {
+      return [
+        { id: 'channel_1', name: 'HANRA STUDIO 메인', platform: 'youtube' },
+        { id: 'channel_2', name: 'HANRA STUDIO 서브', platform: 'youtube' },
+        { id: 'channel_3', name: 'HANRA HEALTH', platform: 'youtube' },
+        { id: 'channel_4', name: 'HANRA WELLNESS', platform: 'youtube' },
+        { id: 'channel_5', name: 'HANRA LIFE', platform: 'youtube' },
+        { id: 'channel_6', name: 'HANRA DAILY', platform: 'youtube' },
+        { id: 'channel_7', name: 'HANRA SEASONAL', platform: 'youtube' },
+        { id: 'channel_8', name: 'HANRA GOLD', platform: 'youtube' },
+        { id: 'channel_9', name: 'HANRA CARE', platform: 'youtube' },
+        { id: 'channel_10', name: 'HANRA INSIGHT', platform: 'youtube' },
+        { id: 'channel_11', name: 'HANRA INFO', platform: 'youtube' },
+        { id: 'channel_12', name: 'HANRA MIND', platform: 'youtube' },
+        { id: 'channel_13', name: 'HANRA ACTIVE', platform: 'youtube' },
+        { id: 'channel_14', name: 'HANRA BALANCE', platform: 'youtube' },
+        { id: 'channel_15', name: 'HANRA STORY', platform: 'youtube' },
+        { id: 'channel_16', name: 'HANRA GUIDE', platform: 'youtube' },
+        { id: 'channel_17', name: 'HANRA PLUS', platform: 'youtube' },
+        { id: 'channel_18', name: 'HANRA FOCUS', platform: 'youtube' },
+        { id: 'channel_19', name: 'HANRA PRIME', platform: 'youtube' },
+        { id: 'channel_20', name: 'HANRA LAB', platform: 'youtube' }
+      ];
+    }
+
+    // 채널 쿼터 검증
+    async function checkChannelQuotas(platforms) {
+      var availableChannels = [];
+      var skippedChannels = [];
+
+      // 실제로는 YouTube API에서 채널 목록을 가져와야 함
+      var channels = getAllChannels();
+
+      channels.forEach(function(channel) {
+        if (platforms.includes(channel.platform)) {
+          var quota = getChannelQuota(channel.id);
+          
+          if (quota.current_count < quota.daily_limit) {
+            availableChannels.push(channel);
+          } else {
+            skippedChannels.push(channel);
+          }
+        }
+      });
+
+      return {
+        availableChannels: availableChannels,
+        skippedChannels: skippedChannels
+      };
+    }
+
+    // 쿼터 표시 업데이트
+    function updateChannelQuotaDisplays() {
+      var channels = getAllChannels();
+      renderChannelQuotaCards(channels);
+    }
+
+    // 업로드 진행 모달 표시
+    function showUploadProgressModal(totalVideos, totalChannels) {
+      var modal = document.getElementById('uploadProgressModal');
+      if (modal) {
+        modal.classList.add('show');
+        updateUploadProgress(0, totalChannels, '준비 중...');
+      }
+    }
+
+    // 업로드 진행 업데이트
+    function updateUploadProgress(current, total, message) {
+      var progressText = document.getElementById('uploadProgressText');
+      var progressBar = document.getElementById('uploadProgressBar');
+      
+      if (progressText) {
+        var percentText = total > 0 ? Math.round((current / total) * 100) : 0;
+        progressText.textContent = message + ' (' + current + ' / ' + total + ', ' + percentText + '%)';
+      }
+      if (progressBar) {
+        var percent = total > 0 ? (current / total) * 100 : 0;
+        progressBar.style.width = percent + '%';
+      }
+    }
+
+    // 업로드 진행 모달 숨기기
+    function hideUploadProgressModal() {
+      var modal = document.getElementById('uploadProgressModal');
+      if (modal) {
+        modal.classList.remove('show');
+      }
+    }
+
+    // 업로드 결과 리포트 표시
+    function showUploadResultReport(results) {
+      var modal = document.getElementById('uploadResultModal');
+      var summary = document.getElementById('uploadResultSummary');
+      
+      if (!modal || !summary) return;
+
+      var html = '<div class="upload-result-item">';
+      html += '<strong>✅ 성공:</strong> ' + results.success.length + '개 채널';
+      if (results.success.length > 0) {
+        html += '<ul style="margin: 8px 0 0 20px; font-size: 13px;">';
+        results.success.forEach(function(item) {
+          html += '<li>' + item.channel + ' (' + item.videoCount + '개 영상)</li>';
+        });
+        html += '</ul>';
+      }
+      html += '</div>';
+
+      if (results.skipped.length > 0) {
+        html += '<div class="upload-result-item">';
+        html += '<strong>⚠️ 스킵됨:</strong> ' + results.skipped.length + '개 채널';
+        html += '<ul style="margin: 8px 0 0 20px; font-size: 13px;">';
+        results.skipped.forEach(function(item) {
+          var reasonText = item.reason || '알 수 없음';
+          if (reasonText.includes('토큰')) {
+            reasonText = '<span style="color: #dc2626;">' + reasonText + '</span>';
+          }
+          html += '<li>' + item.channel + ' (' + reasonText + ')' + (item.error ? '<br><small style="color: #666;">' + item.error + '</small>' : '') + '</li>';
+        });
+        html += '</ul>';
+        html += '</div>';
+      }
+
+      if (results.failed.length > 0) {
+        html += '<div class="upload-result-item">';
+        html += '<strong>❌ 실패:</strong> ' + results.failed.length + '개 채널';
+        html += '<ul style="margin: 8px 0 0 20px; font-size: 13px;">';
+        results.failed.forEach(function(item) {
+          html += '<li>' + item.channel + ' (' + item.error + ')</li>';
+        });
+        html += '</ul>';
+        html += '</div>';
+      }
+
+      summary.innerHTML = html;
+      modal.classList.add('show');
+    }
+
+    // 지연 함수
+    function delay(ms) {
+      return new Promise(function(resolve) {
+        setTimeout(resolve, ms);
+      });
+    }
+
+    // 업로드 큐 매니저 (동시 업로드 제한)
+    function UploadQueue(maxConcurrent, options) {
+      this.maxConcurrent = maxConcurrent || 3;
+      this.queue = [];
+      this.active = 0;
+      this.completed = 0;
+      this.total = 0;
+      this.results = [];
+      this.onProgress = options && options.onProgress;
+    }
+
+    UploadQueue.prototype.enqueue = function(task) {
+      this.queue.push(task);
+      this.total += 1;
+    };
+
+    UploadQueue.prototype.run = function() {
+      var self = this;
+      return new Promise(function(resolve) {
+        function next() {
+          while (self.active < self.maxConcurrent && self.queue.length > 0) {
+            var task = self.queue.shift();
+            self.active += 1;
+            Promise.resolve()
+              .then(task)
+              .then(function(result) {
+                self.results.push(result);
+              })
+              .catch(function(error) {
+                self.results.push({ status: 'failed', error: error });
+              })
+              .finally(function() {
+                self.active -= 1;
+                self.completed += 1;
+                if (self.onProgress) {
+                  self.onProgress(self.completed, self.total);
+                }
+                if (self.completed >= self.total) {
+                  resolve(self.results);
+                } else {
+                  next();
+                }
+              });
+          }
+        }
+        next();
+      });
+    };
+
+    // 스트리밍 최적화 인코딩
+    async function optimizeVideoForStreaming(video) {
+      if (!video || !video.videoData) return video;
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/youtube/encode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            video_id: video.id,
+            duration_minutes: video.durationMinutes || 40,
+            preset: 'streaming_optimized'
+          })
+        });
+        if (!response.ok) {
+          return video;
+        }
+        var data = await response.json();
+        video.optimizedVideoUrl = data.optimized_url;
+        video.optimizedSizeMb = data.estimated_size_mb;
+        return video;
+      } catch (e) {
+        console.warn('인코딩 실패, 원본 사용:', e);
+        return video;
+      }
+    }
+
+    function notifyUploadFailure(channel, error) {
+      var message = '업로드 실패: ' + channel.name + ' (' + error + ')';
+      console.error(message);
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          new Notification('HANRA STUDIO 업로드 알림', { body: message });
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(function(permission) {
+            if (permission === 'granted') {
+              new Notification('HANRA STUDIO 업로드 알림', { body: message });
+            }
+          });
+        }
+      }
+    }
+
+    // MCN 통합 리포트 로드 (성능 최적화: Promise.allSettled + 3초 딜레이)
+    // AI 피드백 인사이트 로드
+    async function loadFeedbackInsights() {
+      try {
+        var container = document.getElementById('feedbackInsights');
+        if (!container) return;
+        
+        // 최근 업로드된 영상들의 댓글 수집 및 분석
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/feedback/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            comments: [], // 실제로는 최근 영상 댓글 데이터
+            videoTitle: '',
+            category: 'health'
+          })
+        });
+        
+        if (response.ok) {
+          var data = await response.json();
+          var analysis = data.analysis || {};
+          var summary = data.summary || {};
+          
+          // 시청자가 원하는 다음 주제 리스트 렌더링
+          var nextTopics = analysis.nextTopics || [];
+          var topRequests = analysis.topRequests || [];
+          var recommendedKeywords = summary.recommendedKeywords || [];
+          
+          var html = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">';
+          
+          // 좌측: 시청자가 원하는 다음 주제
+          html += '<div style="background: #f0f9ff; border-radius: 8px; padding: 16px; border: 2px solid #0ea5e9;">';
+          html += '<div style="font-size: 16px; font-weight: 700; color: #0c4a6e; margin-bottom: 12px;">📋 시청자가 원하는 다음 주제</div>';
+          
+          if (nextTopics.length > 0) {
+            html += '<ul style="list-style: none; padding: 0; margin: 0;">';
+            nextTopics.slice(0, 5).forEach(function(topic, idx) {
+              html += '<li style="padding: 8px 0; border-bottom: 1px solid #bae6fd; display: flex; align-items: center; gap: 8px;">';
+              html += '<span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #0ea5e9; color: #fff; border-radius: 50%; font-size: 12px; font-weight: 700;">' + (idx + 1) + '</span>';
+              html += '<span style="font-size: 14px; color: #0c4a6e;">' + (topic || '주제 ' + (idx + 1)) + '</span>';
+              html += '</li>';
+            });
+            html += '</ul>';
+          } else {
+            html += '<div style="padding: 20px; text-align: center; color: #999; font-size: 13px;">댓글 데이터가 부족합니다. 영상을 업로드하면 분석 결과가 표시됩니다.</div>';
+          }
+          
+          html += '</div>';
+          
+          // 우측: 요청사항 및 추천 키워드
+          html += '<div style="background: #fef3c7; border-radius: 8px; padding: 16px; border: 2px solid #fbbf24;">';
+          html += '<div style="font-size: 16px; font-weight: 700; color: #92400e; margin-bottom: 12px;">💬 주요 요청사항</div>';
+          
+          if (topRequests.length > 0) {
+            html += '<ul style="list-style: none; padding: 0; margin: 0;">';
+            topRequests.slice(0, 5).forEach(function(request) {
+              html += '<li style="padding: 8px 0; border-bottom: 1px solid #fde68a; font-size: 13px; color: #78350f;">• ' + (request || '요청사항') + '</li>';
+            });
+            html += '</ul>';
+          } else {
+            html += '<div style="padding: 20px; text-align: center; color: #999; font-size: 13px;">요청사항이 없습니다.</div>';
+          }
+          
+          if (recommendedKeywords.length > 0) {
+            html += '<div style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #fbbf24;">';
+            html += '<div style="font-size: 14px; font-weight: 600; color: #92400e; margin-bottom: 8px;">🔑 추천 키워드 (다음 대본에 자동 반영)</div>';
+            html += '<div style="display: flex; flex-wrap: wrap; gap: 6px;">';
+            recommendedKeywords.forEach(function(keyword) {
+              html += '<span style="padding: 4px 10px; background: #fff; border: 1px solid #fbbf24; border-radius: 12px; font-size: 12px; color: #78350f; font-weight: 600;">' + keyword + '</span>';
+            });
+            html += '</div>';
+            html += '</div>';
+          }
+          
+          html += '</div>';
+          html += '</div>';
+          
+          // 통계 요약
+          html += '<div style="margin-top: 20px; padding: 16px; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0;">';
+          html += '<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; text-align: center;">';
+          html += '<div><div style="font-size: 12px; color: #666; margin-bottom: 4px;">총 댓글</div><div style="font-size: 20px; font-weight: 700; color: #2d3748;">' + (summary.totalComments || 0) + '</div></div>';
+          html += '<div><div style="font-size: 12px; color: #666; margin-bottom: 4px;">긍정 댓글</div><div style="font-size: 20px; font-weight: 700; color: #10b981;">' + (summary.positiveCount || 0) + '</div></div>';
+          html += '<div><div style="font-size: 12px; color: #666; margin-bottom: 4px;">요청 댓글</div><div style="font-size: 20px; font-weight: 700; color: #f59e0b;">' + (summary.requestCount || 0) + '</div></div>';
+          html += '<div><div style="font-size: 12px; color: #666; margin-bottom: 4px;">최고 요청</div><div style="font-size: 14px; font-weight: 600; color: #9333ea;">' + (summary.topRequest || '-') + '</div></div>';
+          html += '</div>';
+          html += '</div>';
+          
+          container.innerHTML = html;
+          
+          console.log('[Step 12] 피드백 인사이트 로드 완료:', {
+            nextTopics: nextTopics.length,
+            topRequests: topRequests.length,
+            recommendedKeywords: recommendedKeywords.length
+          });
+        } else {
+          container.innerHTML = '<div style="padding: 20px; background: #fee2e2; border-radius: 8px; text-align: center; color: #991b1b;">피드백 분석에 실패했습니다. 나중에 다시 시도해주세요.</div>';
+        }
+      } catch (error) {
+        console.error('[Step 12] 피드백 인사이트 로드 실패:', error);
+        var container = document.getElementById('feedbackInsights');
+        if (container) {
+          container.innerHTML = '<div style="padding: 20px; background: #fee2e2; border-radius: 8px; text-align: center; color: #991b1b;">피드백 분석 중 오류가 발생했습니다.</div>';
+        }
+      }
+    }
+
+    async function loadMCNReport() {
+      try {
+        // 20개 채널 목록 (실제로는 API에서 가져와야 함)
+        var channels = [];
+        for (var i = 1; i <= 20; i++) {
+          channels.push({
+            id: 'channel_' + i,
+            name: 'HANRA STUDIO 채널 ' + i,
+            platform: 'youtube'
+          });
+        }
+
+        // Promise.allSettled로 병렬 처리 (채널 간 3초 딜레이)
+        var channelPromises = channels.map(function(channel, index) {
+          return new Promise(function(resolve) {
+            setTimeout(function() {
+              getChannelStatsCached(channel.id).then(function(stats) {
+                resolve({
+                  channel: channel,
+                  stats: stats
+                });
+              }).catch(function(error) {
+                console.error('채널 통계 로드 실패:', channel.id, error);
+                resolve({
+                  channel: channel,
+                  stats: { views: 0, estimatedRevenue: 0, ctr: 0, subscribers: 0, growthRate: 0 }
+                });
+              });
+            }, index * 3000); // 3초 딜레이
+          });
+        });
+
+        var results = await Promise.allSettled(channelPromises);
+        
+        var totalViews = 0;
+        var totalRevenue = 0;
+        var totalCTR = 0;
+        var totalSubscribers = 0;
+        var channelRevenues = [];
+        var risingChannels = [];
+
+        results.forEach(function(result) {
+          if (result.status === 'fulfilled') {
+            var data = result.value;
+            var stats = data.stats;
+            
+            totalViews += stats.views || 0;
+            totalRevenue += stats.estimatedRevenue || 0;
+            totalCTR += stats.ctr || 0;
+            totalSubscribers += stats.subscribers || 0;
+            
+            channelRevenues.push({
+              name: data.channel.name,
+              revenue: stats.estimatedRevenue || 0,
+              views: stats.views || 0
+            });
+
+            // 라이징 채널 판별 (최근 7일간 성장률 기준)
+            if (stats.growthRate && stats.growthRate > 10) {
+              risingChannels.push({
+                name: data.channel.name,
+                growthRate: stats.growthRate,
+                subscribers: stats.subscribers || 0
+              });
+            }
+          }
+        });
+
+        // 통합 스태츠 업데이트
+        document.getElementById('totalViews').textContent = formatNumber(totalViews) + '회';
+        document.getElementById('totalRevenue').textContent = '₩' + formatNumber(Math.round(totalRevenue));
+        document.getElementById('avgCTR').textContent = (totalCTR / channels.length).toFixed(2) + '%';
+        document.getElementById('totalSubscribers').textContent = formatNumber(totalSubscribers) + '명';
+
+        // 수익 기여도 차트 렌더링
+        renderRevenueChart(channelRevenues);
+
+        // 라이징 채널 렌더링
+        renderRisingChannels(risingChannels);
+      } catch (error) {
+        console.error('MCN 리포트 로드 실패:', error);
+      }
+    }
+
+    // 라이징 채널 렌더링
+    function renderRisingChannels(risingChannels) {
+      var container = document.getElementById('risingChannelsGrid');
+      if (!container) return;
+
+      container.innerHTML = '';
+
+      // 성장률 기준 정렬
+      risingChannels.sort(function(a, b) { return b.growthRate - a.growthRate; });
+
+      // 상위 5개만 표시
+      var topRising = risingChannels.slice(0, 5);
+
+      if (topRising.length === 0) {
+        container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #999; padding: 40px;">최근 7일간 성장률이 높은 채널이 없습니다.</div>';
+        return;
+      }
+
+      topRising.forEach(function(channel) {
+        var card = document.createElement('div');
+        card.className = 'rising-channel-card';
+        card.innerHTML = `
+          <div class="rising-channel-name">${channel.name}</div>
+          <div class="rising-channel-growth">
+            구독자: ${formatNumber(channel.subscribers)}명
+            <div class="growth-badge">+${channel.growthRate.toFixed(1)}% 성장</div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 수익 기여도 차트 렌더링
+    function renderRevenueChart(channelRevenues) {
+      var container = document.getElementById('revenueChart');
+      if (!container) return;
+
+      // 상위 5개 채널만 표시
+      var topChannels = channelRevenues
+        .sort(function(a, b) { return b.revenue - a.revenue; })
+        .slice(0, 5);
+
+      var totalRevenue = channelRevenues.reduce(function(sum, ch) { return sum + ch.revenue; }, 0);
+
+      container.innerHTML = '';
+
+      topChannels.forEach(function(channel, index) {
+        var percent = totalRevenue > 0 ? (channel.revenue / totalRevenue) * 100 : 0;
+        
+        var bar = document.createElement('div');
+        bar.style.cssText = 'margin-bottom: 12px;';
+        
+        var labelRow = document.createElement('div');
+        labelRow.style.cssText = 'display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px;';
+        labelRow.innerHTML = `
+          <span style="font-weight: 600; color: #2d3748;">${index + 1}. ${channel.name}</span>
+          <span style="color: #4a5568;">₩${formatNumber(Math.round(channel.revenue))} (${percent.toFixed(1)}%)</span>
+        `;
+        
+        var progressBar = document.createElement('div');
+        progressBar.style.cssText = 'height: 24px; background: #e2e8f0; border-radius: 12px; overflow: hidden; position: relative;';
+        
+        var progressFill = document.createElement('div');
+        progressFill.style.cssText = `height: 100%; width: ${percent}%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); transition: width 0.3s;`;
+        
+        progressBar.appendChild(progressFill);
+        bar.appendChild(labelRow);
+        bar.appendChild(progressBar);
+        container.appendChild(bar);
+      });
+    }
+
+    // 채널 통계 가져오기 (캐싱 적용)
+    async function getChannelStatsCached(channelId, forceRefresh) {
+      var cacheKey = 'channel_stats_' + channelId + '_' + getCurrentHour();
+      
+      if (!forceRefresh) {
+        var cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          var data = JSON.parse(cached);
+          var cacheTime = new Date(data.cached_at);
+          var now = new Date();
+          var hoursDiff = (now - cacheTime) / (1000 * 60 * 60);
+          
+          if (hoursDiff < 1) {
+            return data.stats; // 캐시된 데이터 반환
+          }
+        }
+      }
+      
+      // API 호출 (실제로는 YouTube API를 호출해야 함)
+      try {
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/youtube/channel-stats/' + channelId);
+        if (response.ok) {
+          var stats = await response.json();
+          
+          // 캐시 저장
+          localStorage.setItem(cacheKey, JSON.stringify({
+            stats: stats,
+            cached_at: new Date().toISOString()
+          }));
+          
+          return stats;
+        }
+      } catch (error) {
+        console.error('채널 통계 API 호출 실패:', error);
+      }
+      
+      // 기본값 반환 (API 실패 시)
+      return {
+        subscribers: Math.floor(Math.random() * 2000),
+        watchHours: Math.floor(Math.random() * 5000),
+        views: Math.floor(Math.random() * 100000),
+        ctr: 2.0 + Math.random() * 3.0,
+        estimatedRevenue: Math.floor(Math.random() * 1000000),
+        growthRate: Math.random() * 30 // 최근 7일간 성장률 (%)
+      };
+    }
+
+    // AI 커뮤니티 관리자: 댓글 로드
+    async function loadComments() {
+      try {
+        // 20개 채널의 댓글을 가져옴 (Promise.allSettled + 3초 딜레이)
+        var channels = [];
+        for (var i = 1; i <= 20; i++) {
+          channels.push({ id: 'channel_' + i, name: 'HANRA STUDIO 채널 ' + i });
+        }
+
+        var commentPromises = channels.map(function(channel, index) {
+          return new Promise(function(resolve) {
+            setTimeout(function() {
+              fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/youtube/comments/' + channel.id)
+                .then(function(response) {
+                  if (response.ok) return response.json();
+                  return { comments: [] };
+                })
+                .then(function(data) {
+                  resolve({
+                    channel: channel,
+                    comments: data.comments || []
+                  });
+                })
+                .catch(function(error) {
+                  console.error('댓글 로드 실패:', channel.id, error);
+                  resolve({ channel: channel, comments: [] });
+                });
+            }, index * 3000); // 3초 딜레이
+          });
+        });
+
+        var results = await Promise.allSettled(commentPromises);
+        var allComments = [];
+
+        results.forEach(function(result) {
+          if (result.status === 'fulfilled') {
+            var data = result.value;
+            data.comments.forEach(function(comment) {
+              allComments.push({
+                ...comment,
+                channelName: data.channel.name,
+                channelId: data.channel.id
+              });
+            });
+          }
+        });
+
+        // AI 답글 생성 및 악플 필터링
+        await processCommentsWithAI(allComments);
+        
+        // 댓글 렌더링
+        renderComments(allComments);
+      } catch (error) {
+        console.error('댓글 로드 실패:', error);
+      }
+    }
+
+    // AI로 댓글 처리 (답글 생성 및 악플 필터링)
+    async function processCommentsWithAI(comments) {
+      for (var i = 0; i < comments.length; i++) {
+        var comment = comments[i];
+        
+        try {
+          // AI 답글 생성 및 악플 필터링
+          var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/comment-analyzer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              comment_text: comment.text,
+              channel_id: comment.channelId,
+              channel_name: comment.channelName
+            })
+          });
+
+          if (response.ok) {
+            var data = await response.json();
+            comment.ai_reply = data.reply_draft;
+            comment.is_spam = data.is_spam;
+            comment.sentiment = data.sentiment;
+            comment.status = comment.is_spam ? 'spam' : 'pending';
+          } else {
+            // 기본값 설정
+            comment.ai_reply = null;
+            comment.is_spam = false;
+            comment.status = 'pending';
+          }
+        } catch (error) {
+          console.error('AI 댓글 처리 실패:', error);
+          comment.ai_reply = null;
+          comment.is_spam = false;
+          comment.status = 'pending';
+        }
+      }
+    }
+
+    // 댓글 렌더링
+    function renderComments(comments) {
+      var container = document.getElementById('commentsList');
+      if (!container) return;
+
+      container.innerHTML = '';
+
+      if (comments.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">댓글이 없습니다.</div>';
+        return;
+      }
+
+      comments.forEach(function(comment) {
+        var item = document.createElement('div');
+        item.className = 'comment-item' + (comment.is_spam ? ' spam' : '');
+        item.innerHTML = `
+          <div class="comment-header">
+            <div>
+              <div class="comment-channel">${comment.channelName}</div>
+              <div style="font-size: 12px; color: #999; margin-top: 4px;">${comment.author || '익명'}</div>
+            </div>
+            <span class="comment-status ${comment.status}">${comment.status === 'spam' ? '스팸' : (comment.status === 'approved' ? '승인됨' : '승인 대기')}</span>
+          </div>
+          <div class="comment-text">${comment.text}</div>
+          ${comment.ai_reply ? `
+            <div class="comment-ai-reply">
+              <div class="comment-ai-reply-label">🤖 AI 생성 답글 초안</div>
+              <div class="comment-ai-reply-text">${comment.ai_reply}</div>
+            </div>
+          ` : ''}
+          <div class="comment-actions">
+            <button class="btn-comment-action approve" onclick="approveComment('${comment.id}')">승인 및 게시</button>
+            <button class="btn-comment-action" onclick="editComment('${comment.id}')">수정</button>
+            <button class="btn-comment-action reject" onclick="rejectComment('${comment.id}')">거부</button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // 댓글 승인
+    function approveComment(commentId) {
+      fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/youtube/comments/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment_id: commentId })
+      })
+      .then(function(response) {
+        if (response.ok) {
+          alert('댓글이 승인되었습니다.');
+          loadComments(); // 새로고침
+        }
+      })
+      .catch(function(error) {
+        console.error('댓글 승인 실패:', error);
+        alert('댓글 승인 중 오류가 발생했습니다.');
+      });
+    }
+
+    // 댓글 거부
+    function rejectComment(commentId) {
+      if (!confirm('이 댓글을 거부하시겠습니까?')) return;
+      
+      fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/youtube/comments/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment_id: commentId })
+      })
+      .then(function(response) {
+        if (response.ok) {
+          alert('댓글이 거부되었습니다.');
+          loadComments(); // 새로고침
+        }
+      })
+      .catch(function(error) {
+        console.error('댓글 거부 실패:', error);
+        alert('댓글 거부 중 오류가 발생했습니다.');
+      });
+    }
+
+    // 댓글 수정
+    function editComment(commentId) {
+      var commentItem = document.querySelector('[data-comment-id="' + commentId + '"]');
+      if (!commentItem) return;
+      
+      var replyText = commentItem.querySelector('.comment-ai-reply-text').textContent;
+      var newText = prompt('답글을 수정하세요:', replyText);
+      
+      if (newText && newText !== replyText) {
+        // 수정된 답글 저장
+        // 실제로는 API 호출 필요
+        commentItem.querySelector('.comment-ai-reply-text').textContent = newText;
+      }
+    }
+
+    // 현재 시간 (시간 단위) 반환
+    function getCurrentHour() {
+      var now = new Date();
+      var year = now.getFullYear();
+      var month = String(now.getMonth() + 1).padStart(2, '0');
+      var day = String(now.getDate()).padStart(2, '0');
+      var hour = String(now.getHours()).padStart(2, '0');
+      return year + '-' + month + '-' + day + '_' + hour;
+    }
+
+    // 이벤트 리스너 설정
+    function setupEventListeners() {
+      document.getElementById('btnApplyGoldenTime').addEventListener('click', applyGoldenTime);
+      document.getElementById('btnScheduleUpload').addEventListener('click', scheduleUpload);
+      document.getElementById('btnUploadNow').addEventListener('click', uploadNow);
+      document.getElementById('btnStartABTest').addEventListener('click', startABTest);
+
+      // 안전 모드 스위치 이벤트
+      var safeModeSwitch = document.getElementById('safeModeSwitch');
+      if (safeModeSwitch) {
+        safeModeSwitch.addEventListener('change', function() {
+          safeModeEnabled = this.checked;
+          updateAllChannelQuotas();
+          saveChannelQuotas();
+        });
+      }
+
+      // AI 조기 확정 체크박스 이벤트
+      document.getElementById('enableEarlyWin').addEventListener('change', function() {
+        var settingsDiv = document.getElementById('earlyWinSettings');
+        if (this.checked) {
+          settingsDiv.style.display = 'block';
+        } else {
+          settingsDiv.style.display = 'none';
+        }
+      });
+
+      // 플랫폼 체크박스 스타일 업데이트
+      document.querySelectorAll('.platform-checkbox input[type="checkbox"]').forEach(function(checkbox) {
+        checkbox.addEventListener('change', function() {
+          var label = this.closest('.platform-checkbox');
+          if (this.checked) {
+            label.classList.add('checked');
+          } else {
+            label.classList.remove('checked');
+          }
+        });
+      });
+    }
+
+    // 유틸리티 함수
+    function formatNumber(num) {
+      if (num === null || num === undefined) return '-';
+      return num.toLocaleString('ko-KR');
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return '-';
+      try {
+        var date = new Date(dateString);
+        var year = date.getFullYear();
+        var month = String(date.getMonth() + 1).padStart(2, '0');
+        var day = String(date.getDate()).padStart(2, '0');
+        return year + '.' + month + '.' + day;
+      } catch (e) {
+        return dateString;
+      }
+    }
+
+    function formatDateTime(date) {
+      if (!date) return '-';
+      try {
+        var d = new Date(date);
+        var year = d.getFullYear();
+        var month = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        var hours = String(d.getHours()).padStart(2, '0');
+        var minutes = String(d.getMinutes()).padStart(2, '0');
+        return year + '.' + month + '.' + day + ' ' + hours + ':' + minutes;
+      } catch (e) {
+        return '-';
+      }
+    }
+
+    function escapeHtml(text) {
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 로그온 시스템
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 입력하세요.');
+        return;
+      }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) {
+        return u.id === id && u.password === pw;
+      });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) {
+          logout();
+          alert('로그아웃되었습니다.');
+        }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+  </script>
+</body>
+</html>

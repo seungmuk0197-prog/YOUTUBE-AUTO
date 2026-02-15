@@ -1,0 +1,21 @@
+{
+  "name": "youtube-auto-ui",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "predev": "node -e \"try{require('fs').unlinkSync(require('path').join(process.cwd(),'.next','dev','lock'))}catch(e){}\"",
+    "dev": "next dev -p 3000 -H 0.0.0.0",
+    "build": "node scripts/inject-api-base.js && next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^16.1.6",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.55.0",
+    "eslint-config-next": "^14.0.0"
+  }
+}

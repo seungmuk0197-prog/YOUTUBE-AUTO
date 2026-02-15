@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Auto - 영상 자동 생성 시스템</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .status-bar {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .badge-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .badge-error {
+            background: #f44336;
+            color: white;
+        }
+
+        .badge-pending {
+            background: #ff9800;
+            color: white;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="file"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .project-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .project-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .project-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .project-card p {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .project-status {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .status-tag {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .status-tag.done {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-tag.pending {
+            background: #ff9800;
+            color: white;
+        }
+
+        .editor-section {
+            display: none;
+        }
+
+        .editor-section.active {
+            display: block;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 20px;
+            pointer-events: none;
+        }
+
+        .tab-btn {
+            padding: 15px 20px;
+            background: none;
+            border: none;
+            cursor: default;
+            color: #999;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .tab-btn:hover {
+            color: #999;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f0f0f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            background: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .error-message {
+            background: #f44336;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .range-value {
+            color: #667eea;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .steps {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            position: relative;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .step:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .step.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .step.completed {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 50%;
+            line-height: 30px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .step.active .step-number {
+            background: white;
+            color: #667eea;
+        }
+
+        .step.completed .step-number {
+            background: white;
+            color: #4CAF50;
+        }
+
+        .step-name {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .info-text {
+            color: #999;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 12px;
+            background: #f0f0f0;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-label:hover {
+            border-color: #667eea;
+            background: #f9f9ff;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Text viewer modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .modal-box {
+            background: white;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 80vh;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header {
+            padding: 12px 16px;
+            background: #f6f8fb;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-title { font-weight: 700; }
+        .modal-actions { display:flex; gap:8px; }
+        .modal-content { padding: 12px; overflow: auto; background: #111; color: #eee; }
+        .modal-content pre { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace; font-size: 13px; }
+
+        /* Loading Modal (Issue #4) */
+        .loading-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-modal.open {
+            display: flex;
+        }
+
+        .loading-modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 300px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .loading-modal-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f0f0f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .loading-modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin: 15px 0;
+        }
+
+        .loading-modal-message {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Fix z-index issues (Issue #2) */
+        .steps {
+            position: relative;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .step {
+            pointer-events: auto;
+            position: relative;
+            z-index: 20;
+        }
+
+        .tab-btn {
+            pointer-events: auto;
+            position: relative;
+            z-index: 20;
+        }
+
+        /* Audio error handling (Issue #1) */
+        .audio-error {
+            color: #f44336;
+            font-size: 12px;
+            margin-top: 8px;
+            padding: 8px;
+            background: #ffebee;
+            border-radius: 4px;
+        }
+
+        /* Speed control (Issue #3) */
+        .speed-control-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .speed-control-wrapper label {
+            margin-bottom: 0;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .speed-control-wrapper select {
+            margin-bottom: 0;
+            flex: 1;
+        }
+
+        .speed-value {
+            color: #667eea;
+            font-weight: bold;
+            min-width: 50px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 YouTube Auto Studio</h1>
+            <p class="subtitle">AI 기반 자동 영상 생성 및 편집 시스템</p>
+            <div class="status-bar">
+                <div class="status-item">
+                    <span>Backend 상태:</span>
+                    <span class="status-badge badge-success" id="backend-status">🟢 연결됨</span>
+                </div>
+                <div class="status-item">
+                    <span>Frontend 상태:</span>
+                    <span class="status-badge badge-success">🟢 실행중</span>
+                </div>
+                <div class="status-item">
+                    <span>프로젝트:</span>
+                    <span id="project-count" style="font-weight: bold; color: #667eea;">0개</span>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- 왼쪽: 사이드바 -->
+            <div class="sidebar">
+                <!-- 새 프로젝트 생성 -->
+                <div class="card">
+                    <div class="card-header">+ 새 프로젝트</div>
+                    <div class="card-content">
+                        <div class="form-group">
+                            <label for="project-name">프로젝트 이름</label>
+                            <input type="text" id="project-name" placeholder="예: 주식 설명 영상">
+                        </div>
+                        <div class="form-group">
+                            <label for="project-type">유형</label>
+                            <select id="project-type">
+                                <option value="general">일반</option>
+                                <option value="educational">교육</option>
+                                <option value="entertainment">엔터테인먼트</option>
+                                <option value="tutorial">튜토리얼</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="createProject()">프로젝트 생성</button>
+                    </div>
+                </div>
+
+                <!-- 빠른 작업 -->
+                <div class="card">
+                    <div class="card-header">⚡ 빠른 작업</div>
+                    <div class="card-content">
+                        <button class="btn btn-secondary" onclick="showSection('projects')">모든 프로젝트</button>
+                        <button class="btn btn-secondary" onclick="refreshProjects()">프로젝트 새로고침</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오른쪽: 메인 컨텐츠 -->
+            <div>
+                <!-- 메시지 표시 영역 -->
+                <div id="message-area"></div>
+
+                <!-- 프로젝트 목록 섹션 -->
+                <div id="projects-section" class="editor-section active">
+                    <div class="card">
+                        <div class="card-header">📁 프로젝트 목록</div>
+                        <div class="card-content">
+                            <div id="projects-loading" class="loading">
+                                <div class="spinner"></div>
+                                <p>프로젝트 로딩중...</p>
+                            </div>
+                            <div id="projects-grid" class="projects-grid" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 프로젝트 편집 섹션 -->
+                <div id="editor-section" class="editor-section">
+                    <div class="card">
+                        <div class="card-header">
+                            <span id="editor-title">프로젝트 편집</span>
+                            <span style="float: right; cursor: pointer; font-size: 20px;" onclick="showSection('projects')">✕</span>
+                        </div>
+                        <div class="card-content">
+                            <!-- 진행 상황 -->
+                            <div class="steps" id="progress-steps">
+                                <div class="step"><div class="step-number">1</div><div class="step-name">대본</div></div>
+                                <div class="step"><div class="step-number">2</div><div class="step-name">TTS</div></div>
+                                <div class="step"><div class="step-number">3</div><div class="step-name">자막</div></div>
+                                <div class="step"><div class="step-number">4</div><div class="step-name">썸네일</div></div>
+                                <div class="step"><div class="step-number">5</div><div class="step-name">BGM</div></div>
+                                <div class="step"><div class="step-number">6</div><div class="step-name">렌더링</div></div>
+                            </div>
+
+                            <!-- 탭 -->
+                            <div class="tabs" id="step-tabs">
+                                <button class="tab-btn active" data-step="0">📝 대본</button>
+                                <button class="tab-btn" data-step="1">🔊 TTS</button>
+                                <button class="tab-btn" data-step="2">📝 자막</button>
+                                <button class="tab-btn" data-step="3">📸 썸네일</button>
+                                <button class="tab-btn" data-step="4">🎵 BGM</button>
+                                <button class="tab-btn" data-step="5">🎬 렌더링</button>
+                            </div>
+
+                            <!-- 대본 탭 -->
+                            <div id="script-tab" class="tab-content">
+                                <div class="form-group">
+                                    <label for="script-text">영상 대본</label>
+                                    <textarea id="script-text" placeholder="영상의 나레이션 대본을 입력하세요...">안녕하세요. 이 영상은 AI가 자동으로 생성했습니다.</textarea>
+                                    <div class="info-text">💡 한국어 또는 영어로 입력하세요. 자동으로 TTS 음성으로 변환됩니다.</div>
+                                </div>
+                                <button class="btn btn-primary" onclick="updateScript()">대본 저장</button>
+                                <div class="card" style="margin-top:12px;">
+                                    <div class="card-header">Result</div>
+                                    <div class="card-content" id="result-script">현재 상태: 대기</div>
+                                </div>
+                            </div>
+
+                            <!-- TTS 탭 -->
+                            <div id="tts-tab" class="tab-content" style="display: none;">
+                                <div class="form-group">
+                                    <label for="voice-select">음성 선택</label>
+                                    <select id="voice-select">
+                                        <option value="ko-KR-SunHiNeural">한국어 - 여성 (Sun Hi)</option>
+                                        <option value="ko-KR-InJoonNeural">한국어 - 남성 (In Joon)</option>
+                                        <option value="en-US-AriaNeural">English - Female (Aria)</option>
+                                        <option value="en-US-GuyNeural">English - Male (Guy)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>✓ 음성 설정</label>
+                                    <div class="info-text">현재 선택된 음성: ko-KR-SunHiNeural</div>
+                                </div>
+                                <!-- Speed Control (Issue #3) -->
+                                <div class="form-group">
+                                    <label for="tts-speed-select">재생 속도 (배속)</label>
+                                    <select id="tts-speed-select">
+                                        <option value="0.8">0.8배 (느림)</option>
+                                        <option value="0.9">0.9배</option>
+                                        <option value="1.0" selected>1.0배 (기본)</option>
+                                        <option value="1.1">1.1배</option>
+                                        <option value="1.2">1.2배 (빠름)</option>
+                                    </select>
+                                    <div class="info-text">선택한 속도로 TTS를 재생성합니다.</div>
+                                </div>
+                                <button class="btn btn-primary" onclick="generateTTS()">TTS 생성</button>
+                                <div class="card" style="margin-top:12px;">
+                                    <div class="card-header">Result</div>
+                                    <div class="card-content" id="result-tts">현재 상태: 대기</div>
+                                </div>
+                            </div>
+
+                            <!-- 자막 탭 -->
+                            <div id="subtitles-tab" class="tab-content" style="display: none;">
+                                <div class="form-group">
+                                    <label>자막 생성</label>
+                                    <div class="info-text">씬 기반 자동 자막을 생성합니다.</div>
+                                </div>
+                                <button class="btn btn-primary" onclick="generateSubtitles()">자막 생성</button>
+                                <div class="card" style="margin-top:12px;">
+                                    <div class="card-header">Result</div>
+                                    <div class="card-content" id="result-subtitles">현재 상태: 대기</div>
+                                </div>
+                            </div>
+
+                            <!-- 썸네일 탭 -->
+                            <div id="thumbnail-tab" class="tab-content" style="display: none;">
+                                <div class="form-group">
+                                    <label for="thumbnail-title">썸네일 제목</label>
+                                    <input type="text" id="thumbnail-title" placeholder="예: 새로운 기술 설명">
+                                </div>
+                                <div class="form-group">
+                                    <label for="thumbnail-color">배경색</label>
+                                    <input type="text" id="thumbnail-color" placeholder="#667eea" value="#667eea">
+                                    <div class="info-text">색상 코드 형식: #RRGGBB</div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="thumbnail-image">커스텀 이미지 (선택)</label>
+                                    <div class="file-input-wrapper">
+                                        <label class="file-input-label">
+                                            📤 이미지 업로드
+                                            <input type="file" id="thumbnail-image" accept="image/*">
+                                        </label>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" onclick="generateThumbnail()">썸네일 생성</button>
+                                    <div class="card" style="margin-top:12px;">
+                                        <div class="card-header">Result</div>
+                                        <div class="card-content" id="result-thumbnail">현재 상태: 대기</div>
+                                    </div>
+                            </div>
+
+                            <!-- BGM 탭 -->
+                            <div id="bgm-tab" class="tab-content" style="display: none;">
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="bgm-enabled" onchange="toggleBGM()"> BGM 사용 여부
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label for="bgm-volume">BGM 볼륨: <span class="range-value" id="volume-display">50%</span></label>
+                                    <input type="range" id="bgm-volume" min="0" max="100" value="50" onchange="updateBGMVolume()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="bgm-file">BGM 파일 선택</label>
+                                    <div class="file-input-wrapper">
+                                        <label class="file-input-label">
+                                            🎵 오디오 파일 업로드 (.mp3, .wav, .aac, .ogg, .flac)
+                                            <input type="file" id="bgm-file" accept="audio/*">
+                                        </label>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" onclick="uploadBGM()">BGM 적용</button>
+                                    <div class="card" style="margin-top:12px;">
+                                        <div class="card-header">Result</div>
+                                        <div class="card-content" id="result-bgm">현재 상태: 대기</div>
+                                    </div>
+                            </div>
+
+                            <!-- 렌더링 탭 -->
+                            <div id="render-tab" class="tab-content" style="display: none;">
+                                <div class="form-group">
+                                    <label for="output-format">출력 포맷</label>
+                                    <select id="output-format">
+                                        <option value="1080p">Full HD (1920x1080)</option>
+                                        <option value="720p">HD (1280x720)</option>
+                                        <option value="4k">4K (3840x2160)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="video-duration">예상 영상 시간</label>
+                                    <input type="text" id="video-duration" placeholder="계산중..." disabled>
+                                </div>
+                                <div id="render-progress" style="display: none;">
+                                    <div class="loading">
+                                        <div class="spinner"></div>
+                                        <p>렌더링 중... 잠시 기다려주세요</p>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" id="render-btn" onclick="startRender()">최종 렌더링 시작</button>
+                                    <div class="card" style="margin-top:12px;">
+                                        <div class="card-header">Result</div>
+                                        <div class="card-content" id="result-render">현재 상태: 대기</div>
+                                    </div>
+                            </div>
+
+                            <button class="btn btn-secondary" onclick="showSection('projects')">돌아가기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let currentProjectId = null;
+        let isLoading = false; // Global loading state (Issue #4)
+        let ttsSpeed = 1.0; // Global TTS speed state (Issue #3)
+
+        // ============================================================================
+        // LOADING MODAL FUNCTIONS (Issue #4)
+        // ============================================================================
+        function showLoadingModal(title = '생성 중입니다...', message = '완료될 때까지 잠시 기다려 주세요.') {
+            document.getElementById('loading-modal-title').textContent = title;
+            document.getElementById('loading-modal-message').textContent = message;
+            document.getElementById('loading-modal').classList.add('open');
+            isLoading = true;
+        }
+
+        function hideLoadingModal() {
+            document.getElementById('loading-modal').classList.remove('open');
+            isLoading = false;
+        }
+
+        // ============================================================================
+        // UNIFIED STEP NAVIGATION SYSTEM
+        // ============================================================================
+        
+        // Single source of truth: step definitions
+        const STEPS = [
+            { key: "script", label: "대본", num: 1, tabId: "script-tab" },
+            { key: "tts", label: "TTS", num: 2, tabId: "tts-tab" },
+            { key: "subtitles", label: "자막", num: 3, tabId: "subtitles-tab" },
+            { key: "thumbnail", label: "썸네일", num: 4, tabId: "thumbnail-tab" },
+            { key: "bgm", label: "BGM", num: 5, tabId: "bgm-tab" },
+            { key: "render", label: "렌더링", num: 6, tabId: "render-tab" }
+        ];
+
+        // Current step state - SINGLE SOURCE OF TRUTH
+        let currentStep = 0; // 0-5 index
+        
+        function setCurrentStep(stepIndex) {
+            if (stepIndex < 0 || stepIndex >= STEPS.length) {
+                console.warn("[NAV] Invalid step index:", stepIndex);
+                return;
+            }
+
+            currentStep = stepIndex;
+            console.log("[NAV] switched to step", STEPS[stepIndex].key, "index:", stepIndex);
+            
+            // Update top step buttons: activate only the current step
+            document.querySelectorAll('.step').forEach((el, idx) => {
+                el.classList.toggle('active', idx === stepIndex);
+            });
+
+            // Update bottom tab indicators (read-only sync)
+            document.querySelectorAll('.tab-btn').forEach((el, idx) => {
+                el.classList.toggle('active', idx === stepIndex);
+            });
+
+            // Show only the step's content tab
+            document.querySelectorAll('.tab-content').forEach((el, idx) => {
+                el.style.display = (idx === stepIndex) ? 'block' : 'none';
+            });
+        }
+
+        function getCurrentStep() {
+            return currentStep;
+        }
+
+        // ============================================================================
+        // 백엔드 상태 확인
+        async function checkBackend() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (response.ok) {
+                    document.getElementById('backend-status').textContent = '🟢 연결됨';
+                }
+            } catch (error) {
+                document.getElementById('backend-status').textContent = '🔴 연결 끊김';
+                showMessage('backend 연결 실패. 포트 5000을 확인하세요.', 'error');
+            }
+        }
+
+        // 메시지 표시
+        function showMessage(text, type = 'success') {
+            const area = document.getElementById('message-area');
+            const div = document.createElement('div');
+            div.className = `${type}-message`;
+            div.textContent = text;
+            area.appendChild(div);
+            setTimeout(() => div.remove(), 3000);
+        }
+
+        // 섹션 전환
+        function showSection(sectionId) {
+            document.querySelectorAll('.editor-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`${sectionId}-section`).classList.add('active');
+        }
+
+        // 프로젝트 목록 로드
+        async function refreshProjects() {
+            try {
+                const response = await fetch(`${API_BASE}/projects`);
+                const data = await response.json();
+                
+                if (!data.ok || !data.projects) {
+                    document.getElementById('projects-grid').innerHTML = '<p>프로젝트가 없습니다.</p>';
+                    return;
+                }
+
+                document.getElementById('project-count').textContent = data.projects.length + '개';
+                const grid = document.getElementById('projects-grid');
+                grid.innerHTML = '';
+
+                if (data.projects.length === 0) {
+                    grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999;">프로젝트를 생성해주세요.</p>';
+                } else {
+                    data.projects.forEach(project => {
+                        const card = createProjectCard(project);
+                        grid.appendChild(card);
+                    });
+                }
+
+                document.getElementById('projects-loading').style.display = 'none';
+                document.getElementById('projects-grid').style.display = 'grid';
+            } catch (error) {
+                console.error('프로젝트 로드 실패:', error);
+                showMessage('프로젝트 로드 실패', 'error');
+            }
+        }
+
+        // 프로젝트 카드 생성
+        function createProjectCard(project) {
+            const card = document.createElement('div');
+            card.className = 'project-card';
+            
+            const completionSteps = [
+                project.scenes?.length > 0 ? 'script' : null,
+                project.settings?.tts?.audio_paths?.length > 0 ? 'tts' : null,
+                project.settings?.subtitles?.enabled ? 'srt' : null,
+                project.settings?.thumbnail?.path ? 'thumbnail' : null,
+                project.settings?.bgm?.enabled ? 'bgm' : null,
+                project.rendered ? 'render' : null
+            ].filter(Boolean);
+
+            card.innerHTML = `
+                <h3>${project.name || 'Untitled Project'}</h3>
+                <p>ID: ${project.id}</p>
+                <p>생성일: ${new Date(project.created_at).toLocaleDateString('ko-KR')}</p>
+                <div class="project-status">
+                    ${completionSteps.includes('script') ? '<span class="status-tag done">✓ 대본</span>' : ''}
+                    ${completionSteps.includes('tts') ? '<span class="status-tag done">✓ TTS</span>' : ''}
+                    ${completionSteps.includes('srt') ? '<span class="status-tag done">✓ 자막</span>' : ''}
+                    ${completionSteps.includes('thumbnail') ? '<span class="status-tag done">✓ 썸네일</span>' : ''}
+                    ${completionSteps.includes('bgm') ? '<span class="status-tag done">✓ BGM</span>' : ''}
+                    ${completionSteps.includes('render') ? '<span class="status-tag done">✓ 렌더링</span>' : ''}
+                </div>
+                <button class="btn btn-small btn-primary" onclick="window.location.href = '/project.html?id=${project.id}#script'" style="margin-top: 10px;">편집</button>
+            `;
+            return card;
+        }
+
+        // 프로젝트 생성
+        async function createProject() {
+            const name = document.getElementById('project-name').value;
+            const type = document.getElementById('project-type').value;
+
+            if (!name) {
+                showMessage('프로젝트 이름을 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/projects`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, type })
+                });
+                
+                const data = await response.json();
+                if (data.ok) {
+                    showMessage(`"${name}" 프로젝트가 생성되었습니다.`);
+                    document.getElementById('project-name').value = '';
+                    // Refresh list and open the newly created project for editing
+                    refreshProjects();
+                    if (data.projectId) {
+                        window.location.href = `/project.html?id=${data.projectId}#script`;
+                    }
+                }
+            } catch (error) {
+                console.error('프로젝트 생성 실패:', error);
+                showMessage('프로젝트 생성 실패', 'error');
+            }
+        }
+
+        // 프로젝트 열기
+        async function openProject(projectId) {
+            currentProjectId = projectId;
+            showSection('editor');
+            document.getElementById('editor-title').textContent = `프로젝트 편집: ${projectId}`;
+            
+            // 프로젝트 데이터 로드
+            try {
+                const response = await fetch(`${API_BASE}/projects/${projectId}`);
+                const data = await response.json();
+                if (data.ok) {
+                    // keep project data handy for gating UI
+                    window.currentProjectData = data.project;
+                    // set header to project name if available
+                    const displayName = data.project.name || data.project.topic || projectId;
+                    document.getElementById('editor-title').textContent = `프로젝트 편집: ${displayName}`;
+                    populateEditor(data.project);
+                }
+            } catch (error) {
+                console.error('프로젝트 로드 실패:', error);
+            }
+        }
+
+        // 편집기 채우기
+        function populateEditor(project) {
+            // 대본
+            if (project.scenes?.[0]) {
+                document.getElementById('script-text').value = project.scenes[0].text || '';
+            }
+
+            // 음성 선택
+            if (project.settings?.tts?.voice) {
+                document.getElementById('voice-select').value = project.settings.tts.voice;
+            }
+
+            // 썸네일
+            if (project.settings?.thumbnail) {
+                document.getElementById('thumbnail-title').value = project.settings.thumbnail.title || '';
+                document.getElementById('thumbnail-color').value = project.settings.thumbnail.bg_color || '#667eea';
+            }
+
+            // BGM
+            if (project.settings?.bgm) {
+                document.getElementById('bgm-enabled').checked = project.settings.bgm.enabled || false;
+                document.getElementById('bgm-volume').value = (project.settings.bgm.volume * 100) || 50;
+                updateBGMVolume();
+            }
+
+            // 진행 상황 표시
+            updateProgress(project);
+        }
+
+        // 진행 상황 표시 업데이트
+        function updateProgress(project) {
+            // Mark completed steps with visual indicator
+            const steps = document.querySelectorAll('.step');
+            steps.forEach((step, index) => {
+                step.classList.remove('completed');
+                if (index === 0 && project.scenes?.length > 0) step.classList.add('completed');
+                if (index === 1 && project.settings?.tts?.audio_paths?.length > 0) step.classList.add('completed');
+                if (index === 2 && project.settings?.subtitles?.enabled) step.classList.add('completed');
+                if (index === 3 && project.settings?.thumbnail?.path) step.classList.add('completed');
+                if (index === 4 && project.settings?.bgm?.enabled) step.classList.add('completed');
+                if (index === 5 && project.rendered) step.classList.add('completed');
+            });
+            
+            // Attach click handlers - ALWAYS clickable for navigation
+            attachStepClickHandlers(project);
+        }
+
+        function attachStepClickHandlers(project) {
+            const steps = document.querySelectorAll('.step');
+            steps.forEach((step, stepIndex) => {
+                // Remove old listeners by cloning
+                if (step.onclick) step.onclick = null;
+                
+                step.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    console.log("[NAV] step click", STEPS[stepIndex].key, "index:", stepIndex);
+                    
+                    // NAVIGATION ALWAYS WORKS - no prerequisites blocking
+                    setCurrentStep(stepIndex);
+                }, { once: false });
+            });
+        }
+
+        // 대본 저장
+        async function updateScript() {
+            const text = document.getElementById('script-text').value;
+            if (!text) {
+                showMessage('대본을 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                console.log('[TTS-GEN] Saving script for', currentProjectId, text.slice(0,120));
+                const response = await fetch(`${API_BASE}/projects/${currentProjectId}/scenes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                const respText = await response.text();
+                let data = null;
+                try { data = JSON.parse(respText); } catch (e) { /* not json */ }
+                if (response.ok && data && data.ok) {
+                    showMessage('대본이 저장되었습니다.');
+                    console.log('[TTS-GEN] Script saved successfully');
+                    // refresh local project data and update UI
+                    if (data.projectId) {
+                        const projResp = await fetch(`${API_BASE}/projects/${data.projectId}`);
+                        const projData = await projResp.json();
+                        if (projData.ok) {
+                            window.currentProjectData = projData.project;
+                            populateEditor(projData.project);
+                            refreshProjects();
+                        }
+                    }
+                } else {
+                    const errMsg = (data && data.error) ? data.error : respText || 'Unknown error';
+                    console.error('[TTS-GEN] Failed:', response.status, errMsg);
+                    showMessage(`대본 저장 실패: ${response.status} ${errMsg}`, 'error');
+                }
+            } catch (error) {
+                console.error('[TTS-GEN] Exception:', error);
+                showMessage('대본 저장 실패', 'error');
+            }
+        }
+
+        // TTS 生成 (Issue #1, #3, #4 fixes)
+        async function generateTTS() {
+            if (!currentProjectId) return showMessage('프로젝트를 먼저 열어주세요.', 'error');
+
+            // Check prerequisites but allow user to stay in the step to see the issue
+            const hasScript = window.currentProjectData?.scenes?.length > 0 && 
+                             (window.currentProjectData.scenes[0].text || window.currentProjectData.scenes[0].narration_ko);
+            if (!hasScript) {
+                showMessage('⚠️ 대본이 필요합니다. 먼저 "대본" 단계에서 대본을 저장해주세요.', 'error');
+                const resultEl = document.getElementById('result-tts');
+                if (resultEl) {
+                    resultEl.innerHTML = '<span style="color: #f44336;">대본이 필요합니다.</span> <button class="btn btn-small btn-secondary" onclick="setCurrentStep(0)" style="margin-top:8px;">대본으로 이동</button>';
+                }
+                return;
+            }
+
+            try {
+                showLoadingModal('TTS 생성 중...', 'AI 음성을 생성하고 있습니다. 기다려 주세요.');
+                console.log('[TTS-GEN] TTS button clicked for', currentProjectId);
+                
+                const voice = document.getElementById('voice-select').value;
+                ttsSpeed = parseFloat(document.getElementById('tts-speed-select').value);
+                const sceneId = window.currentProjectData?.scenes?.[0]?.id;
+                
+                if (!sceneId) {
+                    showMessage('대본을 저장한 후 TTS를 생성하세요.', 'error');
+                    hideLoadingModal();
+                    return;
+                }
+
+                // Include speed in request body (Issue #3)
+                const response = await fetch(`${API_BASE}/projects/${currentProjectId}/generate/tts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ voice, sceneId, speed: ttsSpeed })
+                });
+
+                const respText = await response.text();
+                let data = null;
+                try { data = JSON.parse(respText); } catch (e) { /* ignore */ }
+
+                const resultEl = document.getElementById('result-tts');
+                if (response.ok && data && data.ok) {
+                    showMessage('TTS 생성이 완료되었습니다.');
+                    console.log('[TTS-GEN] TTS success', data);
+                    refreshProjects();
+
+                    // clear and show detailed result
+                    resultEl.innerHTML = '';
+                    const info = document.createElement('div');
+                    info.textContent = `오디오 생성: ${data.audioPath} (길이: ${Math.round((data.durationSec||0)*1000)/1000}s, 배속: ${ttsSpeed}배)`;
+                    resultEl.appendChild(info);
+
+                    if (data.audioPath) {
+                        // Use preview endpoint with cache buster (Issue #1 - fix A)
+                        const previewUrl = `${API_BASE}/projects/${currentProjectId}/preview?path=${encodeURIComponent(data.audioPath)}&v=${Date.now()}`;
+                        
+                        const audio = document.createElement('audio');
+                        audio.controls = true;
+                        audio.src = previewUrl;
+                        audio.style.display = 'block';
+                        audio.style.marginTop = '8px';
+                        
+                        // Error handling (Issue #1 - fix C)
+                        audio.onerror = (e) => {
+                            console.error('[TTS-GEN] Audio playback error:', e);
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'audio-error';
+                            errorDiv.textContent = `❌ 오디오 재생 실패 (상태: ${audio.error?.code || 'unknown'})`;
+                            resultEl.appendChild(errorDiv);
+                            
+                            // Offer download as fallback
+                            const fallbackBtn = document.createElement('a');
+                            fallbackBtn.className = 'btn btn-small btn-secondary';
+                            fallbackBtn.href = `${API_BASE}/projects/${currentProjectId}/download?path=${encodeURIComponent(data.audioPath)}`;
+                            fallbackBtn.textContent = '대신 다운로드하기';
+                            fallbackBtn.style.display = 'inline-block';
+                            fallbackBtn.style.marginTop = '8px';
+                            resultEl.appendChild(fallbackBtn);
+                        };
+                        
+                        resultEl.appendChild(audio);
+
+                        // Download link
+                        const dl = document.createElement('a');
+                        dl.href = `${API_BASE}/projects/${currentProjectId}/download?path=${encodeURIComponent(data.audioPath)}`;
+                        dl.textContent = '오디오 다운로드';
+                        dl.style.display = 'inline-block';
+                        dl.style.marginTop = '8px';
+                        dl.style.marginLeft = '10px';
+                        resultEl.appendChild(dl);
+                    }
+                } else {
+                    const errMsg = (data && data.error) ? data.error : respText || 'Unknown error';
+                    console.error('[TTS-GEN] TTS failed:', response.status, errMsg);
+                    showMessage(`TTS 실패: ${response.status} ${errMsg}`, 'error');
+                    if (resultEl) resultEl.textContent = `실패: ${errMsg}`;
+                }
+            } catch (error) {
+                console.error('[TTS-GEN] Exception:', error);
+                showMessage('TTS 생성 실패', 'error');
+                const resultEl = document.getElementById('result-tts');
+                if (resultEl) resultEl.textContent = 'TTS 생성 중 오류가 발생했습니다.';
+            } finally {
+                hideLoadingModal();
+            }
+        }
+
+            // 자막 생성 (Issue #4 - add loading modal)
+            async function generateSubtitles() {
+                if (!currentProjectId) return showMessage('프로젝트를 먼저 열어주세요.', 'error');
+                
+                // Check prerequisite: TTS audio exists
+                const hasTTS = window.currentProjectData?.settings?.tts?.audio_paths?.length > 0;
+                if (!hasTTS) {
+                    showMessage('⚠️ TTS 오디오가 필요합니다. 먼저 "TTS" 단계를 완료해주세요.', 'error');
+                    const resultEl = document.getElementById('result-subtitles');
+                    if (resultEl) {
+                        resultEl.innerHTML = '<span style="color: #f44336;">TTS 오디오가 필요합니다.</span> <button class="btn btn-small btn-secondary" onclick="setCurrentStep(1)" style="margin-top:8px;">TTS로 이동</button>';
+                    }
+                    return;
+                }
+                
+                try {
+                    showLoadingModal('자막 생성 중...', 'AI가 자막을 생성하고 있습니다.');
+                    console.log('[SUBTITLE] Generating subtitles for', currentProjectId);
+                    const response = await fetch(`${API_BASE}/projects/${currentProjectId}/generate/srt`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
+                    });
+                    const data = await response.json();
+                    const resultEl = document.getElementById('result-subtitles');
+                    if (data.ok) {
+                        showMessage('자막 생성 완료');
+                        console.log('[SUBTITLE] Success');
+                        resultEl.innerHTML = '';
+                        const info = document.createElement('div');
+                        info.textContent = `SRT 생성: ${data.srtPath || data.srtPath}`;
+                        resultEl.appendChild(info);
+
+                        const viewBtn = document.createElement('button');
+                        viewBtn.className = 'btn btn-small btn-secondary';
+                        viewBtn.textContent = 'View';
+                        viewBtn.onclick = () => fetchTextAndOpen(data.srtPath, 'Subtitles');
+                        resultEl.appendChild(viewBtn);
+
+                        const dl = document.createElement('a');
+                        dl.href = `${API_BASE}/projects/${currentProjectId}/download?path=${encodeURIComponent(data.srtPath)}`;
+                        dl.textContent = 'Download';
+                        dl.className = 'btn btn-small';
+                        dl.style.marginLeft = '8px';
+                        resultEl.appendChild(dl);
+
+                        refreshProjects();
+                    } else {
+                        console.error('[SUBTITLE] Failed', data);
+                        showMessage('자막 생성 실패: ' + (data.error || 'Unknown'), 'error');
+                    }
+                } catch (e) {
+                    console.error('[SUBTITLE] Exception', e);
+                    showMessage('자막 생성 실패', 'error');
+                } finally {
+                    hideLoadingModal();
+                }
+            }
+
+            // Fetch text file and open modal
+            async function fetchTextAndOpen(relpath, title) {
+                if (!currentProjectId) return showMessage('프로젝트를 먼저 열어주세요.', 'error');
+                try {
+                    const resp = await fetch(`${API_BASE}/projects/${currentProjectId}/text?path=${encodeURIComponent(relpath)}`);
+                    const data = await resp.json();
+                    if (resp.ok && data.ok) {
+                        let content = data.content || '';
+                        const ext = (data.path || '').split('.').pop();
+                        if (ext === 'json') {
+                            try { content = JSON.stringify(JSON.parse(content), null, 2); } catch (e) { /* ignore */ }
+                        }
+                        openTextViewer(title || data.path, content, ext);
+                    } else {
+                        const err = data && data.error ? data.error : (await resp.text());
+                        showMessage('파일 읽기 실패: ' + err, 'error');
+                    }
+                } catch (e) {
+                    console.error('파일 읽기 실패', e);
+                    showMessage('파일 읽기 실패', 'error');
+                }
+            }
+
+            function openTextViewer(title, content, languageHint) {
+                const overlay = document.getElementById('textviewer-modal');
+                document.getElementById('textviewer-title').textContent = title || '';
+                const pre = document.getElementById('textviewer-pre');
+                pre.textContent = content || '';
+                overlay.style.display = 'flex';
+            }
+
+            function closeTextViewer() {
+                document.getElementById('textviewer-modal').style.display = 'none';
+            }
+
+            function copyTextViewer() {
+                const pre = document.getElementById('textviewer-pre');
+                navigator.clipboard.writeText(pre.textContent).then(() => showMessage('복사되었습니다.'))
+                .catch(err => showMessage('복사 실패', 'error'));
+            }
+
+        // 썸네일 생성 (Issue #4 - add loading modal)
+        async function generateThumbnail() {
+            if (!currentProjectId) return;
+
+            try {
+                showLoadingModal('썸네일 생성 중...', 'AI가 썸네일을 생성하고 있습니다.');
+                const title = document.getElementById('thumbnail-title').value;
+                const bg_color = document.getElementById('thumbnail-color').value;
+                
+                const response = await fetch(`${API_BASE}/projects/${currentProjectId}/generate/thumbnail`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, bg_color })
+                });
+                
+                const data = await response.json();
+                if (data.ok) {
+                    showMessage('썸네일이 생성되었습니다.');
+                    refreshProjects();
+                } else {
+                    showMessage('썸네일 생성 실패: ' + (data.error || 'Unknown'), 'error');
+                }
+            } catch (error) {
+                console.error('썸네일 생성 실패:', error);
+                showMessage('썸네일 생성 실패', 'error');
+            } finally {
+                hideLoadingModal();
+            }
+        }
+
+        // BGM 토글
+        function toggleBGM() {
+            const enabled = document.getElementById('bgm-enabled').checked;
+            updateBGMSettings({ enabled });
+        }
+
+        // BGM 볼륨 업데이트
+        function updateBGMVolume() {
+            const volume = document.getElementById('bgm-volume').value;
+            document.getElementById('volume-display').textContent = volume + '%';
+            updateBGMSettings({ volume: volume / 100 });
+        }
+
+        // BGM 설정 업데이트
+        async function updateBGMSettings(settings) {
+            if (!currentProjectId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/projects/${currentProjectId}/settings/bgm`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+                
+                const data = await response.json();
+                if (!data.ok) {
+                    showMessage('BGM 설정 실패', 'error');
+                }
+            } catch (error) {
+                console.error('BGM 설정 실패:', error);
+            }
+        }
+
+        // BGM 업로드
+        async function uploadBGM() {
+            const file = document.getElementById('bgm-file').files[0];
+            if (!file) {
+                showMessage('파일을 선택해주세요.', 'error');
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch(`${API_BASE}/projects/${currentProjectId}/upload/bgm`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (data.ok) {
+                    showMessage('BGM 파일이 업로드되었습니다.');
+                    document.getElementById('bgm-file').value = '';
+                }
+            } catch (error) {
+                console.error('BGM 업로드 실패:', error);
+                showMessage('BGM 업로드 실패', 'error');
+            }
+        }
+
+        // 렌더링 시작 (Issue #4 - add loading modal)
+        async function startRender() {
+            if (!currentProjectId) return;
+
+            try {
+                showLoadingModal('영상 렌더링 중...', '최종 영상을 생성하고 있습니다. 시간이 걸릴 수 있습니다.');
+                document.getElementById('render-btn').disabled = true;
+                document.getElementById('render-progress').style.display = 'block';
+
+                const response = await fetch(`${API_BASE}/projects/${currentProjectId}/render`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                if (data.ok) {
+                    showMessage('영상 렌더링이 완료되었습니다!');
+                    refreshProjects();
+                } else {
+                    showMessage('렌더링 실패: ' + (data.error || '알 수 없는 오류'), 'error');
+                }
+            } catch (error) {
+                console.error('렌더링 실패:', error);
+                showMessage('렌더링 실패', 'error');
+            } finally {
+                hideLoadingModal();
+                document.getElementById('render-btn').disabled = false;
+                document.getElementById('render-progress').style.display = 'none';
+            }
+        }
+
+        // 초기화
+        window.addEventListener('load', () => {
+            console.log('[UI] Application initialized');
+            checkBackend();
+            refreshProjects();
+
+            // Initialize step navigation
+            console.log('[NAV] Setting up step navigation system');
+            setCurrentStep(0);
+        });
+    </script>
+    <!-- Text viewer modal -->
+    <div id="textviewer-modal" class="modal-overlay" onclick="if(event.target.id==='textviewer-modal') closeTextViewer()">
+        <div class="modal-box" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <div class="modal-title" id="textviewer-title">파일 내용</div>
+                <div class="modal-actions">
+                    <button class="btn btn-small btn-secondary" onclick="copyTextViewer()">Copy</button>
+                    <button class="btn btn-small" onclick="closeTextViewer()">Close</button>
+                </div>
+            </div>
+            <div class="modal-content">
+                <pre id="textviewer-pre"> </pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal (Issue #4) -->
+    <div id="loading-modal" class="loading-modal">
+        <div class="loading-modal-content">
+            <div class="loading-modal-spinner"></div>
+            <div class="loading-modal-title" id="loading-modal-title">생성 중입니다...</div>
+            <div class="loading-modal-message" id="loading-modal-message">완료될 때까지 잠시 기다려 주세요.</div>
+        </div>
+    </div>
+</body>
+</html>

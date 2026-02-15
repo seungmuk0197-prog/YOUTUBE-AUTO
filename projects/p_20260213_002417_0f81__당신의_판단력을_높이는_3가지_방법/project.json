@@ -1,0 +1,87 @@
+{
+  "id": "p_20260213_002417_0f81",
+  "createdAt": "2026-02-13T00:24:17.836373+09:00",
+  "created_at": "2026-02-13T00:24:17.836373+09:00",
+  "updatedAt": "2026-02-14T01:38:15.305612+09:00",
+  "updated_at": "2026-02-13T00:54:40.590886+09:00",
+  "topic": "당신의 판단력을 높이는 3가지 방법",
+  "name": "당신의 판단력을 높이는 3가지 방법",
+  "provider": "imagen4",
+  "aspectRatio": "16:9",
+  "blueprint": {
+    "topic": "당신의 판단력을 높이는 3가지 방법",
+    "length": 60,
+    "tone": "humor",
+    "targetAudience": "expert",
+    "style": "vlog",
+    "coreMessage": "",
+    "viewerPainPoint": "",
+    "hookType": [
+      "shocking"
+    ],
+    "emotionIntensity": 4,
+    "scriptStructure": "story",
+    "additionalRequests": "",
+    "generationStrategy": {
+      "openingStyle": "shocking",
+      "emotionalCurve": "dramatic",
+      "persuasiveStyle": "emotional",
+      "pacing": "fast"
+    },
+    "metadata": {
+      "createdAt": "2026-02-12T15:28:53.955Z",
+      "version": "2.1",
+      "source": "manual"
+    }
+  },
+  "script": "여러분은 절대 모를 거예요. 당신의 판단력을 높이는 3가지 방법에 대한 핵심 정보를 전달합니다. \n\n첫 번째, 다양한 관점을 가져보세요. 친구와의 대화가 큰 도움이 됩니다. 서로 다른 의견을 듣는 건 마치 맛있는 샐러드 같아요. 여러 재료가 어우러져서 더 맛있죠!\n\n두 번째, 경험에서 배워보세요. 실수는 최고의 스승입니다. 실패한 경험을 바탕으로 판단해보면, 그 결과는 훨씬 더 뚜렷해질 거예요. \n\n세 번째, 직관을 믿어보세요. 가끔은 gut feeling이 정답일 때가 많습니다. 직관이 나를 이끌 때, 자신감을 가져보세요! \n\n이 세 가지 방법으로 판단력을 높일 수 있습니다. 다음엔 더 멋진 결정을 내리게 될 거예요. \n\n좋아요와 구독, 그리고 댓글로 여러분의 생각을 알려주세요!",
+  "characters": [],
+  "scenes": [],
+  "thumbnail": {
+    "text": "",
+    "mode": "with_text",
+    "path": null
+  },
+  "settings": {
+    "video": {
+      "fps": 30,
+      "width": 1280,
+      "height": 720
+    },
+    "tts": {
+      "voice": "alloy",
+      "format": "mp3"
+    },
+    "bgm": {
+      "enabled": false,
+      "path": null,
+      "volume": 0.15
+    },
+    "subtitles": {
+      "enabled": false
+    }
+  },
+  "status": {
+    "script": "pending",
+    "images": "pending",
+    "tts": "pending",
+    "render": "pending",
+    "archived": false,
+    "isPinned": false,
+    "lastOpenedAt": null
+  },
+  "lastRun": {
+    "timingsMs": {},
+    "error": null
+  },
+  "folderName": "p_20260213_002417_0f81__당신의_판단력을_높이는_3가지_방법",
+  "hasScript": false,
+  "hasScenesJson": false,
+  "scenesCount": 0,
+  "imagesCount": 0,
+  "previewImageUrl": null,
+  "hasTts": false,
+  "ttsCount": 0,
+  "hasVideo": false,
+  "title": "당신의 판단력을 높이는 3가지 방법"
+}

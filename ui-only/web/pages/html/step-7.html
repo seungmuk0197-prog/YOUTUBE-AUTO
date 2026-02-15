@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>6. 영상 렌더링</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { flex: 1; }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    .content-card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .field-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    /* Model selector */
+    .model-selector {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .model-option {
+      flex: 1;
+      padding: 12px 16px;
+      background: #fff;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+    }
+    .model-option:hover {
+      border-color: #cbd5e0;
+      background: #f7fafc;
+    }
+    .model-option.selected {
+      border-color: #805ad5;
+      background: #f3e8ff;
+      color: #553c9a;
+      font-weight: 600;
+    }
+
+    /* Scene cards */
+    .scene-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .scene-card {
+      display: grid;
+      grid-template-columns: 220px 1fr 180px;
+      gap: 16px;
+      padding: 16px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      align-items: start;
+      position: relative;
+    }
+    .scene-card.loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    .scene-card-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      z-index: 10;
+      display: none;
+    }
+    .scene-card.loading .scene-card-overlay {
+      display: flex;
+    }
+    .overlay-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: #553c9a;
+    }
+    .scene-source {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .scene-num {
+      font-size: 16px;
+      font-weight: 700;
+      color: #553c9a;
+    }
+    .scene-image {
+      width: 100%;
+      max-height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .scene-audio-preview {
+      width: 100%;
+    }
+    .scene-audio-preview audio {
+      width: 100%;
+      height: 32px;
+    }
+    .scene-camera {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .scene-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      background: #f7fafc;
+      border: 2px dashed #cbd5e0;
+      border-radius: 8px;
+      position: relative;
+    }
+    .scene-preview video {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 6px;
+    }
+    .scene-preview.loading {
+      border-color: #805ad5;
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #805ad5;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .progress-bar {
+      width: 200px;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #805ad5;
+      transition: width 0.3s;
+      width: 0%;
+    }
+    .scene-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .camera-row {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .camera-label {
+      font-size: 12px;
+      color: #555;
+    }
+    .camera-select {
+      height: 30px;
+      padding: 0 8px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e0;
+      font-size: 13px;
+      background: #fff;
+      cursor: pointer;
+    }
+    .rhythm-sync-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: #f3e8ff;
+      border: 1px solid #e9d8fd;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #553c9a;
+      margin-top: 8px;
+    }
+    .camera-sync-icon {
+      display: inline-block;
+      font-size: 12px;
+      margin-left: 4px;
+      color: #805ad5;
+    }
+    .btn-scene {
+      padding: 10px 16px;
+      background: #805ad5;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-scene:hover { background: #6b46c1; }
+    .btn-scene:disabled {
+      background: #cbd5e0;
+      cursor: not-allowed;
+    }
+    .btn-scene-secondary {
+      background: #4a5568;
+    }
+    .btn-scene-secondary:hover { background: #2d3748; }
+
+    .btn-primary {
+      padding: 10px 16px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #c62828; }
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Batch actions */
+    .batch-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item active">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>6. 영상 렌더링</h1>
+          <p class="subtitle">씬별 영상을 생성하고 관리합니다</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 영상 생성 모델 선택 -->
+      <div class="content-card">
+        <div class="field-label">비디오 생성 모델 선택</div>
+        <div class="model-selector" id="modelSelector">
+          <button type="button" class="model-option selected" data-model="veo2">
+            ⚡ VEO 2 (기본 모델 / 고속 생성)
+          </button>
+          <button type="button" class="model-option" data-model="veo3">
+            💎 VEO 3 (고급 모델 / 고해상도 및 정교한 움직임)
+          </button>
+        </div>
+      </div>
+
+      <!-- 씬별 영상 변환 작업대 -->
+      <div class="content-card">
+        <div class="field-label">씬별 영상 변환</div>
+        <div class="batch-actions">
+          <button class="btn-primary" type="button" id="btnGenerateAll">모든 씬 영상으로 변환하기</button>
+        </div>
+        <div class="scene-list" id="sceneList">
+          <!-- 씬 카드들이 여기에 동적으로 생성됩니다 -->
+        </div>
+      </div>
+
+      <!-- 다음 단계 이동 -->
+      <div style="margin-top: 24px;">
+        <button class="btn-primary" type="button" id="btnGoToStep7">7. 제목/설명 작성 단계로 이동</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    var selectedModel = 'veo2';
+    var imageData = null;
+    var ttsData = null;
+    var bgmData = null;
+    var beatTimeline = null;
+    var sceneStates = {};
+
+    // Camera working options
+    var cameraOptions = [
+      { value: 'static', label: '정지 (Static)' },
+      { value: 'zoom_in', label: '줌 인 (Zoom In)' },
+      { value: 'zoom_out', label: '줌 아웃 (Zoom Out)' },
+      { value: 'pan_left', label: '왼쪽 팬 (Pan Left)' },
+      { value: 'pan_right', label: '오른쪽 팬 (Pan Right)' },
+      { value: 'tilt_up', label: '위로 틸트 (Tilt Up)' },
+      { value: 'tilt_down', label: '아래로 틸트 (Tilt Down)' }
+    ];
+
+    // Step4-2 & Step6 & Step5-2 -> Step7 데이터 로드
+    (function() {
+      try {
+        var imagePayloadRaw = localStorage.getItem('step5ImageData');
+        var ttsPayloadRaw = localStorage.getItem('step6TTSData');
+        var bgmPayloadRaw = localStorage.getItem('step52BGMData');
+        var beatTimelineRaw = localStorage.getItem('bgmBeatTimeline');
+        
+        if (!imagePayloadRaw || !ttsPayloadRaw) {
+          document.getElementById('sceneList').innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">이미지 또는 TTS 데이터가 없습니다.</div>';
+          return;
+        }
+
+        imageData = JSON.parse(imagePayloadRaw);
+        ttsData = JSON.parse(ttsPayloadRaw);
+        
+        if (bgmPayloadRaw) {
+          bgmData = JSON.parse(bgmPayloadRaw);
+          if (bgmData.beatTimeline) {
+            beatTimeline = bgmData.beatTimeline;
+          }
+        }
+        
+        if (beatTimelineRaw) {
+          var timelineData = JSON.parse(beatTimelineRaw);
+          if (timelineData.beatTimeline) {
+            beatTimeline = timelineData.beatTimeline;
+            // BPM 정보도 함께 저장
+            if (timelineData.bpm) {
+              beatTimeline.bpm = timelineData.bpm;
+            }
+          }
+        }
+        
+        // BGM 데이터에서도 BPM 정보 추출
+        if (bgmData && bgmData.bpm) {
+          if (beatTimeline) {
+            beatTimeline.bpm = bgmData.bpm;
+          } else {
+            beatTimeline = { bpm: bgmData.bpm };
+          }
+        }
+
+        if (!imageData.jsonData || !imageData.jsonData.scenes || !ttsData.jsonData || !ttsData.jsonData.scenes) {
+          document.getElementById('sceneList').innerHTML = (
+            '<div class="content-card" style="text-align: center; padding: 40px 20px;">' +
+            '<div style="font-size: 16px; font-weight: 600; color: #4a5568; margin-bottom: 12px;">데이터가 없습니다</div>' +
+            '<div style="font-size: 13px; color: #666; margin-bottom: 20px;">4-2단계에서 이미지를 생성하고, 5단계에서 TTS를 생성한 후 다시 시도해 주세요.</div>' +
+            '<div style="display: flex; gap: 12px; justify-content: center;">' +
+            '<button class="btn-primary" onclick="window.location.href=\'step-4-2.html\'" style="font-size: 13px; padding: 8px 16px;">4-2. 이미지 생성으로 이동</button>' +
+            '<button class="btn-primary" onclick="window.location.href=\'step-6.html\'" style="font-size: 13px; padding: 8px 16px;">5. TTS 생성으로 이동</button>' +
+            '</div>' +
+            '</div>'
+          );
+          return;
+        }
+
+        renderSceneCards();
+      } catch (e) {
+        console.error('데이터 로드 실패:', e);
+        document.getElementById('sceneList').innerHTML = (
+          '<div class="content-card" style="text-align: center; padding: 40px 20px;">' +
+          '<div style="font-size: 16px; font-weight: 600; color: #e53935; margin-bottom: 12px;">데이터를 불러오는 중 오류가 발생했습니다</div>' +
+          '<div style="font-size: 13px; color: #666; margin-bottom: 20px;">이전 단계에서 데이터를 생성한 후 다시 시도해 주세요.</div>' +
+          '<button class="btn-primary" onclick="window.location.href=\'step-4-2.html\'" style="margin-top: 8px;">이전 단계로 이동</button>' +
+          '</div>'
+        );
+      }
+    })();
+
+    // 모델 선택
+    (function() {
+      var selector = document.getElementById('modelSelector');
+      if (!selector) return;
+      selector.querySelectorAll('.model-option').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          selector.querySelectorAll('.model-option').forEach(function(b) {
+            b.classList.remove('selected');
+          });
+          this.classList.add('selected');
+          selectedModel = this.getAttribute('data-model');
+        });
+      });
+    })();
+
+    // 씬 카드 렌더링 (이미지 + TTS 매칭)
+    function renderSceneCards() {
+      var container = document.getElementById('sceneList');
+      if (!container || !imageData || !ttsData) return;
+
+      var imageScenes = imageData.jsonData.scenes || [];
+      var ttsScenes = ttsData.jsonData.scenes || [];
+      var generatedImages = imageData.generatedImages || [];
+      var generatedAudios = ttsData.generatedAudios || [];
+
+      container.innerHTML = imageScenes
+        .map(function(scene, idx) {
+          var sceneNum = scene.scene_num;
+          var sceneId = 'scene-' + sceneNum;
+          
+          // 이미지 찾기
+          var imageInfo = generatedImages.find(function(img) {
+            return img.scene_num === sceneNum;
+          });
+          var imageUrl = imageInfo ? imageInfo.imageUrl : null;
+
+          // TTS 음성 찾기
+          var audioInfo = generatedAudios.find(function(audio) {
+            return audio.scene_num === sceneNum;
+          });
+          var audioUrl = audioInfo ? audioInfo.audioUrl : null;
+          var script = audioInfo ? audioInfo.script : (scene.script || '');
+
+          sceneStates[sceneId] = {
+            scene_num: sceneNum,
+            imageUrl: imageUrl,
+            audioUrl: audioUrl,
+            script: script,
+            videoUrl: null,
+            isLoading: false,
+            hasError: false,
+            progress: 0,
+            cameraWorking: 'zoom_in'
+          };
+
+          return (
+            '<div class="scene-card" data-scene-id="' +
+            sceneId +
+            '">' +
+            '<div class="scene-card-overlay">' +
+            '<div class="overlay-text">렌더링 중... (<span id="overlay-progress-' +
+            sceneId +
+            '">0</span>%)</div>' +
+            '<div class="progress-bar">' +
+            '<div class="progress-fill" id="overlay-progress-fill-' +
+            sceneId +
+            '"></div>' +
+            '</div>' +
+            '</div>' +
+            '<div class="scene-source">' +
+            '<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">' +
+            '<div class="scene-num">씬 ' +
+            sceneNum +
+            '</div>' +
+            (beatTimeline && beatTimeline.bpm ? '<div class="rhythm-sync-badge">🎵 리듬 동기화 활성화됨 (' + beatTimeline.bpm + ' BPM)</div>' : '') +
+            '</div>' +
+            (imageUrl
+              ? '<img src="' + imageUrl + '" alt="씬 ' + sceneNum + ' 이미지" class="scene-image" />'
+              : '<div class="scene-image" style="background: #f7fafc; border: 1px dashed #cbd5e0; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; color: #718096; font-size: 12px; min-height: 120px;">' +
+                '<div style="font-weight: 600; margin-bottom: 4px; color: #4a5568;">이미지 생성 대기 중</div>' +
+                '<div style="font-size: 11px;">4-2단계에서 이미지를 생성하세요</div>' +
+                '</div>') +
+            '<div class="scene-audio-preview">' +
+            (audioUrl
+              ? '<audio controls src="' + audioUrl + '"></audio>'
+              : '<div style="padding: 12px; background: #f7fafc; border: 1px dashed #cbd5e0; border-radius: 6px; font-size: 12px; color: #718096; text-align: center;">' +
+                '<div style="font-weight: 600; margin-bottom: 4px; color: #4a5568;">TTS 생성 대기 중</div>' +
+                '<div style="font-size: 11px;">5단계에서 TTS를 생성하세요</div>' +
+                '</div>') +
+            '</div>' +
+            '</div>' +
+            '<div class="scene-camera">' +
+            '<div class="scene-preview" id="preview-' +
+            sceneId +
+            '">' +
+            '<div style="color: #999; font-size: 13px;">영상 미리보기</div>' +
+            '</div>' +
+            '<div class="camera-row">' +
+            '<span class="camera-label">카메라 워킹' + (beatTimeline && beatTimeline.bpm ? '<span class="camera-sync-icon">⚡</span>' : '') + '</span>' +
+            '<select class="camera-select" id="camera-' +
+            sceneId +
+            '" onchange="updateCameraWorking(\'' +
+            sceneId +
+            '\', this.value)">' +
+            cameraOptions
+              .map(function(opt) {
+                var label = opt.label;
+                if (beatTimeline && beatTimeline.bpm) {
+                  label = opt.label + ' ⚡';
+                }
+                return '<option value="' + opt.value + '"' + (opt.value === 'zoom_in' ? ' selected' : '') + '>' + label + '</option>';
+              })
+              .join('') +
+            '</select>' +
+            '</div>' +
+            '</div>' +
+            '<div class="scene-actions">' +
+            '<button class="btn-scene" type="button" onclick="generateVideo(\'' +
+            sceneId +
+            '\')">개별 렌더링</button>' +
+            '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
+    }
+
+    // 카메라 워킹 옵션 업데이트
+    function updateCameraWorking(sceneId, value) {
+      if (sceneStates[sceneId]) {
+        sceneStates[sceneId].cameraWorking = value;
+      }
+    }
+
+    // 리듬 동기화 프롬프트 생성 (VEO AI가 직접 비트를 맞추도록 유도)
+    function generateRhythmSyncPrompt(cameraMotion, beatTimeline) {
+      if (!beatTimeline || !beatTimeline.bpm) {
+        // BPM 정보가 없으면 기본 프롬프트
+        return getCameraMotionPrompt(cameraMotion);
+      }
+
+      var bpm = beatTimeline.bpm;
+      var basePrompt = getCameraMotionPrompt(cameraMotion);
+      
+      // 프롬프트에 템포 정보를 텍스트로 명시하여 VEO AI가 스스로 비트를 맞추도록 유도
+      var rhythmSyncPrompt = basePrompt + 
+        ' with a dynamic rhythmic pulse that matches a ' + bpm + ' BPM tempo. ' +
+        'Ensure the maximum camera movement depth aligns with every 4th beat (downbeat), ' +
+        'creating a natural synchronization with the music rhythm. ' +
+        'The camera motion should follow the musical tempo, with smooth transitions at each strong beat.';
+
+      return rhythmSyncPrompt;
+    }
+
+    // 카메라 워킹 기본 프롬프트
+    function getCameraMotionPrompt(motion) {
+      var prompts = {
+        'static': 'Keep the camera static and stable.',
+        'zoom_in': 'Zoom in on the subject gradually.',
+        'zoom_out': 'Zoom out from the subject gradually.',
+        'pan_left': 'Pan the camera to the left smoothly.',
+        'pan_right': 'Pan the camera to the right smoothly.',
+        'tilt_up': 'Tilt the camera upward smoothly.',
+        'tilt_down': 'Tilt the camera downward smoothly.'
+      };
+      return prompts[motion] || prompts['zoom_in'];
+    }
+
+    // 비트 타임라인 기반 카메라 움직임 파라미터 계산
+    function calculateCameraMotionFromBeat(sceneNum, audioDuration) {
+      if (!beatTimeline || !beatTimeline.timeline || beatTimeline.timeline.length === 0) {
+        // 비트 타임라인이 없으면 기본값 반환
+        return {
+          motion: 'zoom_in',
+          speed: 1.0,
+          transitionPoints: []
+        };
+      }
+
+      // 씬 시작 시간 계산 (이전 씬들의 총 길이)
+      var sceneStartTime = 0;
+      if (ttsData && ttsData.jsonData && ttsData.jsonData.scenes) {
+        for (var i = 0; i < ttsData.jsonData.scenes.length; i++) {
+          if (ttsData.jsonData.scenes[i].scene_num < sceneNum) {
+            sceneStartTime += 30; // 기본 30초 추정
+          } else {
+            break;
+          }
+        }
+      }
+
+      var sceneEndTime = sceneStartTime + audioDuration;
+      
+      // 해당 씬 구간의 비트 타임라인 추출
+      var sceneBeats = beatTimeline.timeline.filter(function(beat) {
+        return beat.time >= sceneStartTime && beat.time < sceneEndTime;
+      });
+
+      // 강한 비트 지점을 전환점으로 설정
+      var transitionPoints = sceneBeats
+        .filter(function(beat) {
+          return beat.isStrongBeat;
+        })
+        .map(function(beat) {
+          return {
+            time: beat.time - sceneStartTime, // 씬 내 상대 시간
+            beatIndex: beat.beatIndex,
+            barIndex: beat.barIndex
+          };
+        });
+
+      // 카메라 워킹 속도 계산 (비트 간격에 맞춰)
+      var speed = 1.0;
+      if (beatTimeline.beatInterval) {
+        // 비트 간격이 짧을수록 빠른 움직임
+        speed = Math.max(0.5, Math.min(2.0, 1.0 / beatTimeline.beatInterval));
+      }
+
+      // 기본 카메라 워킹 (비트에 따라 자동 선택)
+      var motion = 'zoom_in';
+      if (sceneBeats.length > 0) {
+        var strongBeats = sceneBeats.filter(function(b) { return b.isStrongBeat; });
+        if (strongBeats.length % 2 === 0) {
+          motion = 'zoom_in';
+        } else {
+          motion = 'pan_right';
+        }
+      }
+
+      return {
+        motion: motion,
+        speed: speed,
+        transitionPoints: transitionPoints,
+        beatInterval: beatTimeline.beatInterval,
+        barInterval: beatTimeline.barInterval
+      };
+    }
+
+    // 오디오 길이 가져오기 (초 단위)
+    function getAudioDuration(audioUrl) {
+      return new Promise(function(resolve, reject) {
+        var audio = new Audio(audioUrl);
+        audio.addEventListener('loadedmetadata', function() {
+          resolve(audio.duration);
+        });
+        audio.addEventListener('error', function() {
+          reject(new Error('오디오 로드 실패'));
+        });
+        audio.load();
+      });
+    }
+
+    // 영상 생성 API 호출
+    async function generateVideo(sceneId) {
+      var state = sceneStates[sceneId];
+      if (!state || state.isLoading) return;
+
+      if (!state.imageUrl || !state.audioUrl) {
+        alert('이미지 또는 음성 파일이 없습니다.');
+        return;
+      }
+
+      state.isLoading = true;
+      state.hasError = false;
+      state.progress = 0;
+      updateSceneUI(sceneId);
+
+      try {
+        // TTS 오디오 길이 가져오기
+        var audioDuration = await getAudioDuration(state.audioUrl);
+
+        // 비트 타임라인 기반 카메라 워킹 속도 및 전환 시점 계산
+        var cameraMotionParams = calculateCameraMotionFromBeat(state.scene_num, audioDuration);
+        
+        // 리듬 동기화 프롬프트 자동 보정
+        var cameraMotion = state.cameraWorking || cameraMotionParams.motion;
+        var rhythmSyncPrompt = generateRhythmSyncPrompt(cameraMotion, beatTimeline);
+
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-video', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+            body: JSON.stringify({
+              image_url: state.imageUrl,
+              audio_url: state.audioUrl,
+              audio_duration: audioDuration,
+              model: selectedModel,
+              camera_motion: cameraMotion,
+              camera_speed: cameraMotionParams.speed,
+              transition_points: cameraMotionParams.transitionPoints,
+              beat_timeline: beatTimeline,
+              rhythm_sync_prompt: rhythmSyncPrompt, // 리듬 동기화 프롬프트
+              prompt: rhythmSyncPrompt // VEO AI가 직접 사용할 프롬프트
+            })
+        });
+
+        if (!response.ok) {
+          throw new Error('영상 생성 실패: ' + response.statusText);
+        }
+
+        // 진행률 업데이트 (폴링 또는 SSE)
+        var progressInterval = setInterval(function() {
+          fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/video-progress?taskId=' + encodeURIComponent(state.taskId || ''))
+            .then(function(res) {
+              return res.json();
+            })
+            .then(function(data) {
+              if (data.progress !== undefined) {
+                state.progress = data.progress;
+                updateSceneUI(sceneId);
+                if (data.progress >= 100) {
+                  clearInterval(progressInterval);
+                }
+              }
+            })
+            .catch(function(err) {
+              console.error('진행률 조회 실패:', err);
+            });
+        }, 2000);
+
+        var result = await response.json();
+        state.taskId = result.taskId || result.id;
+        state.videoUrl = result.videoUrl || result.url || result.data?.url;
+        state.isLoading = false;
+        state.progress = 100;
+        clearInterval(progressInterval);
+        updateSceneUI(sceneId);
+      } catch (error) {
+        console.error('영상 생성 오류:', error);
+        state.isLoading = false;
+        state.hasError = true;
+        updateSceneUI(sceneId);
+      }
+    }
+
+    // 씬 UI 업데이트
+    function updateSceneUI(sceneId) {
+      var state = sceneStates[sceneId];
+      if (!state) return;
+
+      var card = document.querySelector('[data-scene-id="' + sceneId + '"]');
+      var preview = document.getElementById('preview-' + sceneId);
+      var actions = card.querySelector('.scene-actions');
+      var overlayProgress = document.getElementById('overlay-progress-' + sceneId);
+      var overlayProgressFill = document.getElementById('overlay-progress-fill-' + sceneId);
+
+      if (!card || !preview || !actions) return;
+
+      // 카드 로딩 상태
+      if (state.isLoading) {
+        card.classList.add('loading');
+        if (overlayProgress) overlayProgress.textContent = Math.round(state.progress);
+        if (overlayProgressFill) overlayProgressFill.style.width = state.progress + '%';
+      } else {
+        card.classList.remove('loading');
+      }
+
+      // 미리보기 업데이트
+      if (state.videoUrl) {
+        preview.className = 'scene-preview';
+        preview.innerHTML = '<video controls src="' + state.videoUrl + '"></video>';
+      } else if (state.hasError) {
+        preview.className = 'scene-preview';
+        preview.innerHTML = '<div style="color: #e53935; font-size: 13px;">생성 실패</div>';
+      } else {
+        preview.className = 'scene-preview';
+        preview.innerHTML = '<div style="color: #999; font-size: 13px;">영상 미리보기</div>';
+      }
+
+      // 액션 버튼 업데이트
+      var cameraSelect = document.getElementById('camera-' + sceneId);
+      if (cameraSelect) {
+        cameraSelect.disabled = state.isLoading;
+      }
+
+      var btn = actions.querySelector('.btn-scene');
+      if (state.isLoading) {
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = '렌더링 중...';
+        }
+      } else if (state.videoUrl) {
+        if (btn) {
+          btn.className = 'btn-scene btn-scene-secondary';
+          btn.disabled = false;
+          btn.textContent = '재생성';
+          btn.onclick = function() {
+            generateVideo(sceneId);
+          };
+        }
+      } else if (state.hasError) {
+        if (btn) {
+          btn.className = 'btn-scene';
+          btn.disabled = false;
+          btn.textContent = '재시도';
+          btn.onclick = function() {
+            generateVideo(sceneId);
+          };
+        }
+      } else {
+        if (btn) {
+          btn.className = 'btn-scene';
+          btn.disabled = false;
+          btn.textContent = '개별 렌더링';
+          btn.onclick = function() {
+            generateVideo(sceneId);
+          };
+        }
+      }
+    }
+
+    // 모든 씬 일괄 생성
+    (function() {
+      var btnAll = document.getElementById('btnGenerateAll');
+      if (btnAll) {
+        btnAll.addEventListener('click', function() {
+          if (!imageData || !imageData.jsonData || !imageData.jsonData.scenes) return;
+          imageData.jsonData.scenes.forEach(function(scene) {
+            var sceneId = 'scene-' + scene.scene_num;
+            if (sceneStates[sceneId] && !sceneStates[sceneId].isLoading) {
+              generateVideo(sceneId);
+            }
+          });
+        });
+      }
+    })();
+
+    // 7단계로 이동
+    (function() {
+      var btnNext = document.getElementById('btnGoToStep7');
+      if (btnNext) {
+        btnNext.addEventListener('click', function() {
+          var videos = [];
+          Object.keys(sceneStates).forEach(function(sceneId) {
+            var state = sceneStates[sceneId];
+            if (state.videoUrl) {
+              videos.push({
+                scene_num: state.scene_num,
+                videoUrl: state.videoUrl,
+                imageUrl: state.imageUrl,
+                audioUrl: state.audioUrl,
+                cameraWorking: state.cameraWorking
+              });
+            }
+          });
+
+          var payload = {
+            jsonData: imageData.jsonData,
+            generatedVideos: videos,
+            model: selectedModel
+          };
+          localStorage.setItem('step7VideoData', JSON.stringify(payload));
+          window.location.href = 'step-8.html';
+        });
+      }
+    })();
+
+    // 로그온 시스템
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 입력하세요.');
+        return;
+      }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) {
+        return u.id === id && u.password === pw;
+      });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) {
+          logout();
+          alert('로그아웃되었습니다.');
+        }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+    checkLoginStatus();
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3. 대본 직접 입력</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .sidebar-logo:hover {
+      color: #9333ea;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+    /* 1~2단계(AI 창작)와 3단계(사용자 제어) 시각적 구분 */
+    .workflow-list li:nth-child(3) .workflow-item {
+      margin-top: 10px;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 14px;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { 
+      flex: 1; 
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin: 0;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin-top: 4px;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+    .login-inline-row .login-input {
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      pointer-events: none;
+      cursor: not-allowed;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    /* 전문가용 편집기 스타일 */
+    .editor-container {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+    .editor-title-row {
+      display: flex !important;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 12px;
+    }
+    .editor-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a202c;
+      flex: 0 0 auto;
+      margin: 0;
+    }
+    .editor-actions {
+      display: flex !important;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+      margin-left: auto;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    .btn-import {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      min-height: 40px;
+      border: none;
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex !important;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      position: relative;
+      color: #4a5568;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      flex-shrink: 0;
+      vertical-align: middle;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    .btn-import:hover {
+      background: #edf2f7;
+      border-color: #cbd5e0;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .btn-import[data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: -32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2d3748;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    .btn-import[data-tooltip]:hover::before {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-bottom-color: #2d3748;
+      z-index: 1000;
+    }
+    .script-textarea {
+      width: 100%;
+      min-height: 500px;
+      padding: 16px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      line-height: 1.6;
+      resize: vertical;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: #fafafa;
+      color: #1a202c;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .script-textarea:focus {
+      outline: none;
+      border-color: #805ad5;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1);
+    }
+    .script-textarea::placeholder {
+      color: #a0aec0;
+      font-style: italic;
+    }
+
+    /* 모달 스타일 */
+    .import-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .import-modal-overlay.show { display: flex; }
+    .import-modal {
+      width: 100%;
+      max-width: 720px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      border: 1px solid rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .import-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #fafafa;
+    }
+    .import-modal-title { font-size: 15px; font-weight: 700; color: #222; }
+    .import-modal-close {
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: #e0e0e0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      color: #333;
+    }
+    .import-modal-close:hover {
+      background: #d5d5d5;
+    }
+    .import-modal-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .import-modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .import-modal-grid .full { grid-column: 1 / -1; }
+    .import-field-label { 
+      font-size: 13px; 
+      font-weight: 700; 
+      color: #2d3748; 
+      margin-bottom: 6px; 
+    }
+    .import-input {
+      width: 100%;
+      height: 36px;
+      padding: 0 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    .import-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .btn-secondary {
+      height: 34px;
+      padding: 0 14px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .btn-secondary:hover { background: #d5d5d5; }
+    .btn-primary {
+      height: 34px;
+      padding: 0 16px;
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo" onclick="window.location.href='ai-automation-project.html'" title="홈으로 이동">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item active">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>3. 대본 직접 입력</h1>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 전문가용 편집기 -->
+      <div class="editor-container">
+        <div class="editor-header">
+          <div style="flex: 1;">
+            <div class="editor-title-row">
+              <div class="editor-title" style="flex: 0 0 auto;">대본 입력 및 수정</div>
+              <div class="editor-actions" style="flex: 0 0 auto; margin-left: auto;">
+                <button type="button" class="btn-import" id="btnImportFile" data-tooltip="파일에서 불러오기" title="파일에서 불러오기" aria-label="파일에서 불러오기">
+                  📂
+                </button>
+                <button type="button" class="btn-import" id="btnImportUrl" data-tooltip="URL에서 불러오기" title="URL에서 불러오기" aria-label="URL에서 불러오기">
+                  🔗
+                </button>
+              </div>
+            </div>
+            <div style="font-size: 13px; color: #666; margin-top: 4px;">2단계에서 생성된 대본을 확인하거나, 직접 입력/수정할 수 있습니다.</div>
+          </div>
+        </div>
+        <textarea 
+          id="scriptTextarea" 
+          class="script-textarea" 
+          placeholder="2단계에서 생성된 대본이 여기에 표시되거나, 직접 대본을 입력/수정하세요."
+        ></textarea>
+      </div>
+    </main>
+  </div>
+
+  <!-- 외부 소스 불러오기 모달 -->
+  <div class="import-modal-overlay" id="importModal">
+    <div class="import-modal">
+      <div class="import-modal-header">
+        <div class="import-modal-title">파일/URL 불러오기</div>
+        <button type="button" class="import-modal-close" id="importModalClose">×</button>
+      </div>
+      <div class="import-modal-body">
+        <div class="import-modal-grid">
+          <div class="full">
+            <div class="import-field-label">파일 업로드 (.txt)</div>
+            <input type="file" id="importFile" class="import-input" accept=".txt,text/plain">
+          </div>
+          <div class="full">
+            <div class="import-field-label">URL 입력</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="importUrl" class="import-input" placeholder="https://..." style="flex:1;">
+              <button type="button" class="btn-primary" id="importUrlLoadBtn">불러오기</button>
+            </div>
+          </div>
+        </div>
+        <div class="import-actions">
+          <button type="button" class="btn-secondary" id="importModalCancel">취소</button>
+          <button type="button" class="btn-primary" id="importApplyBtn">그대로 적용</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 로그온 시스템
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) { alert('ID와 비밀번호를 입력하세요.'); return; }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) { return u.id === id && u.password === pw; });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) { logout(); alert('로그아웃되었습니다.'); }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+    checkLoginStatus();
+
+    // 모달 제어
+    var importModal = document.getElementById('importModal');
+    var btnImportFile = document.getElementById('btnImportFile');
+    var btnImportUrl = document.getElementById('btnImportUrl');
+    var importModalClose = document.getElementById('importModalClose');
+    var importModalCancel = document.getElementById('importModalCancel');
+    var importFileInput = document.getElementById('importFile');
+    var importUrlInput = document.getElementById('importUrl');
+
+    function openImportModal(focusType) {
+      importModal.classList.add('show');
+      // 파일 또는 URL 입력에 포커스
+      if (focusType === 'file' && importFileInput) {
+        setTimeout(function() {
+          importFileInput.focus();
+        }, 100);
+      } else if (focusType === 'url' && importUrlInput) {
+        setTimeout(function() {
+          importUrlInput.focus();
+        }, 100);
+      }
+    }
+    function closeImportModal() {
+      importModal.classList.remove('show');
+    }
+
+    btnImportFile.addEventListener('click', function() {
+      openImportModal('file');
+    });
+    btnImportUrl.addEventListener('click', function() {
+      openImportModal('url');
+    });
+    importModalClose.addEventListener('click', closeImportModal);
+    importModalCancel.addEventListener('click', closeImportModal);
+    importModal.addEventListener('click', function(e) {
+      if (e.target === importModal) {
+        closeImportModal();
+      }
+    });
+
+    // 파일 불러오기
+    var importFile = document.getElementById('importFile');
+    importFile.addEventListener('change', function(e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('scriptTextarea').value = e.target.result;
+        closeImportModal();
+      };
+      reader.readAsText(file);
+    });
+
+    // URL 불러오기
+    var importUrlLoadBtn = document.getElementById('importUrlLoadBtn');
+    importUrlLoadBtn.addEventListener('click', async function() {
+      var urlEl = document.getElementById('importUrl');
+      var textareaEl = document.getElementById('scriptTextarea');
+      var url = urlEl ? urlEl.value.trim() : '';
+      if (!url) {
+        alert('URL을 입력한 뒤 불러오기를 눌러 주세요.');
+        return;
+      }
+      importUrlLoadBtn.disabled = true;
+      importUrlLoadBtn.textContent = '불러오는 중…';
+      try {
+        var res = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/fetch-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: url })
+        });
+        var data = await res.json();
+        if (data.success && (data.text || data.title || data.description)) {
+          var text = data.text || (data.title && data.description ? data.title + '\n\n' + data.description : data.title || data.description);
+          if (textareaEl) textareaEl.value = text;
+          closeImportModal();
+        } else {
+          alert(data.error || 'URL 내용을 가져오지 못했습니다.');
+        }
+      } catch (e) {
+        alert('URL을 불러오지 못했습니다. 네트워크를 확인해 주세요.');
+      }
+      importUrlLoadBtn.disabled = false;
+      importUrlLoadBtn.textContent = '불러오기';
+    });
+
+    // 그대로 적용 버튼
+    var importApplyBtn = document.getElementById('importApplyBtn');
+    importApplyBtn.addEventListener('click', function() {
+      closeImportModal();
+    });
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+  </script>
+</body>
+</html>

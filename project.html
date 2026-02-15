@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">프로젝트 - YouTube Auto Studio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* LEFT SIDEBAR */
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .sidebar-header h2 {
+            font-size: 16px;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .sidebar-header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .project-info {
+            padding: 15px 20px;
+            background: #f9f9f9;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+
+        .project-info-row {
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        .project-info-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .steps-nav {
+            flex: 1;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-left: 12px;
+            padding-right: 12px;
+        }
+
+        .step-btn {
+            padding: 12px 16px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            text-align: left;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .step-btn:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .step-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .step-btn.completed::before {
+            content: "✓";
+            position: absolute;
+            right: 12px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .step-btn.active.completed::before {
+            color: white;
+        }
+
+        .step-icon {
+            width: 24px;
+            text-align: center;
+        }
+
+        .sidebar-footer {
+            padding: 15px 12px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sidebar-btn {
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-btn:hover {
+            border-color: #667eea;
+            background: #f9f9ff;
+            color: #667eea;
+        }
+
+        /* MAIN PANEL */
+        .main-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+
+        .main-header {
+            padding: 20px 30px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .main-header h1 {
+            font-size: 24px;
+            color: #333;
+        }
+
+        .main-header-subtitle {
+            font-size: 14px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        /* STEP CONTENT - Hidden by default */
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        /* FORM ELEMENTS */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="file"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .info-text {
+            color: #999;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-small {
+            padding: 8px 14px;
+            font-size: 12px;
+            width: auto;
+        }
+
+        /* RESULT SECTION */
+        .result-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .result-section h3 {
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-content {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .result-info {
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 12px;
+            margin-bottom: 12px;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .result-actions > * {
+            margin-bottom: 8px;
+        }
+
+        /* MESSAGE */
+        .message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+        }
+
+        .message.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #f44336;
+        }
+
+        .message.warning {
+            background: #fff3e0;
+            color: #e65100;
+            border: 1px solid #ff9800;
+        }
+
+        /* LOADING MODAL */
+        .loading-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-modal.open {
+            display: flex;
+        }
+
+        .loading-modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 300px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f0f0f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-modal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin: 15px 0;
+        }
+
+        .loading-modal-message {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* TEXT VIEWER MODAL */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-box {
+            background: white;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 80vh;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            background: #f6f8fb;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-title {
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .modal-content {
+            padding: 16px;
+            overflow: auto;
+            background: #111;
+            color: #eee;
+            flex: 1;
+        }
+
+        .modal-content pre {
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        /* SPEED CONTROL */
+        .speed-control-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .speed-control-wrapper label {
+            margin-bottom: 0;
+            white-space: nowrap;
+        }
+
+        .speed-control-wrapper select {
+            margin-bottom: 0;
+            flex: 1;
+        }
+
+        .speed-value {
+            color: #667eea;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: right;
+            font-size: 13px;
+        }
+
+        /* FILE INPUT WRAPPER */
+        .file-input-wrapper {
+            position: relative;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 12px;
+            background: #f0f0f0;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-input-label:hover {
+            border-color: #667eea;
+            background: #f9f9ff;
+        }
+
+        /* PROVIDER SELECTOR */
+        .provider-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .provider-option {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .provider-option:hover {
+            border-color: #667eea;
+            background: #f9f9ff;
+        }
+
+        .provider-option.selected {
+            border-color: #667eea;
+            background: #f9f9ff;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        /* MISSING PREREQUISITE */
+        .prerequisite-warning {
+            padding: 16px;
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .prerequisite-warning h4 {
+            color: #e65100;
+            margin-bottom: 10px;
+        }
+
+        .prerequisite-warning p {
+            color: #e65100;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .prerequisite-warning .btn {
+            width: auto;
+        }
+
+        /* VOLUME DISPLAY */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .volume-control input[type="range"] {
+            margin: 0;
+            flex: 1;
+        }
+
+        .volume-display {
+            color: #667eea;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: right;
+            font-size: 13px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 250px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 150px;
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+                overflow-x: auto;
+                overflow-y: hidden;
+            }
+
+            .steps-nav {
+                flex-direction: row;
+                padding: 10px;
+                height: 60px;
+                gap: 0;
+            }
+
+            .step-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+                white-space: nowrap;
+            }
+
+            .main-panel {
+                height: calc(100vh - 150px);
+            }
+
+            .main-header {
+                padding: 15px 20px;
+            }
+
+            .main-header h1 {
+                font-size: 18px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+
+            .content-card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2 id="project-name-header">프로젝트</h2>
+                <p id="project-id-header" style="font-size: 11px; font-family: monospace;"></p>
+            </div>
+
+            <div class="project-info">
+                <div class="project-info-row">
+                    <span class="project-info-label">생성:</span>
+                    <span id="created-info">-</span>
+                </div>
+                <div class="project-info-row">
+                    <span class="project-info-label">수정:</span>
+                    <span id="updated-info">-</span>
+                </div>
+            </div>
+
+            <nav class="steps-nav">
+                <button class="step-btn active" data-step="script">
+                    <span class="step-icon">📝</span>
+                    <span>대본</span>
+                </button>
+                <button class="step-btn" data-step="tts">
+                    <span class="step-icon">🔊</span>
+                    <span>TTS</span>
+                </button>
+                <button class="step-btn" data-step="subtitles">
+                    <span class="step-icon">📝</span>
+                    <span>자막</span>
+                </button>
+                <button class="step-btn" data-step="thumbnail">
+                    <span class="step-icon">📸</span>
+                    <span>썸네일</span>
+                </button>
+                <button class="step-btn" data-step="bgm">
+                    <span class="step-icon">🎵</span>
+                    <span>BGM</span>
+                </button>
+                <button class="step-btn" data-step="render">
+                    <span class="step-icon">🎬</span>
+                    <span>렌더링</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="sidebar-btn" onclick="saveProject()">💾 프로젝트 저장</button>
+                <button class="sidebar-btn" onclick="backToList()">⬅ 프로젝트 목록</button>
+            </div>
+        </aside>
+
+        <!-- MAIN PANEL -->
+        <main class="main-panel">
+            <header class="main-header">
+                <div>
+                    <h1 id="step-title">대본</h1>
+                    <p class="main-header-subtitle" id="step-subtitle"></p>
+                </div>
+            </header>
+
+            <div class="main-content">
+                <div class="content-card">
+                    <div id="message-area" style="margin-bottom: 20px;"></div>
+
+                    <!-- SCRIPT STEP -->
+                    <div class="step-content active" data-step="script">
+                        <div class="form-group">
+                            <label for="script-text">영상 대본</label>
+                            <textarea id="script-text" placeholder="영상의 나레이션 대본을 입력하세요..."></textarea>
+                            <p class="info-text">💡 한국어 또는 영어로 입력하세요. 자동으로 TTS 음성으로 변환됩니다.</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="saveScript()">대본 저장</button>
+
+                        <div class="result-section" id="script-result" style="display: none;">
+                            <h3>📋 결과</h3>
+                            <div class="result-content" id="script-result-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- TTS STEP -->
+                    <div class="step-content" data-step="tts">
+                        <div class="form-group">
+                            <label for="voice-select">음성 선택</label>
+                            <select id="voice-select">
+                                <option value="ko-KR-SunHiNeural">한국어 - 여성 (Sun Hi)</option>
+                                <option value="ko-KR-InJoonNeural">한국어 - 남성 (In Joon)</option>
+                                <option value="en-US-AriaNeural">English - Female (Aria)</option>
+                                <option value="en-US-GuyNeural">English - Male (Guy)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tts-speed">재생 속도 (배속)</label>
+                            <select id="tts-speed">
+                                <option value="0.8">0.8배 (느림)</option>
+                                <option value="0.9">0.9배</option>
+                                <option value="1.0" selected>1.0배 (기본)</option>
+                                <option value="1.1">1.1배</option>
+                                <option value="1.2">1.2배 (빠름)</option>
+                            </select>
+                            <p class="info-text">선택한 속도로 TTS를 생성합니다.</p>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="generateTTS()">TTS 생성</button>
+
+                        <div class="result-section" id="tts-result" style="display: none;">
+                            <h3>🔊 결과</h3>
+                            <div class="result-content" id="tts-result-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- SUBTITLES STEP -->
+                    <div class="step-content" data-step="subtitles">
+                        <p class="info-text">💡 TTS 오디오로부터 자동으로 자막을 생성합니다.</p>
+                        <button class="btn btn-primary" onclick="generateSubtitles()" style="margin-top: 15px;">자막 생성</button>
+
+                        <div class="result-section" id="subtitles-result" style="display: none;">
+                            <h3>📝 결과</h3>
+                            <div class="result-content" id="subtitles-result-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- THUMBNAIL STEP -->
+                    <div class="step-content" data-step="thumbnail">
+                        <div class="form-group">
+                            <label for="thumbnail-title">썸네일 제목</label>
+                            <input type="text" id="thumbnail-title" placeholder="예: 새로운 기술 설명">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="thumbnail-color">배경색</label>
+                            <input type="text" id="thumbnail-color" placeholder="#667eea" value="#667eea">
+                            <p class="info-text">색상 코드 형식: #RRGGBB</p>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="generateThumbnail()">썸네일 생성</button>
+
+                        <div class="result-section" id="thumbnail-result" style="display: none;">
+                            <h3>📸 결과</h3>
+                            <div class="result-content" id="thumbnail-result-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- BGM STEP -->
+                    <div class="step-content" data-step="bgm">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="bgm-enabled" onchange="toggleBGM()"> BGM 사용 여부
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label>BGM 볼륨</label>
+                            <div class="volume-control">
+                                <input type="range" id="bgm-volume" min="0" max="100" value="50" onchange="updateBGMVolume()">
+                                <span class="volume-display" id="volume-display">50%</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bgm-file">BGM 파일 선택</label>
+                            <div class="file-input-wrapper">
+                                <label class="file-input-label">
+                                    📤 음악 파일 업로드 (MP3/WAV)
+                                    <input type="file" id="bgm-file" accept="audio/*">
+                                </label>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="uploadBGM()">BGM 업로드</button>
+
+                        <div class="result-section" id="bgm-result" style="display: none;">
+                            <h3>🎵 결과</h3>
+                            <div class="result-content" id="bgm-result-content"></div>
+                        </div>
+                    </div>
+
+                    <!-- RENDER STEP -->
+                    <div class="step-content" data-step="render">
+                        <button class="btn btn-primary" onclick="startRender()">최종 영상 렌더링</button>
+                        <p class="info-text" style="margin-top: 15px;">⏱️ 렌더링에 시간이 걸릴 수 있습니다. 완료될 때까지 대기해주세요.</p>
+
+                        <div class="result-section" id="render-result" style="display: none;">
+                            <h3>🎬 결과</h3>
+                            <div class="result-content" id="render-result-content"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- LOADING MODAL -->
+    <div id="loading-modal" class="loading-modal">
+        <div class="loading-modal-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-modal-title" id="loading-title">생성 중입니다...</div>
+            <div class="loading-modal-message" id="loading-message">완료될 때까지 잠시 기다려 주세요.</div>
+        </div>
+    </div>
+
+    <!-- TEXT VIEWER MODAL -->
+    <div id="text-viewer-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="modal-title" id="text-viewer-title">파일 내용</div>
+                <div class="modal-actions">
+                    <button class="btn btn-small btn-secondary" onclick="copyViewerContent()">📋 복사</button>
+                    <button class="btn btn-small btn-secondary" onclick="closeTextViewer()">✕ 닫기</button>
+                </div>
+            </div>
+            <div class="modal-content">
+                <pre id="text-viewer-content"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let projectId = null;
+        let projectData = null;
+        let isLoading = false;
+
+        // ============================================================================
+        // INITIALIZATION
+        // ============================================================================
+        window.addEventListener('load', async () => {
+            const params = new URLSearchParams(window.location.search);
+            projectId = params.get('id');
+
+            if (!projectId) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            await loadProject();
+            initializeRouting();
+            setupSidebarNavigation();
+        });
+
+        // ============================================================================
+        // HASH-BASED ROUTING
+        // ============================================================================
+        function initializeRouting() {
+            const hash = window.location.hash.slice(1) || 'script';
+            navigateToStep(hash);
+
+            window.addEventListener('hashchange', () => {
+                const newHash = window.location.hash.slice(1);
+                navigateToStep(newHash);
+            });
+        }
+
+        function navigateToStep(stepKey) {
+            // Update step buttons
+            document.querySelectorAll('.step-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.step === stepKey);
+            });
+
+            // Update step content
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.toggle('active', content.dataset.step === stepKey);
+            });
+
+            // Update header
+            const stepLabels = {
+                script: { title: '대본', subtitle: '영상의 나레이션 대본을 작성하고 저장하세요.' },
+                tts: { title: 'TTS', subtitle: 'AI 음성으로 대본을 읽게 합니다.' },
+                subtitles: { title: '자막', subtitle: 'TTS 오디오로부터 자동 자막을 생성합니다.' },
+                thumbnail: { title: '썸네일', subtitle: 'AI가 생성한 썸네일 이미지입니다.' },
+                bgm: { title: 'BGM', subtitle: '배경 음악을 추가합니다.' },
+                render: { title: '렌더링', subtitle: '최종 영상을 생성합니다.' }
+            };
+
+            const step = stepLabels[stepKey] || stepLabels.script;
+            document.getElementById('step-title').textContent = step.title;
+            document.getElementById('step-subtitle').textContent = step.subtitle;
+        }
+
+        function goToStep(stepKey) {
+            window.location.hash = stepKey;
+        }
+
+        // ============================================================================
+        // SIDEBAR SETUP
+        // ============================================================================
+        function setupSidebarNavigation() {
+            document.querySelectorAll('.step-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    goToStep(btn.dataset.step);
+                });
+            });
+        }
+
+        function backToList() {
+            window.location.href = '/index.html';
+        }
+
+        // ============================================================================
+        // LOADING MODAL
+        // ============================================================================
+        function showLoadingModal(title = '생성 중입니다...', message = '완료될 때까지 잠시 기다려 주세요.') {
+            document.getElementById('loading-title').textContent = title;
+            document.getElementById('loading-message').textContent = message;
+            document.getElementById('loading-modal').classList.add('open');
+            isLoading = true;
+        }
+
+        function hideLoadingModal() {
+            document.getElementById('loading-modal').classList.remove('open');
+            isLoading = false;
+        }
+
+        // ============================================================================
+        // MESSAGING
+        // ============================================================================
+        function showMessage(text, type = 'success') {
+            const area = document.getElementById('message-area');
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.textContent = text;
+            area.appendChild(div);
+            setTimeout(() => div.remove(), 4000);
+        }
+
+        // ============================================================================
+        // PROJECT LOADING & DISPLAY
+        // ============================================================================
+        async function loadProject() {
+            try {
+                const response = await fetch(`${API_BASE}/projects/${projectId}`);
+                const data = await response.json();
+
+                if (!data.ok || !data.project) {
+                    showMessage('프로젝트 로드 실패', 'error');
+                    return;
+                }
+
+                projectData = data.project;
+                displayProjectInfo();
+                populateStepUI();
+                updateStepStatus();
+            } catch (error) {
+                console.error('프로젝트 로드 실패:', error);
+                showMessage('프로젝트 로드 실패', 'error');
+            }
+        }
+
+        function displayProjectInfo() {
+            document.getElementById('project-name-header').textContent = projectData.name || projectData.topic || 'Untitled';
+            document.getElementById('project-id-header').textContent = projectData.id;
+            document.getElementById('page-title').textContent = `${projectData.name || 'Project'} - YouTube Auto Studio`;
+
+            const createdDate = new Date(projectData.created_at).toLocaleDateString('ko-KR');
+            const updatedDate = new Date(projectData.updated_at).toLocaleDateString('ko-KR');
+            document.getElementById('created-info').textContent = createdDate;
+            document.getElementById('updated-info').textContent = updatedDate;
+        }
+
+        function populateStepUI() {
+            // Script
+            if (projectData.scenes?.[0]) {
+                document.getElementById('script-text').value = projectData.scenes[0].text || '';
+            }
+
+            // TTS
+            if (projectData.settings?.tts?.voice) {
+                document.getElementById('voice-select').value = projectData.settings.tts.voice;
+            }
+
+            // Thumbnail
+            if (projectData.settings?.thumbnail) {
+                document.getElementById('thumbnail-title').value = projectData.settings.thumbnail.title || '';
+                document.getElementById('thumbnail-color').value = projectData.settings.thumbnail.bg_color || '#667eea';
+            }
+
+            // BGM
+            if (projectData.settings?.bgm) {
+                document.getElementById('bgm-enabled').checked = projectData.settings.bgm.enabled || false;
+                document.getElementById('bgm-volume').value = (projectData.settings.bgm.volume * 100) || 50;
+                updateBGMVolumeDisplay();
+            }
+        }
+
+        function updateStepStatus() {
+            const steps = document.querySelectorAll('.step-btn');
+            steps.forEach((btn, idx) => {
+                btn.classList.remove('completed');
+                const stepKey = btn.dataset.step;
+
+                let isComplete = false;
+                if (stepKey === 'script' && projectData.scenes?.length > 0) isComplete = true;
+                if (stepKey === 'tts' && projectData.settings?.tts?.audio_paths?.length > 0) isComplete = true;
+                if (stepKey === 'subtitles' && projectData.settings?.subtitles?.enabled) isComplete = true;
+                if (stepKey === 'thumbnail' && projectData.settings?.thumbnail?.path) isComplete = true;
+                if (stepKey === 'bgm' && projectData.settings?.bgm?.enabled) isComplete = true;
+                if (stepKey === 'render' && projectData.rendered) isComplete = true;
+
+                if (isComplete) btn.classList.add('completed');
+            });
+        }
+
+        // ============================================================================
+        // STEP ACTIONS
+        // ============================================================================
+
+        // SCRIPT
+        async function saveScript() {
+            const text = document.getElementById('script-text').value;
+            if (!text.trim()) {
+                showMessage('대본을 입력해주세요.', 'error');
+                return;
+            }
+
+            try {
+                showLoadingModal('대본 저장 중...', '잠시만 기다려주세요.');
+                const response = await fetch(`${API_BASE}/projects/${projectId}/scenes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+
+                const data = await response.json();
+                if (data.ok) {
+                    showMessage('대본이 저장되었습니다.');
+                    await loadProject();
+
+                    // Show result
+                    const resultEl = document.getElementById('script-result');
+                    resultEl.style.display = 'block';
+                    resultEl.querySelector('#script-result-content').innerHTML = `
+                        <div class="result-info">
+                            저장 완료: ${new Date().toLocaleTimeString('ko-KR')}
+                        </div>
+                    `;
+                } else {
+                    showMessage('대본 저장 실패: ' + (data.error || 'Unknown'), 'error');
+                }
+            } catch (error) {
+                console.error('대본 저장 실패:', error);
+                showMessage('대본 저장 실패', 'error');
+            } finally {
+                hideLoadingModal();
+            }
+        }
+
+        // TTS
+        async function generateTTS() {
+            const hasScript = projectData?.scenes?.length > 0 && projectData.scenes[0].text;
+            if (!hasScript) {
+                showMessage('대본을 먼저 저장해주세요.', 'error');
+                return;
+            }
+
+            try {
+                showLoadingModal('TTS 생성 중...', 'AI 음성을 생성하고 있습니다.');
+                const voice = document.getElementById('voice-select').value;
+                const speed = parseFloat(document.getElementById('tts-speed').value);
+                const sceneId = projectData.scenes[0].id;
+
+                const response = await fetch(`${API_BASE}/projects/${projectId}/generate/tts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ voice, sceneId, speed })
+                });
+
+                const data = await response.json();
+                if (data.ok) {
+                    showMessage('TTS 생성이 완료되었습니다.');
+                    await loadProject();
+
+                    // Show result
+                    const resultEl = document.getElementById('tts-result');
+                    resultEl.style.display = 'block';
+                    const audioSrc = `${API_BASE}/projects/${projectId}/preview?path=${encodeURIComponent(data.audioPath)}&v=${Date.now()}`;
+                    const duration = Math.round((data.durationSec || 0) * 1000) / 1000;
+
+                    resultEl.querySelector('#tts-result-content').innerHTML = `
+                        <div class="result-info">
+                            오디오: ${data.audioPath} (${duration}초, ${speed}배속)
+                        </div>
+                        <audio controls style="width: 100%; margin: 12px 0;">
+                            <source src="${audioSrc}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                        <div class="result-actions">
+                            <a href="${API_BASE}/projects/${projectId}/download?path=${encodeURIComponent(data.audioPath)}" class="btn btn-small btn-secondary" download>⬇ 다운로드</a>
+                        </div>
+                    `;
+                } else {
+                    showMessage('TTS 생성 실패: ' + (data.error || 'Unknown'), 'error');
+                }
+            } catch (error) {
+                console.error('TTS 생성 실패:', error);
+                showMessage('TTS 생성 실패', 'error');
+            } finally {
+                hideLoadingModal();
+            }
+        }
+
+        // SUBTITLES
+        async function generateSubtitles() {
+            const hasTTS = projectData?.settings?.tts?.audio_paths?.length > 0;
+            if (!hasTTS) {
+                showMessage('TTS를 먼저 생성해주세요.', 'error');
+                return;
+            }
+
+            try {
+                showLoadingModal('자막 생성 중...', 'AI가 자막을 생성하고 있습니다.');
+                const response = await fetch(`${API_BASE}/projects/${projectId}/generate/srt`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+                if (data.ok) {
+                    showMessage('자막 생성 완료');
+                    await loadProject();
+
+                    const resultEl = document.getElementById('subtitles-result');
+                    resultEl.style.display = 'block';
+                    resultEl.querySelector('#subtitles-result-content').innerHTML = `
+                        <div class="result-info">
+                            SRT 파일: ${data.srtPath || 'unknown'}
+                        </div>
+                        <div class="result-actions">
+                            <button class="btn btn-small btn-secondary" onclick="viewTextFile('${data.srtPath}', 'Subtitles')">👁 보기</button>
+                            <a href="${API_BASE}/projects/${projectId}/download?path=${encodeURIComponent(data.srtPath)}" class="btn btn-small btn-secondary" download>⬇ 다운로드</a>
+                        </div>
+                    `;
+                } else {
+                    showMessage('자막 생성 실패: ' + (data.error || 'Unknown'), 'error');
+                }
+            } catch (error) {
+                console.error('자막 생성 실패:', error);
+                showMessage('자막 생성 실패', 'error');
+            } finally {
+                hideLoadingModal();
+            }
+        }
+
+        // THUMBNAIL
+        async function generateThumbnail() {
+            try {
+                showLoadingModal('썸네일 생성 중...', 'AI가 썸네일을 생성하고 있습니다.');
+                const title = document.getElementById('thumbnail-title').value;
+                const bg_color = document.getElementById('thumbnail-color').value;
+
+                const response = await fetch(`${API_BASE}/projects/${projectId}/generate/thumbnail`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, bg_color })
+                });
+
+                const data = await response.json();
+                if (data.ok) {
+                    showMessage('썸네일이 생성되었습니다.');
+                    await loadProject();
+
+                    const resultEl = document.getElementById('thumbnail-result');
+                    resultEl.style.display = 'block';
+                    resultEl.querySelector('#thumbnail-result-content').innerHTML = `
+                        <p>썸네일 생성 완료</p>
+                    `;
+                } else {
+                    showMessage('썸네일 생성 실패: ' + (data.error || 'Unknown'), 'error');
+                }
+            } catch (error) {
+                console.error('썸네일 생성 실패:', error);
+                showMessage('썸네일 생성 실패', 'error');
+            } finally {
+                hideLoadingModal();
+            }
+        }
+
+        // BGM
+        function toggleBGM() {
+            const enabled = document.getElementById('bgm-enabled').checked;
+            updateBGMSettings({ enabled });
+        }
+
+        function updateBGMVolume() {
+            const volume = document.getElementById('bgm-volume').value;
+            updateBGMVolumeDisplay();
+            updateBGMSettings({ volume: volume / 100 });
+        }
+
+        function updateBGMVolumeDisplay() {
+            const volume = document.getElementById('bgm-volume').value;
+            document.getElementById('volume-display').textContent = volume + '%';
+        }
+
+        async function updateBGMSettings(settings) {
+            try {
+                const response = await fetch(`${API_BASE}/projects/${projectId}/settings/bgm`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(settings)
+                });
+
+                const data = await response.json();
+                if (!data.ok) {
+                    showMessage('BGM 설정 실패', 'error');
+                }
+            } catch (error) {
+                console.error('BGM 설정 실패:', error);
+            }
+        }
+
+        async function uploadBGM() {
+            const file = document.getElementById('bgm-file').files[0];
+            if (!file) {
+                showMessage('파일을 선택해주세요.', 'error');
+                return;
+            }
+
+            try {
+                showLoadingModal('BGM 업로드 중...', '음악 파일을 업로드하고 있습니다.');
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch(`${API_BASE}/projects/${projectId}/upload/bgm`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.ok) {
+                    showMessage('BGM 파일이 업로드되었습니다.');
+                    document.getElementById('bgm-file').value = '';
+                    await loadProject();
+
+                    const resultEl = document.getElementById('bgm-result');
+                    resultEl.style.display = 'block';
+                    resultEl.querySelector('#bgm-result-content').innerHTML = `<p>BGM 업로드 완료</p>`;
+                } else {
+                    showMessage('BGM 업로드 실패: ' + (data.error || 'Unknown'), 'error');
+                }
+            } catch (error) {
+                console.error('BGM 업로드 실패:', error);
+                showMessage('BGM 업로드 실패', 'error');
+            } finally {
+                hideLoadingModal();
+            }
+        }
+
+        // RENDER
+        async function startRender() {
+            try {
+                showLoadingModal('영상 렌더링 중...', '최종 영상을 생성하고 있습니다. 시간이 걸릴 수 있습니다.');
+                const response = await fetch(`${API_BASE}/projects/${projectId}/render`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                const data = await response.json();
+                if (data.ok) {
+                    showMessage('영상 렌더링이 완료되었습니다!');
+                    await loadProject();
+
+                    const resultEl = document.getElementById('render-result');
+                    resultEl.style.display = 'block';
+                    resultEl.querySelector('#render-result-content').innerHTML = `<p>✨ 렌더링 완료!</p>`;
+                } else {
+                    showMessage('렌더링 실패: ' + (data.error || 'Unknown'), 'error');
+                }
+            } catch (error) {
+                console.error('렌더링 실패:', error);
+                showMessage('렌더링 실패', 'error');
+            } finally {
+                hideLoadingModal();
+            }
+        }
+
+        // ============================================================================
+        // TEXT VIEWER MODAL
+        // ============================================================================
+        async function viewTextFile(path, title) {
+            try {
+                const response = await fetch(`${API_BASE}/projects/${projectId}/text?path=${encodeURIComponent(path)}`);
+                const data = await response.json();
+
+                if (response.ok && data.ok) {
+                    let content = data.content || '';
+                    if (path.endsWith('.json')) {
+                        try {
+                            content = JSON.stringify(JSON.parse(content), null, 2);
+                        } catch (e) {
+                            // ignore
+                        }
+                    }
+
+                    openTextViewer(title || path, content);
+                } else {
+                    showMessage('파일 읽기 실패', 'error');
+                }
+            } catch (error) {
+                console.error('파일 읽기 실패:', error);
+                showMessage('파일 읽기 실패', 'error');
+            }
+        }
+
+        function openTextViewer(title, content) {
+            document.getElementById('text-viewer-title').textContent = title;
+            document.getElementById('text-viewer-content').textContent = content;
+            document.getElementById('text-viewer-modal').classList.add('open');
+        }
+
+        function closeTextViewer() {
+            document.getElementById('text-viewer-modal').classList.remove('open');
+        }
+
+        function copyViewerContent() {
+            const content = document.getElementById('text-viewer-content').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                showMessage('복사되었습니다.');
+            }).catch(() => {
+                showMessage('복사 실패', 'error');
+            });
+        }
+
+        // ============================================================================
+        // PROJECT SAVE
+        // ============================================================================
+        async function saveProject() {
+            try {
+                showMessage('프로젝트 저장 중...', 'success');
+                // Project auto-saves through individual endpoint calls, this is just feedback
+                showMessage('프로젝트가 저장되었습니다.', 'success');
+            } catch (error) {
+                console.error('프로젝트 저장 실패:', error);
+                showMessage('프로젝트 저장 실패', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Core dependencies
+PyYAML>=6.0
+python-dotenv>=1.0.0
+
+# LLM & APIs
+openai>=1.0.0
+
+# TTS
+edge-tts>=6.1.0
+mutagen>=1.46.0
+
+# Image processing
+Pillow>=10.0.0
+
+# Video processing
+moviepy>=1.0.3
+
+# FFmpeg (requires separate system installation)
+# For Windows: winget install ffmpeg
+# For macOS: brew install ffmpeg
+# For Linux: apt-get install ffmpeg
+
+# Development & Testing
+pytest>=7.0.0
+black>=23.0.0
+flake8>=6.0.0

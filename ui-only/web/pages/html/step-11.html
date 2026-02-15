@@ -1,0 +1,2259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>10. 쇼츠 자동 변환</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { flex: 1; }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    /* Content Card */
+    .content-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .field-label {
+      font-size: 15px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 16px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    /* Platform Selector */
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .platform-card {
+      padding: 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #fff;
+    }
+    .platform-card:hover {
+      border-color: #cbd5e0;
+      background: #f7fafc;
+    }
+    .platform-card.selected {
+      border-color: #805ad5;
+      background: #f3e8ff;
+    }
+    .platform-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    .platform-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 4px;
+    }
+    .platform-ratio {
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* Preview Section */
+    .preview-container {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .preview-wrapper {
+      flex: 1;
+      max-width: 400px;
+    }
+    .phone-frame {
+      width: 100%;
+      aspect-ratio: 9/16;
+      background: #000;
+      border-radius: 24px;
+      padding: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      position: relative;
+    }
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+    }
+    .video-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #1a1a1a;
+      position: relative;
+    }
+    .video-timeline-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      z-index: 15;
+    }
+    .timeline-hotspot {
+      position: absolute;
+      bottom: 0;
+      width: 3px;
+      height: 100%;
+      background: #ff6fae;
+      z-index: 16;
+      pointer-events: none;
+    }
+    .timeline-hotspot-icon {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    }
+    .platform-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .overlay-top {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.3), transparent);
+    }
+    .overlay-bottom {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 120px;
+      background: linear-gradient(to top, rgba(0,0,0,0.3), transparent);
+    }
+    .overlay-safe-area {
+      position: absolute;
+      top: 80px;
+      left: 0;
+      right: 0;
+      bottom: 120px;
+      border: 2px dashed rgba(255,255,255,0.3);
+    }
+
+    .preview-info {
+      flex: 1;
+    }
+    .info-item {
+      margin-bottom: 16px;
+    }
+    .info-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 6px;
+    }
+    .info-value {
+      font-size: 14px;
+      color: #2d3748;
+      line-height: 1.6;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .btn-primary {
+      padding: 12px 24px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: #c62828; }
+    .btn-primary:disabled {
+      background: #cbd5e0;
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      padding: 12px 24px;
+      background: #fff;
+      color: #4a5568;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-secondary:hover {
+      background: #f7fafc;
+      border-color: #a0aec0;
+    }
+
+    /* Loading State */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border-radius: 16px;
+      z-index: 20;
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .loading-text {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    /* Waveform & Hotspot Visualization */
+    .waveform-section {
+      margin-top: 16px;
+      padding: 12px;
+      background: #f7fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .waveform-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 8px;
+    }
+    .waveform-container {
+      width: 100%;
+      height: 80px;
+      background: #fff;
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hotspot-marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #ff6fae;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .hotspot-icon {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 16px;
+      z-index: 11;
+    }
+    .hotspot-label {
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      font-weight: 600;
+      color: #ff6fae;
+      white-space: nowrap;
+    }
+    .hotspot-tooltip {
+      position: absolute;
+      top: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .hotspot-marker:hover .hotspot-tooltip {
+      opacity: 1;
+    }
+
+    /* Effect Intensity Slider */
+    .intensity-control {
+      margin-top: 16px;
+      padding: 16px;
+      background: #f7fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .intensity-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .intensity-value {
+      font-size: 12px;
+      color: #805ad5;
+      font-weight: 700;
+    }
+    .intensity-slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .intensity-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #805ad5;
+      cursor: pointer;
+    }
+    .intensity-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #805ad5;
+      cursor: pointer;
+      border: none;
+    }
+    .intensity-steps {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 10px;
+      color: #999;
+    }
+
+    /* 쇼츠 시뮬레이터 효과 레이어 */
+    .effect-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 20;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    /* 비트 드롭 시뮬레이션용 CSS 애니메이션 */
+    :root {
+      --effect-shake: 4px;
+      --effect-saturate: 1.6;
+      --effect-brightness: 1.2;
+      --effect-opacity: 0.5;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translate(0, 0); }
+      10% { transform: translate(calc(-1 * var(--effect-shake)), calc(-0.5 * var(--effect-shake))) rotate(-0.5deg); }
+      20% { transform: translate(var(--effect-shake), calc(0.5 * var(--effect-shake))) rotate(0.5deg); }
+      30% { transform: translate(calc(-0.5 * var(--effect-shake)), var(--effect-shake)) rotate(-0.3deg); }
+      40% { transform: translate(calc(0.5 * var(--effect-shake)), calc(-1 * var(--effect-shake))) rotate(0.3deg); }
+      50% { transform: translate(calc(-1 * var(--effect-shake)), calc(0.5 * var(--effect-shake))) rotate(-0.5deg); }
+      60% { transform: translate(var(--effect-shake), calc(-0.5 * var(--effect-shake))) rotate(0.5deg); }
+      70% { transform: translate(calc(-0.5 * var(--effect-shake)), calc(-1 * var(--effect-shake))) rotate(-0.3deg); }
+      80% { transform: translate(calc(0.5 * var(--effect-shake)), var(--effect-shake)) rotate(0.3deg); }
+      90% { transform: translate(calc(-1 * var(--effect-shake)), calc(-0.5 * var(--effect-shake))) rotate(-0.5deg); }
+    }
+    @keyframes glow {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 0.6; }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .effect-shake {
+      animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    .effect-saturate {
+      filter: saturate(var(--effect-saturate)) contrast(1.2);
+      transition: filter 0.1s;
+    }
+    .effect-lightleak {
+      background: radial-gradient(circle, rgba(255,255,255,calc(0.8 * var(--effect-opacity))) 0%, transparent 70%);
+      mix-blend-mode: overlay;
+      animation: glow 0.8s ease-in-out;
+    }
+    .effect-brightness {
+      filter: brightness(var(--effect-brightness));
+      transition: filter 0.2s;
+    }
+    .effect-bounce {
+      animation: pulse 0.3s ease-in-out;
+    }
+
+    /* 플랫폼 UI 오버레이 */
+    .platform-ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 15;
+    }
+    .platform-ui-top {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .platform-ui-profile {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .platform-ui-profile-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      border: 2px solid rgba(255,255,255,0.5);
+    }
+    .platform-ui-bottom {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .platform-ui-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+    }
+    .platform-ui-action-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .platform-ui-title {
+      flex: 1;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      margin-left: 12px;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+
+    /* 시각화 타임라인 */
+    .visual-timeline {
+      margin-top: 16px;
+      padding: 12px;
+      background: #fff;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .timeline-track {
+      position: relative;
+      height: 40px;
+      background: #f7fafc;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .timeline-segment {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      height: 100%;
+      opacity: 0.6;
+      border-radius: 6px;
+    }
+    .timeline-segment.hook {
+      background: linear-gradient(90deg, #ff6fae 0%, #ff8cc8 100%);
+    }
+    .timeline-segment.insight {
+      background: linear-gradient(90deg, #805ad5 0%, #b794f4 100%);
+    }
+    .timeline-hotspot-marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #ff6fae;
+      z-index: 10;
+    }
+    .timeline-hotspot-icon {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 16px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+    .timeline-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 6px;
+    }
+
+    /* 다이내믹 자막 스타일 */
+    .subtitle-simulator {
+      position: absolute;
+      bottom: 140px; /* 플랫폼 UI 하단 버튼 위쪽 */
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 24px);
+      max-width: 90%;
+      z-index: 25;
+      pointer-events: none;
+      text-align: center;
+    }
+    .subtitle-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+      padding: 12px 16px;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      min-height: 60px;
+    }
+    .dynamic-word {
+      display: inline-block;
+      font-weight: 900;
+      font-size: calc(1.8rem + var(--subtitle-scale, 0) * 0.3rem);
+      color: rgba(255, 255, 255, 0.4);
+      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.9),
+                   -1px -1px 0 rgba(0, 0, 0, 0.8),
+                   1px -1px 0 rgba(0, 0, 0, 0.8),
+                   -1px 1px 0 rgba(0, 0, 0, 0.8),
+                   1px 1px 0 rgba(0, 0, 0, 0.8);
+      transition: all 0.2s ease-out;
+      line-height: 1.4;
+    }
+    .dynamic-word.past {
+      opacity: 0.3;
+      transform: scale(0.9);
+    }
+    .dynamic-word.current {
+      opacity: 1;
+      color: #000000;
+      background-color: #ffff00;
+      padding: 4px 10px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(255, 255, 0, 0.5);
+      text-shadow: none;
+      font-weight: 900;
+    }
+    .dynamic-word.future {
+      opacity: 0.4;
+      transform: scale(0.95);
+    }
+    @keyframes word-pop {
+      0% { 
+        transform: scale(0.8); 
+        opacity: 0; 
+      }
+      50% {
+        transform: scale(1.15);
+      }
+      100% { 
+        transform: scale(1); 
+        opacity: 1; 
+      }
+    }
+    .dynamic-word.pop {
+      animation: word-pop calc(0.15s * var(--animation-speed, 1)) ease-out forwards;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item active">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>10. 쇼츠 자동 변환</h1>
+          <p class="subtitle">가로 영상을 세로 쇼츠 형식으로 자동 변환하고 플랫폼별 최적화를 적용합니다</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 플랫폼 선택 -->
+      <div class="content-card">
+        <div class="field-label">플랫폼별 규격 선택</div>
+        <p class="section-desc">변환할 플랫폼을 선택하세요. 각 플랫폼의 UI 가이드라인이 미리보기에 표시됩니다.</p>
+        <div class="platform-grid" id="platformGrid">
+          <div class="platform-card" data-platform="youtube">
+            <div class="platform-icon">📽️</div>
+            <div class="platform-name">YouTube Shorts</div>
+            <div class="platform-ratio">9:16</div>
+          </div>
+          <div class="platform-card" data-platform="tiktok">
+            <div class="platform-icon">🎵</div>
+            <div class="platform-name">TikTok</div>
+            <div class="platform-ratio">9:16</div>
+          </div>
+          <div class="platform-card" data-platform="instagram">
+            <div class="platform-icon">📸</div>
+            <div class="platform-name">Instagram Reels</div>
+            <div class="platform-ratio">9:16</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 미리보기 및 변환 -->
+      <div class="content-card">
+        <div class="field-label">AI 스마트 크롭 및 미리보기</div>
+        <p class="section-desc">핵심 피사체를 자동으로 추적하여 세로 화면 중앙에 배치하고, 자막을 최적화합니다.</p>
+        
+        <div class="preview-container">
+          <div class="preview-wrapper">
+            <div class="phone-frame">
+              <div class="phone-screen" id="shorts-preview">
+                <video class="video-preview" id="videoPreview" controls style="display: none;"></video>
+                <div class="video-timeline-overlay" id="videoTimelineOverlay" style="display: none;">
+                  <div class="timeline-hotspot" id="timelineHotspot" style="display: none;">
+                    <div class="timeline-hotspot-icon">⚡</div>
+                  </div>
+                </div>
+                <div id="previewPlaceholder" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #999; font-size: 14px;">
+                  변환된 영상이 여기에 표시됩니다
+                </div>
+                <!-- 가상 이펙트 레이어 -->
+                <div class="effect-layer" id="effectLayer"></div>
+                <!-- 다이내믹 자막 시뮬레이터 -->
+                <div class="subtitle-simulator" id="subtitleSimulator" style="display: none;">
+                  <div class="subtitle-container" id="subtitleContainer"></div>
+                </div>
+                <!-- 플랫폼 UI 오버레이 -->
+                <div class="platform-ui-overlay" id="platformUIOverlay" style="display: none;">
+                  <div class="platform-ui-top">
+                    <div class="platform-ui-profile">
+                      <div class="platform-ui-profile-avatar"></div>
+                      <span>@creator</span>
+                    </div>
+                  </div>
+                  <div class="platform-ui-bottom">
+                    <div class="platform-ui-title" id="platformUITitle">영상 제목</div>
+                    <div class="platform-ui-actions">
+                      <div class="platform-ui-action-btn">❤️</div>
+                      <div class="platform-ui-action-btn">💬</div>
+                      <div class="platform-ui-action-btn">🔗</div>
+                      <div class="platform-ui-action-btn">⏩</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="platform-overlay" id="platformOverlay" style="display: none;">
+                  <div class="overlay-top"></div>
+                  <div class="overlay-bottom"></div>
+                  <div class="overlay-safe-area"></div>
+                </div>
+                <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                  <div class="loading-spinner"></div>
+                  <div class="loading-text">AI 핫스팟 싱크 및 쇼츠 생성 중...</div>
+                </div>
+              </div>
+            </div>
+            <!-- Waveform & Hotspot Visualization -->
+            <div class="waveform-section" id="waveformSection" style="display: none;">
+              <div class="waveform-label">BGM 파형 및 핫스팟</div>
+              <div class="waveform-container" id="waveformContainer">
+                <div class="hotspot-marker" id="hotspotMarker" style="display: none;">
+                  <div class="hotspot-icon">⚡</div>
+                  <div class="hotspot-label">핫스팟</div>
+                  <div class="hotspot-tooltip">비트 드롭 효과 적용됨</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 시각화 타임라인 -->
+            <div class="visual-timeline" id="visualTimeline" style="display: none;">
+              <div class="timeline-label">영상 구간 분석</div>
+              <div class="timeline-track" id="timelineTrack">
+                <div class="timeline-segment hook" id="hookSegment" style="display: none;"></div>
+                <div class="timeline-segment insight" id="insightSegment" style="display: none;"></div>
+                <div class="timeline-hotspot-marker" id="timelineHotspotMarker" style="display: none;">
+                  <div class="timeline-hotspot-icon">⚡</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="preview-info">
+            <div class="info-item">
+              <div class="info-label">선택된 플랫폼</div>
+              <div class="info-value" id="selectedPlatformText">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">원본 영상</div>
+              <div class="info-value" id="originalVideoInfo">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">변환 상태</div>
+              <div class="info-value" id="conversionStatus">대기 중</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">BGM 핫스팟</div>
+              <div class="info-value" id="hotspotInfo">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">BGM 분위기</div>
+              <div class="info-value" id="bgmMoodInfo">-</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">AI 처리 내용</div>
+              <div class="info-value" id="aiProcessingInfo">- 핵심 피사체 자동 추적<br>- 자막 크기 및 위치 최적화<br>- 플랫폼별 UI 영역 회피<br>- BGM 핫스팟 자동 싱크</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 효과 강도 조절 -->
+        <div class="intensity-control">
+          <div class="intensity-label">
+            <span>비트 드롭 효과 강도</span>
+            <span class="intensity-value" id="intensityValue">3단계</span>
+          </div>
+          <input type="range" class="intensity-slider" id="intensitySlider" min="1" max="5" value="3" step="1" />
+          <div class="intensity-steps">
+            <span>1 (부드러움)</span>
+            <span>2</span>
+            <span>3 (기본)</span>
+            <span>4</span>
+            <span>5 (강렬함)</span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn-primary" id="btnConvert" type="button">AI 핫스팟 싱크 및 쇼츠 생성</button>
+          <button class="btn-secondary" id="btnDownload" type="button" disabled>쇼츠 다운로드</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/wavesurfer.js@7"></script>
+  <script>
+    var selectedPlatform = null;
+    var videoData = null;
+    var bgmData = null;
+    var convertedVideoUrl = null;
+    var bgmHotspot = null;
+    var wavesurfer = null;
+    var syncParams = null;
+    var effectIntensity = 3; // 기본값: 3단계
+    var selectedMood = null;
+    var bgmAudio = null;
+    var isSimulating = false;
+    var scriptText = '';
+    var words = [];
+    var wordTimings = [];
+    var subtitleAnimationFrame = null;
+
+    // 초기화
+    (function() {
+      loadVideoData();
+      loadBGMData();
+      loadScriptText(); // 대본 텍스트 로드
+      setupEventListeners();
+      checkLoginStatus();
+      updateEffectIntensity(); // 초기 효과 강도 설정
+    })();
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+
+    // 영상 데이터 로드
+    function loadVideoData() {
+      try {
+        var videoDataRaw = localStorage.getItem('step7VideoData');
+        if (videoDataRaw) {
+          videoData = JSON.parse(videoDataRaw);
+          updateOriginalVideoInfo();
+        } else {
+          document.getElementById('originalVideoInfo').textContent = '영상 데이터가 없습니다. 6단계에서 영상을 생성하세요.';
+        }
+      } catch (e) {
+        console.error('영상 데이터 로드 실패:', e);
+      }
+    }
+
+    // 대본 텍스트 로드
+    function loadScriptText() {
+      try {
+        // step-4-1 JSON에서 가져오기 (가장 정확한 대본)
+        var step42JsonDataRaw = localStorage.getItem('step42JsonData');
+        if (step42JsonDataRaw) {
+          var step42JsonData = JSON.parse(step42JsonDataRaw);
+          if (step42JsonData.jsonData && step42JsonData.jsonData.scenes) {
+            scriptText = step42JsonData.jsonData.scenes.map(function(scene) {
+              return scene.script || '';
+            }).join(' ');
+          }
+        }
+
+        // step-4-1 JSON에서 가져오기 시도
+        if (!scriptText) {
+          var step4PayloadRaw = localStorage.getItem('step4JsonPayload');
+          if (step4PayloadRaw) {
+            var step4Payload = JSON.parse(step4PayloadRaw);
+            if (step4Payload.script) {
+              scriptText = step4Payload.script;
+            } else if (step4Payload.jsonData && step4Payload.jsonData.scenes) {
+              scriptText = step4Payload.jsonData.scenes.map(function(scene) {
+                return scene.script || '';
+              }).join(' ');
+            }
+          }
+        }
+        
+        // step-3 blueprint에서 가져오기 시도
+        if (!scriptText) {
+          var step3BlueprintRaw = localStorage.getItem('step3Blueprint');
+          if (step3BlueprintRaw) {
+            var step3Blueprint = JSON.parse(step3BlueprintRaw);
+            if (step3Blueprint.script) {
+              scriptText = step3Blueprint.script;
+            }
+          }
+        }
+
+        // videoData에서 가져오기 시도
+        if (!scriptText && videoData && videoData.jsonData && videoData.jsonData.scenes) {
+          scriptText = videoData.jsonData.scenes.map(function(scene) {
+            return scene.script || '';
+          }).join(' ');
+        }
+
+        if (scriptText && scriptText.trim().length > 0) {
+          processScriptForSubtitles();
+        }
+      } catch (e) {
+        console.error('대본 로드 실패:', e);
+      }
+    }
+
+    // 대본을 단어 배열로 분리 및 타이밍 계산
+    function processScriptForSubtitles() {
+      if (!scriptText) return;
+
+      // 공백 단위로 단어 분리
+      words = scriptText.split(/\s+/).filter(function(word) {
+        return word.trim().length > 0;
+      });
+
+      if (words.length === 0) return;
+
+      // TTS 오디오 길이 가져오기
+      var ttsDuration = 60; // 기본값
+      if (bgmData && bgmData.tts_data && bgmData.tts_data.scenes) {
+        ttsDuration = bgmData.tts_data.scenes.reduce(function(total, scene) {
+          return total + (scene.duration || 30);
+        }, 0);
+      }
+
+      // 기본 단어 타이밍 계산
+      var baseWordDuration = ttsDuration / words.length;
+      var currentTime = 0;
+
+      wordTimings = words.map(function(word, index) {
+        var wordStart = currentTime;
+        var wordEnd = currentTime + baseWordDuration;
+
+        // 핫스팟 구간에서는 단어가 더 빠르게 (가중치 적용)
+        if (bgmHotspot) {
+          var hotspotStart = bgmHotspot.time - 0.5;
+          var hotspotEnd = bgmHotspot.time + 0.5;
+          
+          if (wordStart >= hotspotStart && wordStart <= hotspotEnd) {
+            // 핫스팟 구간: 단어 간격을 50%로 줄임 (더 빠르게)
+            wordEnd = wordStart + (baseWordDuration * 0.5);
+          }
+        }
+
+        currentTime = wordEnd;
+        return {
+          word: word,
+          start: wordStart,
+          end: wordEnd
+        };
+      });
+    }
+
+    // BGM 데이터 로드
+    function loadBGMData() {
+      try {
+        var bgmDataRaw = localStorage.getItem('step52BGMData');
+        if (bgmDataRaw) {
+          bgmData = JSON.parse(bgmDataRaw);
+          
+          // 선택된 분위기 가져오기 (step-5-2.html에서 저장된 값)
+          if (bgmData.mood) {
+            selectedMood = bgmData.mood;
+          } else if (bgmData.track && bgmData.track.mood) {
+            selectedMood = bgmData.track.mood;
+          } else {
+            // localStorage에서 직접 가져오기 시도
+            var moodData = localStorage.getItem('selectedMood');
+            if (moodData) {
+              selectedMood = moodData;
+            } else {
+              // 기본값: 정보전달
+              selectedMood = 'informative';
+            }
+          }
+          
+          updateBgmMoodInfo();
+          analyzeBGMHotspot();
+          loadBGMAudio(); // BGM 오디오 로드
+        }
+      } catch (e) {
+        console.error('BGM 데이터 로드 실패:', e);
+      }
+    }
+
+    // BGM 분위기 정보 업데이트
+    function updateBgmMoodInfo() {
+      if (!selectedMood) {
+        document.getElementById('bgmMoodInfo').textContent = '-';
+        return;
+      }
+
+      var moodLabels = {
+        calm: '차분한',
+        epic: '웅장한',
+        intense: '긴박한',
+        emotional: '감성적인',
+        informative: '정보전달',
+        cheerful: '유쾌한',
+        mysterious: '신비로운',
+        lively: '경쾌한',
+        warm: '따뜻한',
+        sophisticated: '세련된',
+        solemn: '비장한'
+      };
+
+      var moodLabel = moodLabels[selectedMood] || selectedMood;
+      document.getElementById('bgmMoodInfo').textContent = '#' + moodLabel;
+    }
+
+    // BGM 핫스팟 분석 (에너지가 가장 높은 구간 추출)
+    async function analyzeBGMHotspot() {
+      if (!bgmData || !bgmData.track || !bgmData.track.url) {
+        return;
+      }
+
+      try {
+        // WaveSurfer.js로 파형 분석
+        if (wavesurfer) {
+          wavesurfer.destroy();
+        }
+
+        wavesurfer = WaveSurfer.create({
+          container: '#waveformContainer',
+          waveColor: '#cbd5e0',
+          progressColor: '#805ad5',
+          cursorColor: '#805ad5',
+          barWidth: 2,
+          barRadius: 1,
+          height: 80,
+          normalize: true,
+          interact: false
+        });
+
+        await wavesurfer.load(bgmData.track.url);
+        
+        // 파형 데이터 가져오기
+        var peaks = wavesurfer.getDecodedData();
+        if (!peaks) {
+          // 대안: 간단한 에너지 분석
+          var duration = wavesurfer.getDuration();
+          bgmHotspot = {
+            time: duration * 0.1, // 초반 10% 지점 (일반적으로 클라이맥스)
+            energy: 1.0
+          };
+        } else {
+          // 에너지 분석: RMS (Root Mean Square) 계산
+          var channelData = peaks.getChannelData(0);
+          var sampleRate = peaks.sampleRate;
+          var windowSize = Math.floor(sampleRate * 0.1); // 0.1초 윈도우
+          var maxEnergy = 0;
+          var maxEnergyTime = 0;
+
+          for (var i = 0; i < channelData.length - windowSize; i += windowSize) {
+            var sum = 0;
+            for (var j = 0; j < windowSize; j++) {
+              sum += Math.abs(channelData[i + j]);
+            }
+            var energy = sum / windowSize;
+            
+            if (energy > maxEnergy) {
+              maxEnergy = energy;
+              maxEnergyTime = i / sampleRate;
+            }
+          }
+
+          bgmHotspot = {
+            time: maxEnergyTime,
+            energy: maxEnergy
+          };
+        }
+
+        // 핫스팟 정보 표시
+        updateHotspotInfo();
+        renderHotspotMarker();
+        
+        // Waveform 섹션 표시
+        document.getElementById('waveformSection').style.display = 'block';
+
+      } catch (e) {
+        console.error('BGM 핫스팟 분석 실패:', e);
+        // 기본값 설정
+        bgmHotspot = {
+          time: 3.0, // 기본 3초
+          energy: 1.0
+        };
+        updateHotspotInfo();
+      }
+    }
+
+    // 핫스팟 정보 업데이트
+    function updateHotspotInfo() {
+      if (!bgmHotspot) {
+        document.getElementById('hotspotInfo').textContent = '-';
+        return;
+      }
+
+      var timeStr = bgmHotspot.time.toFixed(2) + '초';
+      document.getElementById('hotspotInfo').textContent = timeStr + ' (에너지 피크) ⚡ 비트 드롭 효과';
+    }
+
+    // 핫스팟 마커 렌더링
+    function renderHotspotMarker() {
+      if (!bgmHotspot || !wavesurfer) return;
+
+      var marker = document.getElementById('hotspotMarker');
+      if (!marker) return;
+
+      var duration = wavesurfer.getDuration();
+      if (!duration) return;
+
+      var position = (bgmHotspot.time / duration) * 100;
+      marker.style.left = position + '%';
+      marker.style.display = 'block';
+    }
+
+    // 원본 영상 정보 업데이트
+    function updateOriginalVideoInfo() {
+      if (!videoData || !videoData.generatedVideos || videoData.generatedVideos.length === 0) {
+        document.getElementById('originalVideoInfo').textContent = '영상 데이터가 없습니다.';
+        return;
+      }
+
+      var firstVideo = videoData.generatedVideos[0];
+      var info = '16:9 가로 영상 (' + videoData.generatedVideos.length + '개 씬)';
+      document.getElementById('originalVideoInfo').textContent = info;
+    }
+
+    // 플랫폼 선택 이벤트
+    function setupEventListeners() {
+      var platformCards = document.querySelectorAll('.platform-card');
+      platformCards.forEach(function(card) {
+        card.addEventListener('click', function() {
+          // 선택 상태 토글
+          platformCards.forEach(function(c) {
+            c.classList.remove('selected');
+          });
+          this.classList.add('selected');
+          
+          selectedPlatform = this.getAttribute('data-platform');
+          updateSelectedPlatform();
+          showPlatformOverlay();
+        });
+      });
+
+      // 변환 버튼
+      var btnConvert = document.getElementById('btnConvert');
+      if (btnConvert) {
+        btnConvert.addEventListener('click', function() {
+          if (!selectedPlatform) {
+            alert('플랫폼을 선택하세요.');
+            return;
+          }
+          if (!videoData) {
+            alert('영상 데이터가 없습니다.');
+            return;
+          }
+          convertToShorts();
+        });
+      }
+
+      // 다운로드 버튼
+      var btnDownload = document.getElementById('btnDownload');
+      if (btnDownload) {
+        btnDownload.addEventListener('click', function() {
+          if (!convertedVideoUrl) {
+            alert('변환된 영상이 없습니다.');
+            return;
+          }
+          downloadShorts();
+        });
+      }
+
+      // 효과 강도 슬라이더
+      var intensitySlider = document.getElementById('intensitySlider');
+      var intensityValue = document.getElementById('intensityValue');
+      if (intensitySlider && intensityValue) {
+        intensitySlider.addEventListener('input', function() {
+          effectIntensity = parseInt(this.value, 10);
+          var intensityLabels = {
+            1: '1단계 (부드러움)',
+            2: '2단계',
+            3: '3단계 (기본)',
+            4: '4단계',
+            5: '5단계 (강렬함)'
+          };
+          intensityValue.textContent = intensityLabels[effectIntensity] || effectIntensity + '단계';
+          
+          // CSS 변수 업데이트 (효과 강도 반영)
+          updateEffectIntensity();
+        });
+      }
+    }
+
+    // 효과 강도에 따른 CSS 변수 업데이트
+    function updateEffectIntensity() {
+      var root = document.documentElement;
+      var intensityMap = {
+        1: { shake: '2px', saturate: '1.2', brightness: '1.1', opacity: '0.3', subtitleScale: '0', animationSpeed: '1.2' },
+        2: { shake: '3px', saturate: '1.4', brightness: '1.15', opacity: '0.4', subtitleScale: '0.2', animationSpeed: '1.1' },
+        3: { shake: '4px', saturate: '1.6', brightness: '1.2', opacity: '0.5', subtitleScale: '0.4', animationSpeed: '1.0' },
+        4: { shake: '6px', saturate: '1.8', brightness: '1.25', opacity: '0.6', subtitleScale: '0.6', animationSpeed: '0.9' },
+        5: { shake: '8px', saturate: '2.0', brightness: '1.3', opacity: '0.7', subtitleScale: '0.8', animationSpeed: '0.8' }
+      };
+
+      var values = intensityMap[effectIntensity] || intensityMap[3];
+      root.style.setProperty('--effect-shake', values.shake);
+      root.style.setProperty('--effect-saturate', values.saturate);
+      root.style.setProperty('--effect-brightness', values.brightness);
+      root.style.setProperty('--effect-opacity', values.opacity);
+      root.style.setProperty('--subtitle-scale', values.subtitleScale);
+      root.style.setProperty('--animation-speed', values.animationSpeed);
+    }
+
+    // 선택된 플랫폼 업데이트
+    function updateSelectedPlatform() {
+      var platformNames = {
+        youtube: 'YouTube Shorts',
+        tiktok: 'TikTok',
+        instagram: 'Instagram Reels'
+      };
+      document.getElementById('selectedPlatformText').textContent = platformNames[selectedPlatform] || '-';
+    }
+
+    // 플랫폼 오버레이 표시
+    function showPlatformOverlay() {
+      var overlay = document.getElementById('platformOverlay');
+      var uiOverlay = document.getElementById('platformUIOverlay');
+      if (overlay) {
+        overlay.style.display = 'block';
+      }
+      if (uiOverlay) {
+        uiOverlay.style.display = 'block';
+        updatePlatformUI();
+      }
+    }
+
+    // 플랫폼별 UI 업데이트
+    function updatePlatformUI() {
+      var platformUITitle = document.getElementById('platformUITitle');
+      if (!platformUITitle) return;
+
+      var titleText = '영상 제목';
+      if (videoData && videoData.jsonData && videoData.jsonData.title) {
+        titleText = videoData.jsonData.title;
+      }
+
+      platformUITitle.textContent = titleText;
+    }
+
+    // 비트 드롭 효과 시뮬레이션 트리거
+    function triggerBeatDropEffect() {
+      if (!bgmHotspot || !selectedMood) return;
+
+      var preview = document.getElementById('shorts-preview');
+      var effectLayer = document.getElementById('effectLayer');
+      if (!preview || !effectLayer) return;
+
+      // 분위기별 효과 클래스 추가
+      var effectClasses = getEffectClassesByMood(selectedMood, effectIntensity);
+      
+      // 효과 클래스 추가
+      effectClasses.forEach(function(className) {
+        preview.classList.add(className);
+      });
+      effectLayer.className = 'effect-layer ' + effectClasses.join(' ');
+
+      // 0.5초 후 효과 제거
+      setTimeout(function() {
+        effectClasses.forEach(function(className) {
+          preview.classList.remove(className);
+        });
+        effectLayer.className = 'effect-layer';
+      }, 500);
+    }
+
+    // 분위기별 효과 클래스 반환
+    function getEffectClassesByMood(mood, intensity) {
+      var effects = {
+        solemn: ['effect-shake', 'effect-saturate'],
+        epic: ['effect-shake', 'effect-saturate'],
+        emotional: ['effect-lightleak', 'effect-brightness'],
+        warm: ['effect-lightleak', 'effect-brightness'],
+        cheerful: ['effect-bounce', 'effect-saturate'],
+        lively: ['effect-bounce', 'effect-saturate'],
+        mysterious: ['effect-lightleak'],
+        sophisticated: ['effect-lightleak'],
+        intense: ['effect-shake', 'effect-saturate'],
+        calm: [],
+        informative: []
+      };
+
+      var baseEffects = effects[mood] || effects.informative;
+      
+      // 강도에 따른 조정
+      if (intensity <= 2 && (mood === 'calm' || mood === 'informative' || mood === 'warm' || mood === 'emotional')) {
+        return []; // 시니어 타겟은 효과 최소화
+      }
+
+      return baseEffects;
+    }
+
+    // BGM 오디오 로드
+    function loadBGMAudio() {
+      if (!bgmData || !bgmData.track || !bgmData.track.url) return;
+
+      try {
+        bgmAudio = new Audio(bgmData.track.url);
+        bgmAudio.volume = bgmData.bgm_volume ? (bgmData.bgm_volume / 100) : 0.2;
+        bgmAudio.loop = bgmData.auto_loop || false;
+      } catch (e) {
+        console.error('BGM 오디오 로드 실패:', e);
+      }
+    }
+
+    // 실시간 시뮬레이션 로직 (비디오 재생 중 핫스팟 감지)
+    function setupRealtimeSimulation() {
+      var videoPreview = document.getElementById('videoPreview');
+      if (!videoPreview || !bgmHotspot) return;
+
+      var hotspotTime = bgmHotspot.time;
+      var hasTriggered = false;
+
+      // 비디오 재생 시 BGM도 동시 재생
+      videoPreview.addEventListener('play', function() {
+        if (bgmAudio && !isSimulating) {
+          isSimulating = true;
+          // BGM 시작점 조정 (핫스팟 싱크)
+          if (syncParams && syncParams.bgm_offset) {
+            bgmAudio.currentTime = syncParams.bgm_offset;
+          }
+          bgmAudio.play().catch(function(e) {
+            console.warn('BGM 재생 실패:', e);
+          });
+        }
+      });
+
+      // 비디오 일시정지 시 BGM도 일시정지
+      videoPreview.addEventListener('pause', function() {
+        if (bgmAudio) {
+          bgmAudio.pause();
+        }
+      });
+
+      // 비디오 종료 시 BGM도 정지
+      videoPreview.addEventListener('ended', function() {
+        if (bgmAudio) {
+          bgmAudio.pause();
+          bgmAudio.currentTime = 0;
+        }
+        isSimulating = false;
+        hasTriggered = false;
+      });
+
+      // 비디오 시간 업데이트 시 핫스팟 감지 및 자막 업데이트
+      videoPreview.addEventListener('timeupdate', function() {
+        var currentTime = this.currentTime;
+        
+        // BGM 동기화 (비디오 시간에 맞춰 BGM 재생 위치 조정)
+        if (bgmAudio && syncParams && syncParams.bgm_offset !== undefined) {
+          var bgmTargetTime = syncParams.bgm_offset + currentTime;
+          if (Math.abs(bgmAudio.currentTime - bgmTargetTime) > 0.1) {
+            bgmAudio.currentTime = bgmTargetTime;
+          }
+        }
+        
+        // 핫스팟 타임코드에 도달하면 효과 트리거 (한 번만)
+        if (!hasTriggered && Math.abs(currentTime - hotspotTime) < 0.1) {
+          hasTriggered = true;
+          triggerBeatDropEffect();
+        }
+
+        // 비디오가 핫스팟을 지나면 플래그 리셋 (재생 시 다시 트리거 가능)
+        if (currentTime < hotspotTime - 0.2) {
+          hasTriggered = false;
+        }
+
+        // 다이내믹 자막 업데이트
+        updateDynamicSubtitles(currentTime);
+      });
+    }
+
+    // 다이내믹 자막 렌더링 및 업데이트 (requestAnimationFrame 레벨 동기화)
+    var subtitleAnimationFrame = null;
+    function updateDynamicSubtitles(currentTime) {
+      // 이전 애니메이션 프레임 취소
+      if (subtitleAnimationFrame) {
+        cancelAnimationFrame(subtitleAnimationFrame);
+      }
+      
+      // requestAnimationFrame으로 정확한 타이밍 동기화
+      subtitleAnimationFrame = requestAnimationFrame(function() {
+        updateDynamicSubtitlesInternal(currentTime);
+      });
+    }
+    
+    function updateDynamicSubtitlesInternal(currentTime) {
+      if (!wordTimings || wordTimings.length === 0) return;
+
+      var subtitleContainer = document.getElementById('subtitleContainer');
+      var subtitleSimulator = document.getElementById('subtitleSimulator');
+      if (!subtitleContainer || !subtitleSimulator) return;
+
+      // 현재 시점의 단어 인덱스 찾기
+      var currentWordIndex = -1;
+      for (var i = 0; i < wordTimings.length; i++) {
+        if (currentTime >= wordTimings[i].start && currentTime < wordTimings[i].end) {
+          currentWordIndex = i;
+          break;
+        }
+      }
+
+      // 자막이 없으면 표시하지 않음
+      if (currentWordIndex === -1 && currentTime > wordTimings[wordTimings.length - 1].end) {
+        subtitleSimulator.style.display = 'none';
+        return;
+      }
+
+      subtitleSimulator.style.display = 'block';
+
+      // 자막 렌더링 (현재 단어 중심으로 앞뒤 단어 표시)
+      var visibleRange = 3; // 현재 단어 앞뒤로 표시할 단어 수
+      var startIndex = Math.max(0, currentWordIndex - visibleRange);
+      var endIndex = Math.min(wordTimings.length - 1, currentWordIndex + visibleRange);
+
+      var html = '';
+      for (var i = startIndex; i <= endIndex; i++) {
+        var timing = wordTimings[i];
+        var wordClass = 'dynamic-word';
+        
+        if (i < currentWordIndex) {
+          wordClass += ' past';
+        } else if (i === currentWordIndex) {
+          wordClass += ' current pop';
+        } else {
+          wordClass += ' future';
+        }
+
+        html += '<span class="' + wordClass + '" data-word-index="' + i + '">' + 
+                escapeHtml(timing.word) + '</span>';
+      }
+
+      subtitleContainer.innerHTML = html;
+    }
+
+    // HTML 이스케이프
+    function escapeHtml(text) {
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 시각화 타임라인 렌더링
+    function renderVisualTimeline() {
+      if (!bgmHotspot || !videoData) return;
+
+      var timelineTrack = document.getElementById('timelineTrack');
+      var hookSegment = document.getElementById('hookSegment');
+      var insightSegment = document.getElementById('insightSegment');
+      var hotspotMarker = document.getElementById('timelineHotspotMarker');
+      var visualTimeline = document.getElementById('visualTimeline');
+
+      if (!timelineTrack || !visualTimeline) return;
+
+      var videoPreview = document.getElementById('videoPreview');
+      var duration = videoPreview ? videoPreview.duration : 60; // 기본 60초
+      if (!duration || duration === 0) duration = 60;
+
+      var trackWidth = timelineTrack.clientWidth;
+
+      // 초반 3초 훅 구간 (0~3초)
+      var hookStart = 0;
+      var hookEnd = 3;
+      var hookWidth = ((hookEnd - hookStart) / duration) * 100;
+      hookSegment.style.left = (hookStart / duration * 100) + '%';
+      hookSegment.style.width = hookWidth + '%';
+      hookSegment.style.display = 'block';
+
+      // 핵심 인사이트 구간 (중간 부분, 예: 30%~60%)
+      var insightStart = duration * 0.3;
+      var insightEnd = duration * 0.6;
+      var insightWidth = ((insightEnd - insightStart) / duration) * 100;
+      insightSegment.style.left = (insightStart / duration * 100) + '%';
+      insightSegment.style.width = insightWidth + '%';
+      insightSegment.style.display = 'block';
+
+      // 핫스팟 마커
+      var hotspotPosition = (bgmHotspot.time / duration) * 100;
+      hotspotMarker.style.left = hotspotPosition + '%';
+      hotspotMarker.style.display = 'block';
+
+      visualTimeline.style.display = 'block';
+    }
+
+    // AI 쇼츠 변환 (BGM 핫스팟 싱크 포함)
+    async function convertToShorts() {
+      var btnConvert = document.getElementById('btnConvert');
+      var btnDownload = document.getElementById('btnDownload');
+      var loadingOverlay = document.getElementById('loadingOverlay');
+      var previewPlaceholder = document.getElementById('previewPlaceholder');
+      var videoPreview = document.getElementById('videoPreview');
+
+      // UI 업데이트
+      btnConvert.disabled = true;
+      btnDownload.disabled = true;
+      loadingOverlay.style.display = 'flex';
+      previewPlaceholder.style.display = 'none';
+      document.getElementById('conversionStatus').textContent = '핫스팟 싱크 및 변환 중...';
+
+      try {
+        // 훅 & 핫스팟 자동 정렬 계산
+        syncParams = calculateHotspotSync();
+        
+        // 타겟 장면 식별 및 VEO 프롬프트 인젝션
+        var enhancedVideoData = injectBeatDropEffects(videoData);
+        
+        // API 호출
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/convert-to-shorts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            video_data: enhancedVideoData,
+            bgm_data: bgmData,
+            platform: selectedPlatform,
+            aspect_ratio: '9:16',
+            smart_crop: true,
+            subtitle_optimization: true,
+            platform_guidelines: true,
+            bgm_hotspot: bgmHotspot,
+            hotspot_sync: syncParams,
+            dynamic_volume: {
+              enabled: true,
+              initial_volume: 1.0, // 시작 시 BGM 최대 볼륨
+              narration_volume: bgmData ? (bgmData.bgm_volume / 100) : 0.2, // TTS 나올 때 볼륨
+              ducking_start: 3.0 // 3초 후 볼륨 낮춤
+            },
+            beat_drop_effects: {
+              enabled: true,
+              hotspot_time: bgmHotspot ? bgmHotspot.time : null,
+              mood: selectedMood,
+              intensity: effectIntensity
+            }
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('변환 실패: ' + response.statusText);
+        }
+
+        var result = await response.json();
+        convertedVideoUrl = result.video_url;
+
+        // 미리보기 업데이트
+        videoPreview.src = convertedVideoUrl;
+        videoPreview.style.display = 'block';
+        previewPlaceholder.style.display = 'none';
+        loadingOverlay.style.display = 'none';
+        
+        // 비디오 로드 후 타임라인 핫스팟 표시 및 시뮬레이션 설정
+        videoPreview.addEventListener('loadedmetadata', function() {
+          renderTimelineHotspot();
+          renderVisualTimeline();
+          setupRealtimeSimulation();
+          
+          // 대본이 있으면 자막 시뮬레이터 활성화
+          if (wordTimings && wordTimings.length > 0) {
+            var subtitleSimulator = document.getElementById('subtitleSimulator');
+            if (subtitleSimulator) {
+              subtitleSimulator.style.display = 'block';
+            }
+          }
+        });
+
+        // 상태 업데이트
+        var statusText = '변환 완료';
+        if (bgmHotspot) {
+          statusText += ' (핫스팟 싱크 적용됨)';
+        }
+        document.getElementById('conversionStatus').textContent = statusText;
+        btnConvert.disabled = false;
+        btnDownload.disabled = false;
+
+        // 변환된 영상 데이터 저장 (비트 드롭 효과 정보 포함)
+        var shortsData = {
+          platform: selectedPlatform,
+          video_url: convertedVideoUrl,
+          original_video_data: videoData,
+          beat_drop_effects: {
+            enabled: true,
+            hotspot_time: bgmHotspot ? bgmHotspot.time : null,
+            mood: selectedMood,
+            intensity: effectIntensity,
+            effect_type: selectedMood ? getEffectByMood(selectedMood) : null
+          },
+          dynamic_captions: {
+            enabled: true,
+            word_timings: wordTimings || [],
+            script_text: scriptText || ''
+          }
+        };
+        if (bgmHotspot) {
+          shortsData.bgm_hotspot = bgmHotspot;
+        }
+        if (syncParams) {
+          shortsData.hotspot_sync = syncParams;
+        }
+        if (bgmData) {
+          shortsData.bgm_data = {
+            bpm: bgmData.bpm || null,
+            mood: selectedMood,
+            volume: bgmData.bgm_volume || 20
+          };
+        }
+        localStorage.setItem('step11ShortsData', JSON.stringify(shortsData));
+
+      } catch (e) {
+        console.error('변환 실패:', e);
+        alert('변환 중 오류가 발생했습니다: ' + e.message);
+        
+        // UI 복원
+        loadingOverlay.style.display = 'none';
+        previewPlaceholder.style.display = 'flex';
+        btnConvert.disabled = false;
+        document.getElementById('conversionStatus').textContent = '변환 실패';
+      }
+    }
+
+    // 훅 & 핫스팟 자동 정렬 계산
+    function calculateHotspotSync() {
+      if (!bgmHotspot) {
+        return {
+          bgm_offset: 0,
+          sync_point: 0
+        };
+      }
+
+      // 초반 3초에 핫스팟이 일치하도록 BGM 시작점 조정
+      var targetSyncTime = 0; // 쇼츠 시작점 (0초)
+      var hotspotTime = bgmHotspot.time;
+      
+      // BGM 오프셋 계산: 핫스팟이 0초에 오도록 BGM을 앞으로 당김
+      var bgmOffset = hotspotTime;
+      
+      return {
+        bgm_offset: bgmOffset,
+        sync_point: targetSyncTime,
+        hotspot_time: hotspotTime
+      };
+    }
+
+    // 분위기별 효과 매핑 테이블
+    function getEffectByMood(mood) {
+      var effectTable = {
+        // #비장한 / #웅장한
+        solemn: {
+          base: 'with strong camera impact shake, high contrast, and cinematic HDR lighting',
+          intensity: {
+            1: 'with subtle camera impact shake, enhanced contrast, and cinematic lighting',
+            2: 'with slight camera impact shake, moderate contrast, and cinematic HDR lighting',
+            3: 'with strong camera impact shake, high contrast, and cinematic HDR lighting',
+            4: 'with intense camera impact shake, very high contrast, and dramatic cinematic HDR lighting',
+            5: 'with extreme camera impact shake, maximum contrast, and ultra-dramatic cinematic HDR lighting'
+          }
+        },
+        epic: {
+          base: 'with strong camera impact shake, high contrast, and cinematic HDR lighting',
+          intensity: {
+            1: 'with subtle camera impact shake, enhanced contrast, and cinematic lighting',
+            2: 'with slight camera impact shake, moderate contrast, and cinematic HDR lighting',
+            3: 'with strong camera impact shake, high contrast, and cinematic HDR lighting',
+            4: 'with intense camera impact shake, very high contrast, and dramatic cinematic HDR lighting',
+            5: 'with extreme camera impact shake, maximum contrast, and ultra-dramatic cinematic HDR lighting'
+          }
+        },
+        // #감성적인 / #따뜻한
+        emotional: {
+          base: 'with soft warm light leak effects, gentle slow-motion zoom, and ethereal glow',
+          intensity: {
+            1: 'with very soft warm light leak effects, gentle slow-motion zoom, and subtle ethereal glow',
+            2: 'with soft warm light leak effects, gentle slow-motion zoom, and mild ethereal glow',
+            3: 'with soft warm light leak effects, gentle slow-motion zoom, and ethereal glow',
+            4: 'with vibrant warm light leak effects, noticeable slow-motion zoom, and strong ethereal glow',
+            5: 'with intense warm light leak effects, dramatic slow-motion zoom, and powerful ethereal glow'
+          }
+        },
+        warm: {
+          base: 'with soft warm light leak effects, gentle slow-motion zoom, and ethereal glow',
+          intensity: {
+            1: 'with very soft warm light leak effects, gentle slow-motion zoom, and subtle ethereal glow',
+            2: 'with soft warm light leak effects, gentle slow-motion zoom, and mild ethereal glow',
+            3: 'with soft warm light leak effects, gentle slow-motion zoom, and ethereal glow',
+            4: 'with vibrant warm light leak effects, noticeable slow-motion zoom, and strong ethereal glow',
+            5: 'with intense warm light leak effects, dramatic slow-motion zoom, and powerful ethereal glow'
+          }
+        },
+        // #유쾌한 / #경쾌한
+        cheerful: {
+          base: 'with bouncy camera movement, vibrant color popping, and playful brightness pulse',
+          intensity: {
+            1: 'with gentle bouncy camera movement, subtle color popping, and soft brightness pulse',
+            2: 'with slight bouncy camera movement, mild color popping, and noticeable brightness pulse',
+            3: 'with bouncy camera movement, vibrant color popping, and playful brightness pulse',
+            4: 'with strong bouncy camera movement, intense color popping, and vibrant brightness pulse',
+            5: 'with extreme bouncy camera movement, maximum color popping, and dramatic brightness pulse'
+          }
+        },
+        lively: {
+          base: 'with bouncy camera movement, vibrant color popping, and playful brightness pulse',
+          intensity: {
+            1: 'with gentle bouncy camera movement, subtle color popping, and soft brightness pulse',
+            2: 'with slight bouncy camera movement, mild color popping, and noticeable brightness pulse',
+            3: 'with bouncy camera movement, vibrant color popping, and playful brightness pulse',
+            4: 'with strong bouncy camera movement, intense color popping, and vibrant brightness pulse',
+            5: 'with extreme bouncy camera movement, maximum color popping, and dramatic brightness pulse'
+          }
+        },
+        // #신비로운 / #세련된
+        mysterious: {
+          base: 'with subtle digital glitch, chromatic aberration, and dreamy neon color shift',
+          intensity: {
+            1: 'with very subtle digital glitch, minimal chromatic aberration, and soft dreamy neon color shift',
+            2: 'with subtle digital glitch, mild chromatic aberration, and gentle dreamy neon color shift',
+            3: 'with subtle digital glitch, chromatic aberration, and dreamy neon color shift',
+            4: 'with noticeable digital glitch, strong chromatic aberration, and vibrant dreamy neon color shift',
+            5: 'with intense digital glitch, extreme chromatic aberration, and dramatic dreamy neon color shift'
+          }
+        },
+        sophisticated: {
+          base: 'with subtle digital glitch, chromatic aberration, and dreamy neon color shift',
+          intensity: {
+            1: 'with very subtle digital glitch, minimal chromatic aberration, and soft dreamy neon color shift',
+            2: 'with subtle digital glitch, mild chromatic aberration, and gentle dreamy neon color shift',
+            3: 'with subtle digital glitch, chromatic aberration, and dreamy neon color shift',
+            4: 'with noticeable digital glitch, strong chromatic aberration, and vibrant dreamy neon color shift',
+            5: 'with intense digital glitch, extreme chromatic aberration, and dramatic dreamy neon color shift'
+          }
+        },
+        // #긴박한 / #강렬한
+        intense: {
+          base: 'with extreme speed ramping, directional motion blur, and sudden sharp focus',
+          intensity: {
+            1: 'with gentle speed ramping, subtle motion blur, and gradual sharp focus',
+            2: 'with moderate speed ramping, noticeable motion blur, and quick sharp focus',
+            3: 'with extreme speed ramping, directional motion blur, and sudden sharp focus',
+            4: 'with intense speed ramping, strong directional motion blur, and dramatic sudden sharp focus',
+            5: 'with maximum speed ramping, extreme directional motion blur, and ultra-dramatic sudden sharp focus'
+          }
+        },
+        // #차분한 / #정보전달
+        calm: {
+          base: 'with smooth slow push-in and subtle clarity enhancement for a clean look',
+          intensity: {
+            1: 'with very smooth slow push-in and minimal clarity enhancement for a clean look',
+            2: 'with smooth slow push-in and subtle clarity enhancement for a clean look',
+            3: 'with smooth slow push-in and noticeable clarity enhancement for a clean look',
+            4: 'with smooth slow push-in and strong clarity enhancement for a clean look',
+            5: 'with smooth slow push-in and maximum clarity enhancement for a clean look'
+          }
+        },
+        informative: {
+          base: 'with smooth slow push-in and subtle clarity enhancement for a clean look',
+          intensity: {
+            1: 'with very smooth slow push-in and minimal clarity enhancement for a clean look',
+            2: 'with smooth slow push-in and subtle clarity enhancement for a clean look',
+            3: 'with smooth slow push-in and noticeable clarity enhancement for a clean look',
+            4: 'with smooth slow push-in and strong clarity enhancement for a clean look',
+            5: 'with smooth slow push-in and maximum clarity enhancement for a clean look'
+          }
+        }
+      };
+
+      return effectTable[mood] || effectTable.informative; // 기본값: 정보전달
+    }
+
+    // 타겟 장면 식별 및 VEO 프롬프트 인젝션 (비트 드롭 효과)
+    function injectBeatDropEffects(videoData) {
+      if (!videoData || !bgmHotspot) {
+        return videoData;
+      }
+
+      // 분위기별 효과 가져오기
+      var moodEffect = getEffectByMood(selectedMood);
+      var effectPrompt = moodEffect.intensity && moodEffect.intensity[effectIntensity] 
+        ? moodEffect.intensity[effectIntensity] 
+        : moodEffect.base;
+
+      // 쇼츠 타임라인에서 핫스팟 구간 계산
+      var hotspotTime = bgmHotspot.time;
+      var hotspotStart = hotspotTime - 0.5; // 0.5초 전부터 시작
+      var hotspotEnd = hotspotTime + 0.5; // 0.5초 후까지
+
+      // 영상 데이터 복사
+      var enhancedData = JSON.parse(JSON.stringify(videoData));
+
+      // 각 씬의 타임라인 계산 및 프롬프트 인젝션
+      if (enhancedData.generatedVideos && enhancedData.generatedVideos.length > 0) {
+        var currentTime = 0;
+        
+        enhancedData.generatedVideos.forEach(function(scene) {
+          // 씬의 대략적인 길이 추정 (기본 30초 또는 실제 길이)
+          var sceneDuration = scene.duration || 30;
+          var sceneStart = currentTime;
+          var sceneEnd = currentTime + sceneDuration;
+
+          // 핫스팟 구간이 이 씬에 포함되는지 확인
+          if (hotspotStart >= sceneStart && hotspotStart <= sceneEnd) {
+            // 기본 프롬프트 가져오기 (씬의 image_prompt 또는 visual_description 사용)
+            var basePrompt = scene.image_prompt || scene.visual_description || '';
+            
+            // 분위기별 비트 드롭 효과 프롬프트 인젝션
+            var enhancedPrompt = basePrompt + ', ' + effectPrompt + ' for dramatic effect emphasized by the music beat drop.';
+            
+            // 프롬프트 업데이트
+            scene.image_prompt = enhancedPrompt;
+            scene.visual_description = enhancedPrompt;
+            scene.beat_drop_effect = true;
+            scene.beat_drop_time = hotspotTime - sceneStart; // 씬 내 상대 시간
+            scene.beat_drop_mood = selectedMood;
+            scene.beat_drop_intensity = effectIntensity;
+          }
+
+          currentTime = sceneEnd;
+        });
+      }
+
+      // JSON 데이터의 scenes 배열도 업데이트
+      if (enhancedData.jsonData && enhancedData.jsonData.scenes) {
+        var currentTime = 0;
+        
+        enhancedData.jsonData.scenes.forEach(function(scene) {
+          var sceneDuration = 30; // 기본 30초 추정
+          var sceneStart = currentTime;
+          var sceneEnd = currentTime + sceneDuration;
+
+          if (hotspotStart >= sceneStart && hotspotStart <= sceneEnd) {
+            var basePrompt = scene.image_prompt || scene.visual_description || '';
+            var enhancedPrompt = basePrompt + ', ' + effectPrompt + ' for dramatic effect emphasized by the music beat drop.';
+            
+            scene.image_prompt = enhancedPrompt;
+            scene.visual_description = enhancedPrompt;
+            scene.beat_drop_effect = true;
+            scene.beat_drop_time = hotspotTime - sceneStart;
+            scene.beat_drop_mood = selectedMood;
+            scene.beat_drop_intensity = effectIntensity;
+          }
+
+          currentTime = sceneEnd;
+        });
+      }
+
+      return enhancedData;
+    }
+
+    // 비디오 타임라인에 핫스팟 마커 렌더링
+    function renderTimelineHotspot() {
+      if (!bgmHotspot) return;
+
+      var videoPreview = document.getElementById('videoPreview');
+      var timelineOverlay = document.getElementById('videoTimelineOverlay');
+      var timelineHotspot = document.getElementById('timelineHotspot');
+
+      if (!videoPreview || !timelineOverlay || !timelineHotspot) return;
+
+      var duration = videoPreview.duration;
+      if (!duration || duration === 0) return;
+
+      // 핫스팟 위치 계산 (비디오 타임라인 기준)
+      var hotspotPosition = (bgmHotspot.time / duration) * 100;
+      
+      timelineHotspot.style.left = hotspotPosition + '%';
+      timelineHotspot.style.display = 'block';
+      timelineOverlay.style.display = 'block';
+    }
+
+    // 쇼츠 다운로드
+    function downloadShorts() {
+      if (!convertedVideoUrl) {
+        alert('변환된 영상이 없습니다.');
+        return;
+      }
+
+      var a = document.createElement('a');
+      a.href = convertedVideoUrl;
+      a.download = 'shorts_' + selectedPlatform + '_' + Date.now() + '.mp4';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // 로그온 시스템
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 입력하세요.');
+        return;
+      }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) {
+        return u.id === id && u.password === pw;
+      });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) {
+          logout();
+          alert('로그아웃되었습니다.');
+        }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+  </script>
+</body>
+</html>

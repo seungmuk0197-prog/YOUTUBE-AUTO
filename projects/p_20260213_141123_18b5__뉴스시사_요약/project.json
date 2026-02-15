@@ -1,0 +1,221 @@
+{
+  "id": "p_20260213_141123_18b5",
+  "createdAt": "2026-02-13T14:11:23.184515+09:00",
+  "created_at": "2026-02-13T14:11:23.184515+09:00",
+  "updatedAt": "2026-02-14T01:38:16.143902+09:00",
+  "updated_at": "2026-02-13T15:30:20.891462+09:00",
+  "topic": "뉴스/시사 요약",
+  "name": "뉴스/시사 요약",
+  "provider": "imagen4",
+  "aspectRatio": "16:9",
+  "blueprint": {
+    "topic": "뉴스/시사 요약",
+    "length": 60,
+    "tone": "casual",
+    "targetAudience": "general",
+    "style": "shorts",
+    "coreMessage": "뉴스/시사 요약에 대한 핵심 정보를 쉽고 빠르게 알려드립니다",
+    "viewerPainPoint": "뉴스/시사 요약에 대해 궁금하지만 정보가 너무 많아 혼란스러운 분들",
+    "hookType": [
+      "question"
+    ],
+    "emotionIntensity": 3,
+    "scriptStructure": "hook",
+    "additionalRequests": "",
+    "generationStrategy": {
+      "openingStyle": "question",
+      "emotionalCurve": "dynamic",
+      "persuasiveStyle": "emotional",
+      "pacing": "fast"
+    },
+    "metadata": {
+      "createdAt": "2026-02-13T05:11:33.956Z",
+      "version": "2.1",
+      "source": "manual"
+    }
+  },
+  "script": "혹시 뉴스가 너무 많아서 헷갈린 적 있어? 오늘은 뉴스/시사 요약에 대한 핵심 정보를 쉽고 빠르게 알려드릴게. \n\n요즘 뉴스는 정말 다양해. 정치부터 경제, 사회 문제까지 안 다루는 게 없어. 이럴 때 필요한 게 바로 요약이야. 중요한 정보만 쏙쏙 뽑아주는 거지. \n\n예를 들어, 최근 현안인 부동산 문제. 전문가들은 이제 재테크 방향이 바뀌고 있다고 해. 또, 기후 변화도 계속 이슈지. 정부의 새로운 정책이 어떤지 알아보는 것도 중요해. \n\n이런 정보들을 쉽게 이해할 수 있도록 요약해주면, 시간도 절약하고 스트레스도 줄일 수 있어. \n\n그러니까, 앞으로 뉴스 요약 잘 챙겨보자. 더 궁금한 거 있으면 댓글로 알려줘! 그리고 좋아요, 구독 잊지 말고!",
+  "characters": [],
+  "scenes": [
+    {
+      "id": "scene_1770964214795_0",
+      "sequence": 1,
+      "text": "",
+      "duration": 12,
+      "startTime": 0,
+      "endTime": 12,
+      "imagePrompt": "featuring A female narrator or presenter, professional, modern style, trustworthy and clear voice, suitable for documentary or educational video., , character, , character, modern lifestyle, everyday scene, professional photography, introduction scene with clear message, professional photography, high quality, vibrant colors, well-lit, sharp focus, detailed, clean composition, 16:9 aspect ratio, modern aesthetic, engaging visual",
+      "imageStyle": "vibrant",
+      "imageUrl": null,
+      "transition": "none",
+      "effects": {
+        "zoom": false,
+        "pan": false,
+        "kenBurns": false,
+        "textAnimation": "none"
+      },
+      "characterId": "char_slot_1770964173611_0"
+    },
+    {
+      "id": "scene_1770964214795_2",
+      "sequence": 2,
+      "text": "",
+      "duration": 8,
+      "startTime": 12,
+      "endTime": 20,
+      "imagePrompt": "featuring A female narrator or presenter, professional, modern style, trustworthy and clear voice, suitable for documentary or educational video., , character, , character, modern lifestyle, everyday scene, professional photography, main content demonstration, professional photography, high quality, vibrant colors, well-lit, sharp focus, detailed, clean composition, 16:9 aspect ratio, modern aesthetic, engaging visual",
+      "imageStyle": "vibrant",
+      "imageUrl": null,
+      "transition": "none",
+      "effects": {
+        "zoom": false,
+        "pan": false,
+        "kenBurns": false,
+        "textAnimation": "none"
+      },
+      "characterId": "char_slot_1770964173611_0"
+    },
+    {
+      "id": "scene_1770964214795_4",
+      "sequence": 3,
+      "text": "",
+      "duration": 8,
+      "startTime": 20,
+      "endTime": 28,
+      "imagePrompt": "featuring A female narrator or presenter, professional, modern style, trustworthy and clear voice, suitable for documentary or educational video., , character, , character, modern lifestyle, everyday scene, professional photography, detailed explanation or process, professional photography, high quality, vibrant colors, well-lit, sharp focus, detailed, clean composition, 16:9 aspect ratio, modern aesthetic, engaging visual",
+      "imageStyle": "vibrant",
+      "imageUrl": null,
+      "transition": "none",
+      "effects": {
+        "zoom": false,
+        "pan": false,
+        "kenBurns": false,
+        "textAnimation": "none"
+      },
+      "characterId": "char_slot_1770964173611_0"
+    },
+    {
+      "id": "scene_1770964214795_6",
+      "sequence": 4,
+      "text": "",
+      "duration": 10,
+      "startTime": 28,
+      "endTime": 38,
+      "imagePrompt": "featuring A female narrator or presenter, professional, modern style, trustworthy and clear voice, suitable for documentary or educational video., , character, , character, modern lifestyle, everyday scene, professional photography, conclusion with positive outcome, professional photography, high quality, vibrant colors, well-lit, sharp focus, detailed, clean composition, 16:9 aspect ratio, modern aesthetic, engaging visual",
+      "imageStyle": "vibrant",
+      "imageUrl": null,
+      "transition": "none",
+      "effects": {
+        "zoom": false,
+        "pan": false,
+        "kenBurns": false,
+        "textAnimation": "none"
+      },
+      "characterId": "char_slot_1770964173611_0"
+    },
+    {
+      "id": "scene_1770964214795_8",
+      "sequence": 5,
+      "text": "",
+      "duration": 9,
+      "startTime": 38,
+      "endTime": 47,
+      "imagePrompt": "featuring A female narrator or presenter, professional, modern style, trustworthy and clear voice, suitable for documentary or educational video., , character, , character, modern lifestyle, everyday scene, professional photography, introduction scene with clear message, professional photography, high quality, vibrant colors, well-lit, sharp focus, detailed, clean composition, 16:9 aspect ratio, modern aesthetic, engaging visual",
+      "imageStyle": "vibrant",
+      "imageUrl": null,
+      "transition": "none",
+      "effects": {
+        "zoom": false,
+        "pan": false,
+        "kenBurns": false,
+        "textAnimation": "none"
+      },
+      "characterId": "char_slot_1770964173611_0"
+    },
+    {
+      "id": "scene_1770964214795_10",
+      "sequence": 6,
+      "text": "",
+      "duration": 15,
+      "startTime": 47,
+      "endTime": 62,
+      "imagePrompt": "featuring A female narrator or presenter, professional, modern style, trustworthy and clear voice, suitable for documentary or educational video., , character, , character, modern lifestyle, everyday scene, professional photography, main content demonstration, professional photography, high quality, vibrant colors, well-lit, sharp focus, detailed, clean composition, 16:9 aspect ratio, modern aesthetic, engaging visual",
+      "imageStyle": "vibrant",
+      "imageUrl": null,
+      "transition": "none",
+      "effects": {
+        "zoom": false,
+        "pan": false,
+        "kenBurns": false,
+        "textAnimation": "none"
+      },
+      "characterId": "char_slot_1770964173611_0"
+    },
+    {
+      "id": "scene_1770964214795_12",
+      "sequence": 7,
+      "text": "",
+      "duration": 8,
+      "startTime": 62,
+      "endTime": 70,
+      "imagePrompt": "featuring A female narrator or presenter, professional, modern style, trustworthy and clear voice, suitable for documentary or educational video., , character, , character, modern lifestyle, everyday scene, professional photography, detailed explanation or process, professional photography, high quality, vibrant colors, well-lit, sharp focus, detailed, clean composition, 16:9 aspect ratio, modern aesthetic, engaging visual",
+      "imageStyle": "vibrant",
+      "imageUrl": null,
+      "transition": "none",
+      "effects": {
+        "zoom": false,
+        "pan": false,
+        "kenBurns": false,
+        "textAnimation": "none"
+      },
+      "characterId": "char_slot_1770964173611_0"
+    }
+  ],
+  "thumbnail": {
+    "text": "",
+    "mode": "with_text",
+    "path": null
+  },
+  "settings": {
+    "video": {
+      "fps": 30,
+      "width": 1280,
+      "height": 720
+    },
+    "tts": {
+      "voice": "alloy",
+      "format": "mp3"
+    },
+    "bgm": {
+      "enabled": false,
+      "path": null,
+      "volume": 0.15
+    },
+    "subtitles": {
+      "enabled": false
+    }
+  },
+  "status": {
+    "script": "pending",
+    "images": "pending",
+    "tts": "pending",
+    "render": "pending",
+    "archived": false,
+    "isPinned": false,
+    "lastOpenedAt": null
+  },
+  "lastRun": {
+    "timingsMs": {},
+    "error": null
+  },
+  "folderName": "p_20260213_141123_18b5__뉴스시사_요약",
+  "hasScript": true,
+  "hasScenesJson": true,
+  "scenesCount": 7,
+  "imagesCount": 0,
+  "previewImageUrl": null,
+  "hasTts": false,
+  "ttsCount": 0,
+  "hasVideo": false,
+  "title": "뉴스/시사 요약"
+}

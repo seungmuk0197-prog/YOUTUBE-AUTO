@@ -1,0 +1,1679 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5-2. 배경음악(BGM) 삽입</title>
+  <!-- WaveSurfer.js for waveform visualization -->
+  <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+    /* 1~2단계(AI 창작)와 3단계(사용자 제어) 시각적 구분 */
+    .workflow-list li:nth-child(3) .workflow-item {
+      margin-top: 10px;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 14px;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { flex: 1; }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    .content-card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .field-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    /* Mood Filter */
+    .mood-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .mood-tag {
+      padding: 8px 14px;
+      background: #fff;
+      border: 2px solid #e2e8f0;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #4a5568;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mood-tag:hover {
+      border-color: #805ad5;
+      background: #f7fafc;
+    }
+    .mood-tag.selected {
+      border-color: #805ad5;
+      background: #f3e8ff;
+      color: #553c9a;
+      font-weight: 600;
+    }
+
+    /* Track List */
+    .track-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .track-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .track-item.selected {
+      background: #f3e8ff;
+      border-color: #805ad5;
+    }
+    .track-info {
+      flex: 1;
+    }
+    .track-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 4px;
+    }
+    .track-meta {
+      font-size: 12px;
+      color: #666;
+    }
+    .track-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-track {
+      padding: 6px 12px;
+      background: #805ad5;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-track:hover { background: #6b46c1; }
+    .btn-track.secondary {
+      background: #4a5568;
+    }
+    .btn-track.secondary:hover { background: #2d3748; }
+    .btn-track.selected {
+      background: #48bb78;
+    }
+
+    /* Audio Mixer */
+    .audio-mixer {
+      margin-top: 20px;
+    }
+    .mixer-player {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .mixer-player audio {
+      width: 100%;
+      margin-bottom: 12px;
+    }
+    /* Waveform Container */
+    .waveform-container {
+      width: 100%;
+      height: 120px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .waveform-wrapper {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .waveform-bgm {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      z-index: 1;
+    }
+    .waveform-voice {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      z-index: 2;
+      opacity: 0.7;
+    }
+    .waveform-bpm-marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(255, 107, 174, 0.3);
+      z-index: 10;
+      pointer-events: none;
+    }
+    .waveform-bpm-marker.strong {
+      background: rgba(255, 107, 174, 0.6);
+      width: 3px;
+    }
+    .waveform-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #999;
+      font-size: 13px;
+    }
+    .waveform-notification {
+      font-size: 11px;
+      color: #805ad5;
+      margin-top: 8px;
+      padding: 6px 10px;
+      background: #f3e8ff;
+      border-radius: 6px;
+      border: 1px solid #e9d8fd;
+      text-align: center;
+    }
+    .beat-bar {
+      transition: transform 0.1s ease-out;
+    }
+    .beat-bar.beat-active {
+      transform: scaleY(1.3);
+      filter: brightness(1.2);
+    }
+    .volume-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .volume-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .volume-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    .volume-slider-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .volume-slider {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #805ad5;
+      cursor: pointer;
+    }
+    .volume-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #805ad5;
+      cursor: pointer;
+      border: none;
+    }
+    .volume-value {
+      font-size: 12px;
+      font-weight: 600;
+      color: #553c9a;
+      min-width: 40px;
+      text-align: right;
+    }
+    .mixer-options {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .option-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .option-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .option-label {
+      font-size: 12px;
+      color: #4a5568;
+    }
+
+    .btn-primary {
+      padding: 10px 16px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #c62828; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item active">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>5-2. 배경음악(BGM) 삽입</h1>
+          <p class="subtitle">영상에 어울리는 배경음악을 선택하고 믹싱합니다</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI BGM 추천 및 선택 -->
+      <div class="content-card">
+        <div class="field-label">AI BGM 추천</div>
+        <p class="section-desc">2단계 대본 기획의 전문가 분석 데이터를 기반으로 가장 어울리는 곡을 추천합니다.</p>
+
+        <!-- 분위기 필터 -->
+        <div class="field-label" style="margin-top: 16px; font-size: 13px;">분위기 필터</div>
+        <div class="mood-filter" id="moodFilter">
+          <button class="mood-tag" data-mood="calm">#차분한</button>
+          <button class="mood-tag" data-mood="epic">#웅장한</button>
+          <button class="mood-tag" data-mood="intense">#긴박한</button>
+          <button class="mood-tag" data-mood="emotional">#감성적인</button>
+          <button class="mood-tag" data-mood="informative">#정보전달</button>
+          <button class="mood-tag" data-mood="cheerful">#유쾌한</button>
+          <button class="mood-tag" data-mood="mysterious">#신비로운</button>
+          <button class="mood-tag" data-mood="lively">#경쾌한</button>
+          <button class="mood-tag" data-mood="warm">#따뜻한</button>
+          <button class="mood-tag" data-mood="sophisticated">#세련된</button>
+          <button class="mood-tag" data-mood="solemn">#비장한</button>
+        </div>
+
+        <!-- 추천 리스트 -->
+        <div class="field-label" style="margin-top: 20px;">AI 추천 트랙</div>
+        <div class="track-list" id="trackList">
+          <!-- 동적으로 생성됩니다 -->
+        </div>
+      </div>
+
+      <!-- 오디오 믹서 미리보기 -->
+      <div class="content-card">
+        <div class="field-label">오디오 믹서 미리보기</div>
+        <p class="section-desc">선택한 BGM과 TTS 목소리를 합쳐서 미리 들어볼 수 있습니다.</p>
+
+        <div class="audio-mixer">
+          <div class="mixer-player">
+            <audio id="mixedAudio" controls></audio>
+            <!-- Waveform Visualization -->
+            <div class="waveform-container" id="waveformContainer">
+              <div class="waveform-loading" id="waveformLoading">파형을 로드하는 중...</div>
+              <div class="waveform-wrapper" id="waveformWrapper" style="display: none;">
+                <div id="waveformBGM" class="waveform-bgm"></div>
+                <div id="waveformVoice" class="waveform-voice"></div>
+                <div id="waveformBPMMarkers"></div>
+              </div>
+            </div>
+            <div style="font-size: 12px; color: #666; margin-top: 8px;">합성된 오디오 미리보기</div>
+            <div class="waveform-notification" id="waveformNotification" style="display: none;">
+              현재 BGM의 비트에 맞춰 영상 전환점이 자동으로 설정되었습니다
+            </div>
+          </div>
+
+          <!-- 볼륨 조절 -->
+          <div class="volume-controls">
+            <div class="volume-item">
+              <div class="volume-label">목소리 볼륨</div>
+              <div class="volume-slider-container">
+                <input type="range" class="volume-slider" id="voiceVolume" min="0" max="100" value="100" />
+                <span class="volume-value" id="voiceVolumeValue">100%</span>
+              </div>
+            </div>
+            <div class="volume-item">
+              <div class="volume-label">배경음악 볼륨</div>
+              <div class="volume-slider-container">
+                <input type="range" class="volume-slider" id="bgmVolume" min="0" max="100" value="20" />
+                <span class="volume-value" id="bgmVolumeValue">20%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 믹싱 옵션 -->
+          <div class="mixer-options">
+            <div class="option-item">
+              <input type="checkbox" class="option-checkbox" id="autoFitting" checked />
+              <label class="option-label" for="autoFitting">선택한 영상 길이에 맞춰 BGM 자동 최적화</label>
+            </div>
+            <div class="option-item">
+              <input type="checkbox" class="option-checkbox" id="autoDucking" checked />
+              <label class="option-label" for="autoDucking">오디오 더킹 (TTS 구간에서 BGM 자동 낮춤)</label>
+            </div>
+            <div class="option-item">
+              <input type="checkbox" class="option-checkbox" id="autoLoop" />
+              <label class="option-label" for="autoLoop">자동 반복 (Loop)</label>
+            </div>
+            <div class="option-item">
+              <input type="checkbox" class="option-checkbox" id="fadeOut" />
+              <label class="option-label" for="fadeOut">페이드 아웃 처리</label>
+            </div>
+          </div>
+
+          <!-- 오디오 길이 비주얼라이저 -->
+          <div class="audio-length-visualizer" id="audioLengthVisualizer" style="display: none;">
+            <div class="visualizer-label">영상 길이 vs BGM 길이</div>
+            <div class="length-bar-container">
+              <div class="length-bar-bg">
+                <div class="length-bar-video" id="videoLengthBar"></div>
+                <div class="length-bar-bgm" id="bgmLengthBar"></div>
+                <div class="length-bar-fade" id="fadeOutBar" style="display: none;"></div>
+              </div>
+            </div>
+            <div class="length-info" id="lengthInfo"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 음악 확정 및 다음 단계 -->
+      <div style="margin-top: 24px; display: flex; gap: 12px;">
+        <button class="btn-primary" type="button" id="btnConfirmMusic">음악 확정하기</button>
+        <button class="btn-primary" type="button" id="btnGoToStep6">6. 영상 렌더링 단계로 이동</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    var selectedMood = null;
+    var selectedTrack = null;
+    var recommendedTracks = [];
+    var ttsData = null;
+    var blueprintData = null;
+    var voiceVolume = 100;
+    var bgmVolume = 20;
+    var autoLoop = false;
+    var fadeOut = false;
+    var autoFitting = true;
+    var autoDucking = true;
+    var wavesurferBGM = null;
+    var wavesurferVoice = null;
+    var currentBPM = null;
+    var bpmMarkers = [];
+    
+    // Step 3에서 선택한 형식 및 길이 정보
+    var videoFormat = 'shorts'; // 'shorts' or 'longform'
+    var videoDuration = '1m'; // '30s', '1m', etc.
+    var targetVideoMinutes = 1; // 목표 영상 길이 (분 단위)
+    var selectedTone = 'senior-expert'; // Step 3에서 선택한 톤앤매너
+
+    // 톤앤매너 기반 BGM 카테고리 매핑 (IIFE보다 먼저 정의)
+    var toneToMoodMap = {
+      'senior-expert': 'informative',
+      'friendly-neighbor': 'warm',
+      'grandchild-friendly': 'warm',
+      'charismatic-trainer': 'lively',
+      'professional-analyst': 'informative',
+      'emotional-storyteller': 'emotional',
+      'humorous-comedian': 'cheerful',
+      'urgent-news-anchor': 'intense'
+    };
+    function getMoodLabel(mood) {
+      var labels = {
+        calm: '차분한', epic: '웅장한', intense: '긴박한', emotional: '감성적인',
+        informative: '정보전달', cheerful: '유쾌한', mysterious: '신비로운',
+        lively: '경쾌한', warm: '따뜻한', sophisticated: '세련된', solemn: '비장한'
+      };
+      return labels[mood] || '';
+    }
+
+    // 목표 길이를 분 단위로 변환
+    function parseTargetDuration(durationStr) {
+      if (durationStr.endsWith('s')) {
+        return parseInt(durationStr) / 60; // 초를 분으로
+      } else if (durationStr.endsWith('m')) {
+        return parseInt(durationStr); // 분
+      }
+      return 1; // 기본값
+    }
+
+    // Step5 -> Step5-2 데이터 로드
+    (function() {
+      try {
+        var ttsPayloadRaw = localStorage.getItem('step6TTSData');
+        var blueprintPayloadRaw = localStorage.getItem('step2Payload');
+        var step3DataRaw = localStorage.getItem('step3Blueprint');
+
+        if (ttsPayloadRaw) {
+          ttsData = JSON.parse(ttsPayloadRaw);
+        }
+        if (blueprintPayloadRaw) {
+          blueprintData = JSON.parse(blueprintPayloadRaw);
+        }
+        
+        // Step 3에서 선택한 형식 및 길이 정보 로드
+        if (step3DataRaw) {
+          try {
+            var step3Data = JSON.parse(step3DataRaw);
+            if (step3Data.format) videoFormat = step3Data.format;
+            if (step3Data.duration) videoDuration = step3Data.duration;
+            if (step3Data.targetMinutes) targetVideoMinutes = step3Data.targetMinutes;
+            if (step3Data.tone) selectedTone = step3Data.tone;
+          } catch (e) {
+            console.warn('Step 3 데이터 파싱 실패:', e);
+          }
+        }
+        
+        // localStorage에서 직접 읽기 (Step 3에서 저장한 경우)
+        var savedFormat = localStorage.getItem('currentFormat');
+        var savedDuration = localStorage.getItem('currentDuration');
+        if (savedFormat) videoFormat = savedFormat;
+        if (savedDuration) {
+          videoDuration = savedDuration;
+          targetVideoMinutes = parseTargetDuration(savedDuration);
+        }
+
+        setupMoodFilter();
+        setupAudioFittingControls();
+        generateAiRecommendations();
+      } catch (e) {
+        console.error('데이터 로드 실패:', e);
+      }
+    })();
+
+    // 오디오 자동 피팅 컨트롤 설정
+    function setupAudioFittingControls() {
+      var autoFittingCheck = document.getElementById('autoFitting');
+      var autoDuckingCheck = document.getElementById('autoDucking');
+      var autoLoopCheck = document.getElementById('autoLoop');
+      var fadeOutCheck = document.getElementById('fadeOut');
+
+      if (autoFittingCheck) {
+        autoFittingCheck.checked = autoFitting;
+        autoFittingCheck.addEventListener('change', function() {
+          autoFitting = this.checked;
+          if (selectedTrack) {
+            applyAutoFitting();
+          }
+        });
+      }
+
+      if (autoDuckingCheck) {
+        autoDuckingCheck.checked = autoDucking;
+        autoDuckingCheck.addEventListener('change', function() {
+          autoDucking = this.checked;
+          if (selectedTrack && ttsData) {
+            applyAudioDucking();
+          }
+        });
+      }
+
+      if (autoLoopCheck) {
+        autoLoopCheck.checked = autoLoop;
+        autoLoopCheck.addEventListener('change', function() {
+          autoLoop = this.checked;
+          if (selectedTrack) {
+            applyAutoFitting();
+          }
+        });
+      }
+
+      if (fadeOutCheck) {
+        fadeOutCheck.checked = fadeOut;
+        fadeOutCheck.addEventListener('change', function() {
+          fadeOut = this.checked;
+          if (selectedTrack) {
+            updateLengthVisualizer();
+          }
+        });
+      }
+    }
+
+    // 분위기 필터 설정
+    function setupMoodFilter() {
+      var filter = document.getElementById('moodFilter');
+      if (!filter) return;
+
+      filter.querySelectorAll('.mood-tag').forEach(function(tag) {
+        tag.addEventListener('click', function() {
+          filter.querySelectorAll('.mood-tag').forEach(function(t) {
+            t.classList.remove('selected');
+          });
+          this.classList.add('selected');
+          selectedMood = this.getAttribute('data-mood');
+          generateAiRecommendations();
+        });
+      });
+    }
+
+    // AI BGM 추천 생성
+    async function generateAiRecommendations() {
+      try {
+        var expertSummary = '';
+        var title = '';
+        var target = '';
+
+        if (blueprintData) {
+          title = blueprintData.title || '';
+          target = blueprintData.target || '';
+          expertSummary = blueprintData.expertSummary || '';
+        }
+
+        // 톤앤매너 기반 우선 추천 분위기 결정 (toneToMoodMap 미정의 시 방어)
+        var tone = (typeof selectedTone !== 'undefined' && selectedTone) ? selectedTone : 'senior-expert';
+        var preferredMood = (typeof toneToMoodMap !== 'undefined' && toneToMoodMap[tone]) ? toneToMoodMap[tone] : 'informative';
+        if (!selectedMood) {
+          selectedMood = preferredMood;
+          // UI에 반영
+          var moodFilter = document.getElementById('moodFilter');
+          if (moodFilter) {
+            moodFilter.querySelectorAll('.mood-tag').forEach(function(tag) {
+              tag.classList.remove('selected');
+              if (tag.getAttribute('data-mood') === preferredMood) {
+                tag.classList.add('selected');
+              }
+            });
+          }
+        }
+
+        // AI 프롬프트에 저주파(Bass) 주의사항 및 톤앤매너 정보 포함
+        var moodLabel = (typeof getMoodLabel === 'function') ? getMoodLabel : function(m) { return m || ''; };
+        var prompt = '영상 제목: ' + title + '\n' +
+          '타겟 시청자: ' + target + '\n' +
+          '전문가 분석: ' + expertSummary + '\n' +
+          '대본 톤앤매너: ' + tone + ' (이 톤에 가장 적합한 BGM 카테고리를 우선 추천하세요)\n\n' +
+          '위 정보를 바탕으로 영상에 가장 어울리는 배경음악 3개를 추천해주세요. ' +
+          '**중요: 배경음악에 저주파(Bass)가 너무 강하면 목소리가 뭉개져 들릴 수 있으니 중고음역대의 맑은 악기 구성을 우선 추천하세요.** ' +
+          (selectedMood ? '분위기: ' + moodLabel(selectedMood) : '') +
+          '\n\n톤앤매너 기반 우선 추천: ' + moodLabel(preferredMood) + ' 분위기의 BGM을 최우선으로 추천하세요.';
+
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/recommend-bgm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: prompt,
+            mood: selectedMood,
+            title: title,
+            target: target,
+            expert_summary: expertSummary
+          })
+        });
+
+        if (response.ok) {
+          var data = await response.json();
+          recommendedTracks = data.tracks || [];
+        } else {
+          // Fallback: 더미 데이터
+          recommendedTracks = generateDummyTracks();
+        }
+      } catch (e) {
+        console.error('BGM 추천 실패:', e);
+        recommendedTracks = generateDummyTracks();
+      }
+
+      renderTrackList();
+    }
+
+    // MoodTracks 객체 (11종 분위기 필터 데이터)
+    var MoodTracks = {
+      calm: [
+        { id: 'bgm-1', title: 'Peaceful Morning', artist: 'Ambient Library', duration: '2:30', url: '/audio/bgm-1.mp3', bpm: 80 },
+        { id: 'bgm-2', title: 'Gentle Breeze', artist: 'Nature Sounds', duration: '3:00', url: '/audio/bgm-2.mp3', bpm: 75 },
+        { id: 'bgm-3', title: 'Calm Reflection', artist: 'Meditation Music', duration: '2:45', url: '/audio/bgm-3.mp3', bpm: 70 }
+      ],
+      epic: [
+        { id: 'bgm-4', title: 'Epic Journey', artist: 'Cinematic Music', duration: '3:15', url: '/audio/bgm-4.mp3', bpm: 120 },
+        { id: 'bgm-5', title: 'Heroic Theme', artist: 'Orchestral', duration: '2:50', url: '/audio/bgm-5.mp3', bpm: 110 },
+        { id: 'bgm-6', title: 'Grand Finale', artist: 'Symphony', duration: '3:30', url: '/audio/bgm-6.mp3', bpm: 130 }
+      ],
+      intense: [
+        { id: 'bgm-7', title: 'Tension Build', artist: 'Suspense Music', duration: '2:20', url: '/audio/bgm-7.mp3', bpm: 140 },
+        { id: 'bgm-8', title: 'Racing Pulse', artist: 'Action Tracks', duration: '2:45', url: '/audio/bgm-8.mp3', bpm: 150 },
+        { id: 'bgm-9', title: 'Critical Moment', artist: 'Drama Music', duration: '3:00', url: '/audio/bgm-9.mp3', bpm: 135 }
+      ],
+      emotional: [
+        { id: 'bgm-10', title: 'Touching Melody', artist: 'Emotional Scores', duration: '3:10', url: '/audio/bgm-10.mp3', bpm: 90 },
+        { id: 'bgm-11', title: 'Heartfelt', artist: 'Piano Collection', duration: '2:55', url: '/audio/bgm-11.mp3', bpm: 85 },
+        { id: 'bgm-12', title: 'Deep Emotion', artist: 'Strings', duration: '3:20', url: '/audio/bgm-12.mp3', bpm: 88 }
+      ],
+      informative: [
+        { id: 'bgm-13', title: 'Clear Focus', artist: 'Background Music', duration: '2:40', url: '/audio/bgm-13.mp3', bpm: 100 },
+        { id: 'bgm-14', title: 'Professional Tone', artist: 'Corporate Music', duration: '3:05', url: '/audio/bgm-14.mp3', bpm: 95 },
+        { id: 'bgm-15', title: 'Stable Background', artist: 'Ambient Tracks', duration: '2:50', url: '/audio/bgm-15.mp3', bpm: 105 }
+      ],
+      cheerful: [
+        { id: 'bgm-16', title: 'Happy Vibes', artist: 'Upbeat Music', duration: '2:35', url: '/audio/bgm-16.mp3', bpm: 125 },
+        { id: 'bgm-17', title: 'Joyful Moment', artist: 'Positive Sounds', duration: '3:10', url: '/audio/bgm-17.mp3', bpm: 130 },
+        { id: 'bgm-18', title: 'Bright Energy', artist: 'Cheerful Tracks', duration: '2:50', url: '/audio/bgm-18.mp3', bpm: 128 }
+      ],
+      mysterious: [
+        { id: 'bgm-19', title: 'Mysterious Path', artist: 'Enigmatic Music', duration: '3:20', url: '/audio/bgm-19.mp3', bpm: 85 },
+        { id: 'bgm-20', title: 'Hidden Secrets', artist: 'Mystery Scores', duration: '2:55', url: '/audio/bgm-20.mp3', bpm: 80 },
+        { id: 'bgm-21', title: 'Dark Ambience', artist: 'Mysterious Library', duration: '3:15', url: '/audio/bgm-21.mp3', bpm: 88 }
+      ],
+      lively: [
+        { id: 'bgm-22', title: 'Energetic Beat', artist: 'Dynamic Music', duration: '2:40', url: '/audio/bgm-22.mp3', bpm: 135 },
+        { id: 'bgm-23', title: 'Vibrant Pulse', artist: 'Lively Tracks', duration: '3:00', url: '/audio/bgm-23.mp3', bpm: 140 },
+        { id: 'bgm-24', title: 'Active Rhythm', artist: 'Energetic Sounds', duration: '2:45', url: '/audio/bgm-24.mp3', bpm: 138 }
+      ],
+      warm: [
+        { id: 'bgm-25', title: 'Cozy Atmosphere', artist: 'Warm Music', duration: '3:05', url: '/audio/bgm-25.mp3', bpm: 95 },
+        { id: 'bgm-26', title: 'Gentle Warmth', artist: 'Comforting Sounds', duration: '2:50', url: '/audio/bgm-26.mp3', bpm: 92 },
+        { id: 'bgm-27', title: 'Soft Embrace', artist: 'Warm Library', duration: '3:15', url: '/audio/bgm-27.mp3', bpm: 90 }
+      ],
+      sophisticated: [
+        { id: 'bgm-28', title: 'Elegant Style', artist: 'Sophisticated Music', duration: '3:10', url: '/audio/bgm-28.mp3', bpm: 110 },
+        { id: 'bgm-29', title: 'Refined Taste', artist: 'Classy Tracks', duration: '2:55', url: '/audio/bgm-29.mp3', bpm: 108 },
+        { id: 'bgm-30', title: 'Polished Sound', artist: 'Sophisticated Library', duration: '3:20', url: '/audio/bgm-30.mp3', bpm: 112 }
+      ],
+      solemn: [
+        { id: 'bgm-31', title: 'Serious Tone', artist: 'Solemn Music', duration: '3:00', url: '/audio/bgm-31.mp3', bpm: 70 },
+        { id: 'bgm-32', title: 'Gravitas', artist: 'Solemn Scores', duration: '3:25', url: '/audio/bgm-32.mp3', bpm: 75 },
+        { id: 'bgm-33', title: 'Dignified Moment', artist: 'Solemn Library', duration: '3:10', url: '/audio/bgm-33.mp3', bpm: 72 }
+      ]
+    };
+
+    // 더미 트랙 생성 (API 실패 시) - MoodTracks 객체 참조
+    function generateDummyTracks() {
+      var moodKey = selectedMood || 'informative';
+      return MoodTracks[moodKey] || MoodTracks.informative;
+    }
+
+    // 트랙 리스트 렌더링
+    function renderTrackList() {
+      var container = document.getElementById('trackList');
+      if (!container) return;
+
+      if (!recommendedTracks.length) {
+        container.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">추천 트랙이 없습니다.</div>';
+        return;
+      }
+
+      container.innerHTML = recommendedTracks
+        .map(function(track) {
+          var isSelected = selectedTrack && selectedTrack.id === track.id;
+          return (
+            '<div class="track-item' +
+            (isSelected ? ' selected' : '') +
+            '" data-track-id="' +
+            track.id +
+            '">' +
+            '<div class="track-info">' +
+            '<div class="track-title">' +
+            escapeHtml(track.title) +
+            '</div>' +
+            '<div class="track-meta">' +
+            escapeHtml(track.artist) +
+            ' · ' +
+            track.duration +
+            '</div>' +
+            '</div>' +
+            '<div class="track-actions">' +
+            '<button class="btn-track secondary" type="button" onclick="previewTrack(\'' +
+            track.id +
+            '\')">미리듣기</button>' +
+            '<button class="btn-track' +
+            (isSelected ? ' selected' : '') +
+            '" type="button" onclick="selectTrack(\'' +
+            track.id +
+            '\')">' +
+            (isSelected ? '선택됨' : '선택') +
+            '</button>' +
+            '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
+    }
+
+    // 트랙 미리듣기
+    function previewTrack(trackId) {
+      var track = recommendedTracks.find(function(t) {
+        return t.id === trackId;
+      });
+      if (!track) return;
+
+      // 선택된 트랙으로 설정하고 웨이브폼 로드
+      selectedTrack = track;
+      currentBPM = track.bpm || 120;
+      loadWaveforms();
+
+      // 오디오 재생
+      var audio = new Audio(track.url);
+      audio.volume = bgmVolume / 100;
+      audio.play();
+      
+      // 웨이브폼과 동기화
+      if (wavesurferBGM) {
+        wavesurferBGM.play();
+      }
+    }
+
+    // 트랙 선택
+    function selectTrack(trackId) {
+      selectedTrack = recommendedTracks.find(function(t) {
+        return t.id === trackId;
+      });
+      if (!selectedTrack) return;
+
+      // BPM 데이터 읽기
+      currentBPM = selectedTrack.bpm || 120;
+      
+      renderTrackList();
+      loadWaveforms();
+      
+      // 자동 피팅 적용
+      if (autoFitting) {
+        applyAutoFitting();
+      }
+      
+      // 오디오 더킹 적용
+      if (autoDucking && ttsData) {
+        applyAudioDucking();
+      }
+      
+      updateMixedAudio();
+    }
+
+    // 웨이브폼 로드 (Pre-render)
+    async function loadWaveforms() {
+      if (!selectedTrack || !ttsData) {
+        document.getElementById('waveformLoading').style.display = 'block';
+        document.getElementById('waveformWrapper').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('waveformLoading').style.display = 'block';
+      document.getElementById('waveformWrapper').style.display = 'none';
+
+      try {
+        // BGM 웨이브폼 생성
+        if (wavesurferBGM) {
+          wavesurferBGM.destroy();
+        }
+        wavesurferBGM = WaveSurfer.create({
+          container: '#waveformBGM',
+          waveColor: '#ff6fae', // HANRA STUDIO 분홍색
+          progressColor: '#d53f8c',
+          cursorColor: '#ff6fae',
+          barWidth: 2,
+          barRadius: 1,
+          height: 60,
+          normalize: true,
+          interact: false,
+          barGap: 1
+        });
+
+        // TTS 웨이브폼 생성
+        if (wavesurferVoice) {
+          wavesurferVoice.destroy();
+        }
+        wavesurferVoice = WaveSurfer.create({
+          container: '#waveformVoice',
+          waveColor: '#3182ce', // 파란색
+          progressColor: '#2b6cb0',
+          cursorColor: '#3182ce',
+          barWidth: 2,
+          barRadius: 1,
+          height: 60,
+          normalize: true,
+          interact: false,
+          barGap: 1
+        });
+
+        // BGM 로드
+        await wavesurferBGM.load(selectedTrack.url);
+        
+        // 볼륨 적용 (파형 높이에 반영)
+        wavesurferBGM.setVolume(bgmVolume / 100);
+        
+        // 볼륨에 따라 파형 높이 조절 (시각적 피드백)
+        updateWaveformAmplitude('bgm', bgmVolume);
+
+        // TTS 오디오 로드 (첫 번째 씬의 오디오 사용)
+        if (ttsData.scenes && ttsData.scenes.length > 0 && ttsData.scenes[0].audioUrl) {
+          await wavesurferVoice.load(ttsData.scenes[0].audioUrl);
+          wavesurferVoice.setVolume(voiceVolume / 100);
+          
+          // 볼륨에 따라 파형 높이 조절 (시각적 피드백)
+          updateWaveformAmplitude('voice', voiceVolume);
+        }
+
+        // BPM 마커 생성
+        renderBPMMarkers();
+
+        // 재생 동기화
+        syncPlayback();
+
+        // 비트 타임라인 생성 및 저장
+        var duration = wavesurferBGM.getDuration();
+        var beatTimeline = generateBeatTimeline(currentBPM, duration);
+        if (beatTimeline) {
+          // 전역 상태에 비트 타임라인 저장
+          var bgmData = {
+            track: selectedTrack,
+            bpm: currentBPM,
+            beatTimeline: beatTimeline
+          };
+          localStorage.setItem('bgmBeatTimeline', JSON.stringify(bgmData));
+          
+          // 알림 표시
+          document.getElementById('waveformNotification').style.display = 'block';
+        }
+
+        document.getElementById('waveformLoading').style.display = 'none';
+        document.getElementById('waveformWrapper').style.display = 'block';
+      } catch (e) {
+        console.error('웨이브폼 로드 실패:', e);
+        document.getElementById('waveformLoading').textContent = '파형 로드 실패';
+      }
+    }
+
+    // 비트 타임라인 생성 (리듬 동기화)
+    function generateBeatTimeline(bpm, duration) {
+      if (!bpm || !duration) return null;
+
+      var beatInterval = 60 / bpm; // 초 단위 (1박자)
+      var barInterval = beatInterval * 4; // 4박자 = 1마디
+      var timeline = [];
+
+      for (var time = 0; time < duration; time += beatInterval) {
+        var beatIndex = Math.floor(time / beatInterval);
+        var barIndex = Math.floor(time / barInterval);
+        var isStrongBeat = beatIndex % 4 === 0; // 4박자마다 강한 비트
+        var isBarStart = beatIndex % 4 === 0; // 마디 시작
+
+        timeline.push({
+          time: time,
+          beatIndex: beatIndex,
+          barIndex: barIndex,
+          isStrongBeat: isStrongBeat,
+          isBarStart: isBarStart,
+          beatInterval: beatInterval,
+          barInterval: barInterval
+        });
+      }
+
+      return {
+        bpm: bpm,
+        duration: duration,
+        beatInterval: beatInterval,
+        barInterval: barInterval,
+        timeline: timeline,
+        totalBeats: timeline.length,
+        totalBars: Math.ceil(timeline.length / 4)
+      };
+    }
+
+    // BPM 마커 렌더링 (강한 비트 지점 표시)
+    function renderBPMMarkers() {
+      if (!wavesurferBGM || !currentBPM) return;
+
+      var container = document.getElementById('waveformBPMMarkers');
+      if (!container) return;
+
+      container.innerHTML = '';
+      bpmMarkers = [];
+
+      var duration = wavesurferBGM.getDuration();
+      var beatTimeline = generateBeatTimeline(currentBPM, duration);
+      
+      if (!beatTimeline) return;
+
+      beatTimeline.timeline.forEach(function(beat) {
+        var position = (beat.time / duration) * 100;
+
+        var marker = document.createElement('div');
+        marker.className = 'waveform-bpm-marker' + (beat.isStrongBeat ? ' strong' : '');
+        marker.style.left = position + '%';
+        marker.setAttribute('data-beat-time', beat.time);
+        container.appendChild(marker);
+        bpmMarkers.push(beat);
+      });
+    }
+
+    // 박자 강조 애니메이션 (비트에 따라 막대 Scale-up)
+    var beatAnimationTimer = null;
+    function startBeatAnimation() {
+      if (!wavesurferBGM || !currentBPM || !bpmMarkers.length) return;
+
+      // 기존 타이머 정리
+      if (beatAnimationTimer) {
+        clearInterval(beatAnimationTimer);
+      }
+
+      var beatInterval = 60 / currentBPM;
+      var lastBeatTime = -1;
+
+      beatAnimationTimer = setInterval(function() {
+        if (!wavesurferBGM || wavesurferBGM.isPlaying() === false) {
+          clearInterval(beatAnimationTimer);
+          beatAnimationTimer = null;
+          return;
+        }
+
+        var currentTime = wavesurferBGM.getCurrentTime();
+        
+        // 가장 가까운 비트 찾기
+        var nearestBeat = null;
+        var minDiff = Infinity;
+        
+        bpmMarkers.forEach(function(beat) {
+          var diff = Math.abs(beat.time - currentTime);
+          if (diff < minDiff && diff < beatInterval / 2) {
+            minDiff = diff;
+            nearestBeat = beat;
+          }
+        });
+
+        if (nearestBeat && nearestBeat.time !== lastBeatTime) {
+          lastBeatTime = nearestBeat.time;
+          
+          // 웨이브폼 막대 강조
+          var waveformEl = document.querySelector('#waveformBGM wave');
+          if (waveformEl) {
+            var bars = waveformEl.querySelectorAll('rect, path');
+            if (bars && bars.length > 0) {
+              var beatPosition = nearestBeat.time / wavesurferBGM.getDuration();
+              var barIndex = Math.floor(beatPosition * bars.length);
+              
+              if (barIndex >= 0 && barIndex < bars.length) {
+                var bar = bars[barIndex];
+                bar.classList.add('beat-bar');
+                bar.classList.add('beat-active');
+                
+                // 강한 비트는 더 크게
+                if (nearestBeat.isStrongBeat) {
+                  bar.style.transform = 'scaleY(1.5)';
+                } else {
+                  bar.style.transform = 'scaleY(1.3)';
+                }
+                
+                setTimeout(function() {
+                  bar.classList.remove('beat-active');
+                  bar.style.transform = '';
+                }, 150);
+              }
+            }
+          }
+        }
+      }, 50); // 50ms마다 체크하여 정확도 향상
+    }
+
+    // 재생 동기화
+    function syncPlayback() {
+      var audioEl = document.getElementById('mixedAudio');
+      if (!audioEl || !wavesurferBGM || !wavesurferVoice) return;
+
+      audioEl.addEventListener('play', function() {
+        wavesurferBGM.play();
+        wavesurferVoice.play();
+        startBeatAnimation(); // 박자 강조 애니메이션 시작
+      });
+
+      audioEl.addEventListener('pause', function() {
+        wavesurferBGM.pause();
+        wavesurferVoice.pause();
+      });
+
+      audioEl.addEventListener('timeupdate', function() {
+        var currentTime = audioEl.currentTime;
+        wavesurferBGM.seekTo(currentTime / wavesurferBGM.getDuration());
+        if (wavesurferVoice.getDuration()) {
+          wavesurferVoice.seekTo(currentTime / wavesurferVoice.getDuration());
+        }
+      });
+    }
+
+    // 파형 높이(Amplitude) 실시간 업데이트
+    function updateWaveformAmplitude(type, volume) {
+      var wavesurfer = type === 'bgm' ? wavesurferBGM : wavesurferVoice;
+      if (!wavesurfer) return;
+
+      // 볼륨에 따라 파형의 시각적 높이 조절
+      // WaveSurfer.js는 내부적으로 볼륨을 처리하지만, 시각적 피드백을 위해 스타일 조정
+      var container = type === 'bgm' ? document.getElementById('waveformBGM') : document.getElementById('waveformVoice');
+      if (container) {
+        var scale = volume / 100;
+        container.style.transform = 'scaleY(' + scale + ')';
+        container.style.transformOrigin = 'center';
+      }
+    }
+
+    // 카메라 움직임 주기 계산 (BPM 기반)
+    function calculateCameraMotionCycle(bpm) {
+      if (!bpm) return null;
+      
+      // BPM을 기반으로 카메라 움직임 주기 계산
+      // 예: 120 BPM = 0.5초마다 비트
+      var beatInterval = 60 / bpm; // 초 단위
+      var cameraCycle = beatInterval * 4; // 4박자 = 1마디
+      
+      return {
+        beatInterval: beatInterval,
+        cameraCycle: cameraCycle,
+        strongBeatInterval: beatInterval * 4, // 강한 비트 간격
+        transitionPoints: [] // 비트 타임라인에서 전환점 추출
+      };
+    }
+
+    // 합성 오디오 업데이트
+    function updateMixedAudio() {
+      // 실제로는 서버에서 TTS와 BGM을 합성해야 하지만,
+      // 여기서는 미리보기용으로 처리
+      if (selectedTrack && ttsData) {
+        // 합성된 오디오 URL 생성 (서버 API 호출)
+        generateMixedAudio();
+      }
+    }
+
+    // 합성 오디오 생성
+    async function generateMixedAudio(fittingParams, duckingParams) {
+      if (!selectedTrack || !ttsData) return;
+
+      try {
+        // TTS 총 길이 계산 (Step 3에서 선택한 목표 길이 사용)
+        var totalTTSDuration = targetVideoMinutes * 60;
+        
+        // BPM 기반 카메라 움직임 주기 계산
+        var cameraMotionCycle = calculateCameraMotionCycle(currentBPM);
+
+        var requestBody = {
+          bgm_url: selectedTrack.url,
+          tts_data: ttsData,
+          voice_volume: voiceVolume,
+          bgm_volume: bgmVolume,
+          auto_loop: autoLoop,
+          fade_out: fadeOut,
+          total_duration: totalTTSDuration,
+          target_duration: totalTTSDuration, // 목표 길이
+          bpm: currentBPM,
+          camera_motion_cycle: cameraMotionCycle,
+          format: videoFormat, // 'shorts' or 'longform'
+          auto_fitting: autoFitting,
+          auto_ducking: autoDucking
+        };
+
+        // 자동 피팅 파라미터 추가
+        if (fittingParams) {
+          requestBody.fitting_params = fittingParams;
+        }
+
+        // 오디오 더킹 파라미터 추가
+        if (duckingParams) {
+          requestBody.ducking_params = duckingParams;
+        }
+
+        // 비트 드롭 및 핫스팟 동기화
+        if (wavesurferBGM && currentBPM) {
+          var hotspot = detectBGMHotspot();
+          if (hotspot) {
+            requestBody.hotspot_sync = {
+              hotspot_time: hotspot.time,
+              hotspot_energy: hotspot.energy,
+              target_sync_point: videoFormat === 'shorts' ? 3 : 5 // 쇼츠: 3초, 롱폼: 5초
+            };
+          }
+        }
+
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/mix-audio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (response.ok) {
+          var data = await response.json();
+          var audioEl = document.getElementById('mixedAudio');
+          if (audioEl && data.mixed_audio_url) {
+            audioEl.src = data.mixed_audio_url;
+            // 자동 반복 설정
+            if (autoLoop) {
+              audioEl.loop = true;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('오디오 합성 실패:', e);
+      }
+    }
+
+    // 볼륨 슬라이더 이벤트
+    (function() {
+      var voiceSlider = document.getElementById('voiceVolume');
+      var bgmSlider = document.getElementById('bgmVolume');
+      var voiceValue = document.getElementById('voiceVolumeValue');
+      var bgmValue = document.getElementById('bgmVolumeValue');
+
+      if (voiceSlider && voiceValue) {
+        voiceSlider.addEventListener('input', function() {
+          voiceVolume = parseInt(this.value, 10);
+          voiceValue.textContent = voiceVolume + '%';
+          if (wavesurferVoice) {
+            wavesurferVoice.setVolume(voiceVolume / 100);
+            // 파형 높이 실시간 반영
+            updateWaveformAmplitude('voice', voiceVolume);
+          }
+          updateMixedAudio();
+        });
+      }
+
+      if (bgmSlider && bgmValue) {
+        bgmSlider.addEventListener('input', function() {
+          bgmVolume = parseInt(this.value, 10);
+          bgmValue.textContent = bgmVolume + '%';
+          if (wavesurferBGM) {
+            wavesurferBGM.setVolume(bgmVolume / 100);
+            // 파형 높이 실시간 반영
+            updateWaveformAmplitude('bgm', bgmVolume);
+          }
+          updateMixedAudio();
+        });
+      }
+
+      var loopCheckbox = document.getElementById('autoLoop');
+      var fadeCheckbox = document.getElementById('fadeOut');
+
+      if (loopCheckbox) {
+        loopCheckbox.addEventListener('change', function() {
+          autoLoop = this.checked;
+          updateMixedAudio();
+        });
+      }
+
+      if (fadeCheckbox) {
+        fadeCheckbox.addEventListener('change', function() {
+          fadeOut = this.checked;
+          updateMixedAudio();
+        });
+      }
+    })();
+
+    // 음악 확정하기
+    (function() {
+      var btnConfirm = document.getElementById('btnConfirmMusic');
+      if (btnConfirm) {
+        btnConfirm.addEventListener('click', function() {
+          if (!selectedTrack) {
+            alert('BGM을 선택해 주세요.');
+            return;
+          }
+
+          var bgmData = {
+            track: selectedTrack,
+            voice_volume: voiceVolume,
+            bgm_volume: bgmVolume,
+            auto_loop: autoLoop,
+            fade_out: fadeOut,
+            mood: selectedMood
+          };
+          localStorage.setItem('step52BGMData', JSON.stringify(bgmData));
+          alert('BGM이 확정되었습니다.');
+        });
+      }
+    })();
+
+    // 6단계로 이동
+    (function() {
+      var btnNext = document.getElementById('btnGoToStep6');
+      if (btnNext) {
+        btnNext.addEventListener('click', function() {
+          if (!selectedTrack) {
+            alert('BGM을 선택하고 확정해 주세요.');
+            return;
+          }
+
+          // BPM 기반 카메라 움직임 주기 계산
+          var cameraMotionCycle = calculateCameraMotionCycle(currentBPM);
+          
+          // 비트 타임라인 생성
+          var totalDuration = 0;
+          if (ttsData.scenes && ttsData.scenes.length) {
+            ttsData.scenes.forEach(function(scene) {
+              totalDuration += 30; // 기본 30초 추정
+            });
+          }
+          var beatTimeline = generateBeatTimeline(currentBPM, totalDuration || 120);
+
+          var bgmData = {
+            track: selectedTrack,
+            voice_volume: voiceVolume,
+            bgm_volume: bgmVolume,
+            auto_loop: autoLoop,
+            fade_out: fadeOut,
+            tts_data: ttsData,
+            bpm: currentBPM,
+            camera_motion_cycle: cameraMotionCycle,
+            beatTimeline: beatTimeline, // 리듬 동기화를 위한 비트 타임라인
+            mood: selectedMood
+          };
+          localStorage.setItem('step52BGMData', JSON.stringify(bgmData));
+          localStorage.setItem('bgmBeatTimeline', JSON.stringify({
+            track: selectedTrack,
+            bpm: currentBPM,
+            beatTimeline: beatTimeline
+          }));
+          window.location.href = 'step-7.html';
+        });
+      }
+    })();
+
+    // HTML 이스케이프
+    function escapeHtml(text) {
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 로그온 시스템
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 입력하세요.');
+        return;
+      }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) {
+        return u.id === id && u.password === pw;
+      });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) {
+          logout();
+          alert('로그아웃되었습니다.');
+        }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+    checkLoginStatus();
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+  </script>
+</body>
+</html>

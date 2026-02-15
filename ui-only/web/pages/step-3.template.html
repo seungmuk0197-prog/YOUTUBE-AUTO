@@ -1,0 +1,2349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3. 대본 직접 입력</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .sidebar-logo:hover {
+      color: #9333ea;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { flex: 1; }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    .content-card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .field-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    /* Recap card */
+    .recap-card {
+      background: #fff7fb;
+      border-color: #fed7e2;
+    }
+    .recap-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .recap-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid #fed7e2;
+    }
+    .recap-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #d53f8c;
+      margin-bottom: 2px;
+    }
+    .recap-value {
+      font-size: 13px;
+      color: #333;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+
+    /* Script editor */
+    .editor-textarea {
+      width: 100%;
+      min-height: 260px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e0;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    .btn-primary {
+      margin-top: 12px;
+      padding: 10px 16px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #c62828; }
+
+    .tone-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .tone-label {
+      font-size: 12px;
+      color: #555;
+    }
+    .tone-select {
+      height: 30px;
+      padding: 0 8px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e0;
+      font-size: 13px;
+      background: #fff;
+    }
+    .tone-preview {
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: #f0f9ff;
+      border-left: 3px solid #0ea5e9;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #0c4a6e;
+      line-height: 1.5;
+      display: none;
+    }
+    .tone-preview.show {
+      display: block;
+    }
+    .tone-preview strong {
+      color: #0369a1;
+    }
+    .keywords-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .keywords-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    .keywords-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    .keywords-input:focus {
+      outline: none;
+      border-color: #9333ea;
+      box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.1);
+    }
+    .keywords-hint {
+      font-size: 11px;
+      color: #718096;
+      margin-top: -4px;
+    }
+    .keyword-validation {
+      margin-top: 8px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      display: none;
+    }
+    .keyword-validation.warning {
+      background: #fef3c7;
+      border-left: 3px solid #f59e0b;
+      color: #92400e;
+      display: block;
+    }
+    .keyword-validation.success {
+      background: #d1fae5;
+      border-left: 3px solid #10b981;
+      color: #047857;
+      display: block;
+    }
+    .keyword-validation strong {
+      font-weight: 700;
+    }
+
+    /* Scene preview */
+    .scene-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .scene-card {
+      background: #f7fafc;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+      padding: 10px;
+    }
+    .scene-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 4px;
+    }
+    .scene-body {
+      font-size: 12px;
+      color: #4a5568;
+      line-height: 1.5;
+    }
+
+    .btn-next {
+      margin-top: 16px;
+      width: 100%;
+    }
+
+    /* Editor wrapper and duration gauge */
+    .editor-wrapper {
+      position: relative;
+    }
+    .duration-gauge {
+      position: absolute;
+      bottom: 8px;
+      right: 12px;
+      font-size: 11px;
+      color: #718096;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+    .duration-gauge.success {
+      color: #047857;
+      background: #d1fae5;
+      border-color: #10b981;
+    }
+    .duration-gauge.warning {
+      color: #92400e;
+      background: #fef3c7;
+      border-color: #f59e0b;
+    }
+    .duration-gauge.error {
+      color: #991b1b;
+      background: #fee2e2;
+      border-color: #ef4444;
+    }
+    .duration-gauge.refining {
+      color: #b91c1c;
+      background: #fee2e2;
+      border-color: #fca5a5;
+    }
+    .duration-gauge strong {
+      font-weight: 700;
+    }
+
+    /* Top selection bar */
+    .top-selection-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: #f7fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      flex-wrap: wrap;
+    }
+    .format-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .selector-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568;
+      white-space: nowrap;
+    }
+    .format-toggle {
+      display: flex;
+      gap: 4px;
+      background: #fff;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      padding: 2px;
+    }
+    .format-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4a5568;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .format-btn:hover {
+      background: #f7fafc;
+    }
+    .format-btn.active {
+      background: #e53935;
+      color: #fff;
+    }
+    .format-icon {
+      font-size: 16px;
+    }
+    .tone-row-inline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .duration-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .duration-select {
+      height: 32px;
+      padding: 0 8px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e0;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    /* Longform dashboard */
+    .longform-dashboard {
+      margin-top: 20px;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid #1e293b;
+    }
+    .longform-dashboard-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .longform-progress-bar {
+      width: 100%;
+      height: 12px;
+      background: #1e293b;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .longform-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #f97316 0%, #facc15 50%, #22c55e 100%);
+      transition: width 0.3s ease;
+    }
+    .longform-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+    .chapter-indicators {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .chapter-indicator {
+      height: 10px;
+      border-radius: 6px;
+      background: #334155;
+      border: 1px solid #475569;
+    }
+    .chapter-indicator.active {
+      background: #38bdf8;
+      border-color: #38bdf8;
+    }
+    .chapter-indicator.done {
+      background: #22c55e;
+      border-color: #16a34a;
+    }
+    .dashboard-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    .btn-stop-save {
+      padding: 6px 10px;
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Real-time status window */
+    .status-window {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      width: 260px;
+      max-height: 160px;
+      overflow-y: auto;
+      background: rgba(15, 23, 42, 0.95);
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 12px;
+      z-index: 9999;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    .status-window-title {
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .status-window-line {
+      margin-bottom: 4px;
+      color: #cbd5f5;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo" onclick="window.location.href='ai-automation-project.html'" title="홈으로 이동">HANRA STUDIO</div>
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item active">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>대본 직접 입력</h1>
+          <p class="subtitle">기획안을 바탕으로 AI 대본 초안을 생성하고 씬별 구성을 확인합니다</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 상단: Recap -->
+      <section class="content-card recap-card">
+        <div class="field-label">기본 정보 요약</div>
+        <p class="section-desc">2단계에서 확정한 제목·타겟·훅 문구를 다시 한 번 확인합니다.</p>
+        <div id="recapGrid" class="recap-grid"></div>
+      </section>
+
+      <!-- 중단: Script Editor -->
+      <section class="content-card">
+        <div class="field-label">AI 대본 초안 생성</div>
+        <p class="section-desc">영상 뼈대(Storyline)와 톤앤매너를 바탕으로 구어체 대본을 생성합니다.</p>
+        
+        <!-- 상단 선택 바: 영상 형식, 톤앤매너, 예상 길이 -->
+        <div class="top-selection-bar">
+          <!-- 영상 형식 선택 (토글) -->
+          <div class="format-selector">
+            <span class="selector-label">영상 형식</span>
+            <div class="format-toggle">
+              <button type="button" class="format-btn format-btn-shorts active" id="formatShorts" data-format="shorts">
+                <span class="format-icon">📱</span>
+                <span class="format-text">쇼츠</span>
+              </button>
+              <button type="button" class="format-btn format-btn-longform" id="formatLongform" data-format="longform">
+                <span class="format-icon">📺</span>
+                <span class="format-text">롱폼</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- 톤앤매너 드롭다운 -->
+          <div class="tone-row-inline">
+            <span class="tone-label">대본 톤앤매너</span>
+            <select id="toneSelect" class="tone-select">
+              <option value="senior-expert" selected>시니어 건강 전문가(기본)</option>
+              <option value="friendly-neighbor">친근한 이웃</option>
+              <option value="grandchild-friendly">손주처럼 다정한</option>
+              <option value="charismatic-trainer">카리스마 강사</option>
+              <option value="professional-analyst">전문 데이터 분석가</option>
+              <option value="emotional-storyteller">감성적인 이야기꾼</option>
+              <option value="humorous-comedian">유머러스한 만담가</option>
+              <option value="urgent-news-anchor">긴급 뉴스 앵커</option>
+            </select>
+          </div>
+          
+          <!-- 예상 영상 길이 드롭다운 -->
+          <div class="duration-selector">
+            <span class="selector-label">예상 영상 길이</span>
+            <select id="durationSelect" class="duration-select">
+              <option value="30s">30초</option>
+              <option value="1m" selected>1분</option>
+              <option value="2m">2분</option>
+              <option value="3m">3분</option>
+            </select>
+          </div>
+        </div>
+        
+        <div id="tonePreview" class="tone-preview"></div>
+        
+        <!-- 필수 포함 키워드 입력 -->
+        <div class="keywords-row">
+          <label class="keywords-label">필수 포함 키워드</label>
+          <input 
+            type="text" 
+            id="requiredKeywordsInput" 
+            class="keywords-input" 
+            placeholder="예: 건강, 시니어, 운동, 영양 (쉼표로 구분)"
+          />
+          <div class="keywords-hint">1단계에서 선정한 키워드가 자동 입력됩니다. 쉼표(,)로 구분하여 여러 키워드를 입력할 수 있습니다.</div>
+          <div id="keywordValidation" class="keyword-validation"></div>
+        </div>
+        <div class="editor-wrapper">
+          <textarea id="scriptEditor" class="editor-textarea" placeholder="AI가 생성한 대본이 여기에 표시됩니다. 필요 시 직접 수정해도 좋습니다."></textarea>
+          <div id="durationGauge" class="duration-gauge">
+            <span id="durationText">현재 분량: 계산 중... / 목표: <span id="targetDuration">1분</span></span>
+          </div>
+        </div>
+        <button class="btn-primary" type="button" id="btnGenerateScript">AI 대본 초안 생성하기</button>
+      </section>
+
+      <!-- 하단: Scene Preview -->
+      <section class="content-card">
+        <div class="field-label">씬(Scene)별 분할 미리보기</div>
+        <p class="section-desc">2단계에서 작성한 영상 뼈대(Storyline)를 기준으로 씬별 구성을 확인합니다.</p>
+        <div id="sceneGrid" class="scene-grid"></div>
+        <button class="btn-primary btn-next" type="button" id="btnGoToStep4">4-1. JSON 생성 단계로 이동</button>
+      </section>
+
+      <!-- 실시간 장편 제작 대시보드 -->
+      <section class="longform-dashboard" id="longformDashboard" style="display: none;">
+        <div class="longform-dashboard-title">📊 실시간 장편 제작 대시보드</div>
+        <div class="longform-progress-bar">
+          <div class="longform-progress-fill" id="longformProgressFill"></div>
+        </div>
+        <div class="longform-status-row">
+          <div id="longformProgressText">0/120 씬 생성 중...</div>
+          <div id="longformDurationText">예상 길이: 0분</div>
+        </div>
+        <div class="chapter-indicators" id="chapterIndicators"></div>
+        <div class="dashboard-actions">
+          <button class="btn-stop-save" type="button" id="btnStopAndSave">생성 중단 및 저장</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 실시간 상태창 -->
+  <div class="status-window" id="statusWindow" style="display: none;">
+    <div class="status-window-title">실시간 상태</div>
+    <div id="statusWindowBody"></div>
+  </div>
+
+  <script>
+    // Blueprint & recap
+    var step3Data = null;
+    var blueprint = { title: '', target: '', hook: '', storyline: '' };
+    var fromStep2 = null;
+    var globalState = null;
+    var requiredKeywords = [];
+
+    (function loadStep3Data() {
+      try {
+        var raw = localStorage.getItem('step3Blueprint');
+        if (!raw) return;
+        step3Data = JSON.parse(raw);
+        if (step3Data && step3Data.blueprint) {
+          blueprint = step3Data.blueprint;
+        }
+        if (step3Data && step3Data.fromStep2) {
+          fromStep2 = step3Data.fromStep2;
+        }
+        
+        // 1단계에서 선정한 키워드 자동 입력
+        try {
+          var globalStateRaw = localStorage.getItem('globalState');
+          if (globalStateRaw) {
+            globalState = JSON.parse(globalStateRaw);
+            if (globalState.keyword) {
+              requiredKeywords = [globalState.keyword];
+              var keywordsInput = document.getElementById('requiredKeywordsInput');
+              if (keywordsInput) {
+                keywordsInput.value = globalState.keyword;
+              }
+            }
+            // 선택된 주제의 키워드도 포함
+            if (globalState.selectedTopics && globalState.selectedTopics.length > 0) {
+              // 주제 카드에서 키워드 추출 (실제로는 API 응답에서 가져와야 함)
+            }
+          }
+        } catch (e) {
+          console.warn('키워드 자동 입력 실패:', e);
+        }
+        
+        // AI 피드백 루프: 이전 영상 댓글 분석 결과를 키워드에 자동 추가
+        loadFeedbackKeywords();
+      } catch (e) {}
+    })();
+
+    // AI 피드백 루프: 이전 영상 댓글 분석 결과 로드
+    async function loadFeedbackKeywords() {
+      try {
+        // 최근 업로드된 영상의 댓글 분석 결과 가져오기
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/feedback/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            comments: [], // 실제로는 최근 영상 댓글 데이터
+            videoTitle: blueprint.title || '',
+            category: globalState?.selectedCategory || ''
+          })
+        });
+        
+        if (response.ok) {
+          var data = await response.json();
+          var recommendedKeywords = data.summary?.recommendedKeywords || [];
+          
+          if (recommendedKeywords.length > 0) {
+            var keywordsInput = document.getElementById('requiredKeywordsInput');
+            if (keywordsInput) {
+              var currentKeywords = keywordsInput.value.trim();
+              var existingKeywords = currentKeywords ? currentKeywords.split(',').map(function(k) { return k.trim(); }) : [];
+              
+              // 중복 제거하며 추가
+              recommendedKeywords.forEach(function(keyword) {
+                if (keyword && !existingKeywords.includes(keyword.trim())) {
+                  existingKeywords.push(keyword.trim());
+                }
+              });
+              
+              keywordsInput.value = existingKeywords.join(', ');
+              
+              // 사용자에게 알림
+              var validationEl = document.getElementById('keywordValidation');
+              if (validationEl) {
+                validationEl.className = 'keyword-validation success';
+                validationEl.innerHTML = '<strong>💡 AI 피드백 반영:</strong> 이전 영상 댓글 분석 결과, 다음 키워드가 자동 추가되었습니다: ' + 
+                                         recommendedKeywords.join(', ') + 
+                                         '<br><small>시청자들이 요청한 내용이 반영되었습니다.</small>';
+                
+                // 5초 후 자동 숨김
+                setTimeout(function() {
+                  if (validationEl && validationEl.className.includes('success')) {
+                    validationEl.className = 'keyword-validation';
+                    validationEl.innerHTML = '';
+                  }
+                }, 5000);
+              }
+              
+              console.log('[Step 3] 피드백 기반 키워드 자동 추가:', recommendedKeywords);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('[Step 3] 피드백 키워드 로드 실패:', error);
+        // 실패해도 계속 진행 (옵션 기능)
+      }
+    }
+
+    function renderRecap() {
+      var grid = document.getElementById('recapGrid');
+      if (!grid) return;
+      var rows = [];
+      if (blueprint.title) rows.push({ label: '제목', value: blueprint.title });
+      if (blueprint.target) rows.push({ label: '타겟 시청자', value: blueprint.target });
+      if (blueprint.hook) rows.push({ label: '훅(Hook) 문구', value: blueprint.hook });
+      if (!rows.length) {
+        grid.innerHTML = '<div class="recap-item"><div class="recap-value">2단계 기획안 정보가 없습니다. 이전 단계에서 다시 설정해 주세요.</div></div>';
+        return;
+      }
+      grid.innerHTML = rows
+        .map(function(row) {
+          return (
+            '<div class="recap-item">' +
+            '<div class="recap-label">' +
+            row.label +
+            '</div>' +
+            '<div class="recap-value">' +
+            String(row.value) +
+            '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
+    }
+
+    function parseStorylineLines() {
+      var text = blueprint.storyline || '';
+      if (!text && fromStep2 && fromStep2.blueprint && fromStep2.blueprint.storyline) {
+        text = fromStep2.blueprint.storyline;
+      }
+      var lines = String(text)
+        .split(/\r?\n/)
+        .map(function(l) { return l.trim(); })
+        .filter(function(l) { return l.length > 0; })
+        .map(function(l) {
+          return l.replace(/^[0-9]+\)|^[0-9]+\./, '').trim();
+        });
+      if (!lines.length) {
+        return ['인트로', '핵심 내용', '마무리'];
+      }
+      return lines;
+    }
+
+    // 씬별 시각 묘사 자동 변환 함수 (씬 최적화)
+    function generateSceneVisualPrompts(script, scenes) {
+      if (!script || !scenes || scenes.length === 0) return [];
+      
+      // 대본을 씬별로 분할
+      var scriptLines = script.split(/\r?\n/);
+      var sceneScripts = [];
+      var currentScene = 0;
+      var currentLines = [];
+      
+      for (var i = 0; i < scriptLines.length; i++) {
+        var line = scriptLines[i];
+        var sceneMatch = line.match(/\[씬\s*(\d+)\]/);
+        
+        if (sceneMatch) {
+          if (currentScene > 0) {
+            sceneScripts.push({
+              scene_num: currentScene,
+              script: currentLines.join('\n').trim(),
+              scene_title: scenes[currentScene - 1] || '씬 ' + currentScene
+            });
+          }
+          currentScene = parseInt(sceneMatch[1], 10);
+          currentLines = [];
+        } else if (currentScene > 0) {
+          currentLines.push(line);
+        }
+      }
+      
+      // 마지막 씬 추가
+      if (currentScene > 0 && currentLines.length > 0) {
+        sceneScripts.push({
+          scene_num: currentScene,
+          script: currentLines.join('\n').trim(),
+          scene_title: scenes[currentScene - 1] || '씬 ' + currentScene
+        });
+      }
+      
+      // 각 씬에 대해 시각 묘사 생성 (Subject, Action, Setting 추출)
+      return sceneScripts.map(function(scene) {
+        var sceneScript = scene.script || '';
+        
+        // Subject, Action, Setting 추출
+        var subject = 'A healthy senior person';
+        var action = '';
+        var setting = 'in a bright and comfortable environment';
+        
+        var scriptLower = sceneScript.toLowerCase();
+        
+        // 주체 추출
+        if (scriptLower.includes('남성') || scriptLower.includes('할아버지') || scriptLower.includes('아저씨')) {
+          subject = 'A healthy senior man';
+        } else if (scriptLower.includes('여성') || scriptLower.includes('할머니') || scriptLower.includes('어머니')) {
+          subject = 'A healthy senior woman';
+        } else if (scriptLower.includes('부부') || scriptLower.includes('커플')) {
+          subject = 'A healthy senior couple';
+        }
+        
+        // 동작 추출
+        var actionKeywords = {
+          '걷': 'walking',
+          '앉': 'sitting',
+          '서': 'standing',
+          '운동': 'exercising',
+          '먹': 'eating',
+          '마시': 'drinking',
+          '말하': 'speaking',
+          '웃': 'smiling',
+          '보': 'looking',
+          '들': 'listening',
+          '펴': 'extending',
+          '구부': 'bending'
+        };
+        
+        for (var key in actionKeywords) {
+          if (sceneScript.includes(key)) {
+            action = actionKeywords[key];
+            break;
+          }
+        }
+        
+        // 배경 추출
+        if (scriptLower.includes('공원') || scriptLower.includes('산책')) {
+          setting = 'in a sunny park with morning sunlight';
+        } else if (scriptLower.includes('집') || scriptLower.includes('집안') || scriptLower.includes('거실') || scriptLower.includes('의자')) {
+          setting = 'in a bright and cozy living room';
+        } else if (scriptLower.includes('병원') || scriptLower.includes('의원')) {
+          setting = 'in a clean and modern medical facility';
+        } else if (scriptLower.includes('실외') || scriptLower.includes('야외')) {
+          setting = 'in an outdoor setting with natural lighting';
+        }
+        
+        // 시니어 맞춤형 시각 최적화 키워드 주입
+        var seniorOptimizationKeywords = 'warm and bright lighting, high contrast for better visibility, clear and friendly facial expressions, 8k resolution, cinematic quality, senior-friendly composition';
+        var negativePrompt = 'dark, blurry, distorted faces, messy background, too small text';
+        
+        var visualDescription = subject + (action ? ' ' + action : '') + ' ' + setting + '. ' + seniorOptimizationKeywords;
+        
+        return {
+          scene_num: scene.scene_num,
+          scene_title: scene.scene_title,
+          script: scene.script,
+          visual_description: visualDescription,
+          image_prompt: visualDescription + '. Negative prompt: ' + negativePrompt
+        };
+      });
+    }
+
+    // 톤앤매너별 상세 정의 (페르소나 규칙)
+    var tonePersonaMap = {
+      'senior-expert': {
+        name: '시니어 건강 전문가',
+        rules: [
+          '신뢰감 있는 전문 용어를 사용하되, 문장 끝은 "하십시오", "입니다", "됩니다"와 같은 격식체(합쇼체)를 사용합니다.',
+          '의학적 용어나 건강 관련 전문 지식을 자연스럽게 풀어내되, 시니어가 이해하기 쉽게 설명합니다.',
+          '존댓말을 일관되게 유지하며, "~하시면 됩니다", "~하시는 것이 좋습니다" 같은 권유형 문장을 사용합니다.',
+          '감정적인 서술보다는 사실과 근거를 바탕으로 차분하고 신뢰감 있게 전달합니다.'
+        ],
+        preview: '해당 톤으로 변환하면 <strong>"하십시오", "입니다"</strong> 같은 격식체로 전문적이고 신뢰감 있게 설명합니다.',
+        endingExamples: ['하십시오', '입니다', '됩니다', '하시면 됩니다', '하시는 것이 좋습니다']
+      },
+      'friendly-neighbor': {
+        name: '친근한 이웃',
+        rules: [
+          '옆집 이웃처럼 부드러운 해요체를 사용합니다. "~해요", "~했나요?", "~거든요"와 같은 해요체를 기본으로 합니다.',
+          '감탄사를 적절히 섞어주세요: "아!", "와!", "정말요?", "그렇구나!"',
+          '질문을 자주 던져서 시청자와의 소통감을 높입니다: "어떠세요?", "알고 계셨나요?", "궁금하지 않으세요?"',
+          '일상적인 비유와 예시를 많이 사용하여 친근함을 더합니다.',
+          '문장을 짧게 끊어서 말하듯이 자연스럽게 작성합니다.'
+        ],
+        preview: '해당 톤으로 변환하면 <strong>"~해요", "~했나요?"</strong> 같은 해요체로 친근하고 따뜻하게 설명합니다.',
+        endingExamples: ['해요', '했나요?', '거든요', '어떠세요?', '알고 계셨나요?']
+      },
+      'grandchild-friendly': {
+        name: '손주처럼 다정한',
+        rules: [
+          '"할머니~ 이것 좀 보세요!"와 같은 애교 섞인 말투를 적극 사용합니다. "~하세요", "~하셔야 해요", "~하시면 안 돼요" 같은 부드러운 해요체를 사용합니다.',
+          '손주가 할머니 할아버지에게 말하듯이 따뜻하고 애정 어린 톤을 유지합니다: "할머니, 이거 정말 중요하세요!", "할아버지, 꼭 기억하세요!"',
+          '복잡한 설명을 쉽게 풀어서 설명하며, "이렇게 생각하시면 돼요", "간단하게 말하면" 같은 표현을 자주 사용합니다.',
+          '시니어를 배려하는 따뜻한 말투를 사용하며, "조심하세요", "천천히 하세요", "무리하지 마세요" 같은 배려 표현을 포함합니다.',
+          '감탄사와 부드러운 질문을 적절히 섞어서 친근함을 더합니다: "아, 그렇구나!", "알고 계셨나요?", "궁금하시죠?"'
+        ],
+        preview: '해당 톤으로 변환하면 <strong>"할머니~ 이것 좀 보세요!"</strong>처럼 애교 섞인 다정한 표현으로 따뜻하게 설명합니다.',
+        endingExamples: ['하세요', '하셔야 해요', '하시면 안 돼요', '기억하세요', '알고 계셨나요?']
+      },
+      'charismatic-trainer': {
+        name: '카리스마 강사',
+        rules: [
+          '"자, 따라 하세요! 할 수 있습니다!"와 같은 활기찬 명령조를 사용합니다: "자, 시작해봅시다!", "화이팅!", "할 수 있습니다!"',
+          '운동 강사처럼 동기부여하는 표현을 적극 활용합니다: "여러분도 할 수 있어요!", "함께 해봅시다!", "한 번 더!"',
+          '짧고 강렬한 문장을 사용하여 리듬감을 줍니다. "하나, 둘, 셋!" 같은 카운트 표현을 포함합니다.',
+          '긍정적인 에너지를 전달하는 표현을 사용합니다: "훌륭해요!", "잘하고 계세요!", "멋져요!"',
+          '명확하고 직접적인 지시를 사용하며, "이렇게 하세요", "반드시 기억하세요" 같은 강조 표현을 포함합니다.'
+        ],
+        preview: '해당 톤으로 변환하면 <strong>"자, 따라 하세요! 할 수 있습니다!"</strong> 같은 활기찬 명령조로 설명합니다.',
+        endingExamples: ['시작해봅시다!', '할 수 있습니다!', '함께 해봅시다!', '잘하고 계세요!', '반드시 기억하세요!']
+      },
+      'professional-analyst': {
+        name: '전문 데이터 분석가',
+        rules: [
+          '수치와 근거 위주의 딱딱한 문체를 사용합니다. 감정적인 서술을 배제하고 객관적 사실만 전달합니다.',
+          '명사형 종결이나 보고서 스타일의 문체를 사용합니다: "~하는 것이 중요하다", "~에 주의해야 한다", "~로 확인되었다"',
+          '데이터, 통계, 연구 결과를 명확히 제시하며 객관적인 톤을 유지합니다.',
+          '불필요한 수식어를 제거하고 핵심만 간결하게 전달합니다.',
+          '문장을 길게 구성하여 논리적 흐름을 강조합니다.'
+        ],
+        preview: '해당 톤으로 변환하면 <strong>수치와 근거 위주의 딱딱한 문체</strong>로 전문적이고 객관적으로 설명합니다.',
+        endingExamples: ['중요하다', '주의해야 한다', '확인되었다', '권장된다', '필요하다']
+      },
+      'emotional-storyteller': {
+        name: '감성적인 이야기꾼',
+        rules: [
+          '따뜻한 위로와 공감을 주는 서술형 문체를 사용합니다: "많은 분들이 그렇게 느끼셨을 거예요", "이해가 되시나요?"',
+          '스토리텔링 기법을 활용하여 이야기처럼 풀어냅니다: "옛날 옛적에", "한 분의 이야기를 들려드릴게요"',
+          '감정을 자극하는 표현을 적절히 사용합니다: "마음이 따뜻해지시죠?", "공감이 되시나요?", "함께 아파하시는 분들"',
+          '은유와 비유를 사용하여 감성적으로 전달합니다: "인생은 한 그루 나무와 같아요", "시간은 강물처럼 흘러가죠"',
+          '부드럽고 여유 있는 문장 구조를 사용하며, "~하시는 분들", "~하시는 게 좋을 것 같아요" 같은 공감 표현을 포함합니다.'
+        ],
+        preview: '해당 톤으로 변환하면 <strong>따뜻한 위로와 공감</strong>을 주는 서술형 문체로 감성적으로 설명합니다.',
+        endingExamples: ['느끼셨을 거예요', '이해가 되시나요?', '마음이 따뜻해지시죠?', '공감이 되시나요?', '좋을 것 같아요']
+      },
+      'humorous-comedian': {
+        name: '유머러스한 만담가',
+        rules: [
+          '재치 있는 비유와 농담을 문장마다 포함합니다. 시니어들이 웃을 수 있는 가벼운 농담이나 재치 있는 비유를 사용합니다.',
+          '특정 표현을 적극 활용합니다: "깜짝 놀라셨죠?", "이것만 알면 만세!", "정말 신기하지 않으세요?"',
+          '일상생활의 공감대를 형성할 수 있는 유머를 사용합니다: "우리 할머니도 그렇게 하시더라구요", "이제야 알았죠?"',
+          '과장된 표현이나 반전을 활용하여 재미를 더합니다.',
+          '해요체를 기본으로 하되, 유머 요소를 자연스럽게 녹여냅니다.'
+        ],
+        preview: '해당 톤으로 변환하면 <strong>"깜짝 놀라셨죠?", "이것만 알면 만세!"</strong> 같은 재치 있는 비유와 농담으로 유머러스하게 설명합니다.',
+        endingExamples: ['놀라셨죠?', '만세!', '신기하지 않으세요?', '이제야 알았죠?', '웃기지 않으세요?']
+      },
+      'urgent-news-anchor': {
+        name: '긴급 뉴스 앵커',
+        rules: [
+          '명확한 발음과 핵심 위주의 긴박한 문체를 사용합니다: "중요한 소식입니다", "지금 바로 확인해보세요"',
+          '뉴스 앵커처럼 객관적이고 사실 중심으로 전달합니다: "확인된 사실은 다음과 같습니다", "전문가에 따르면"',
+          '긴급성과 중요성을 강조하는 표현을 사용합니다: "지금 당장", "반드시 알아야 할", "주의해야 할"',
+          '명확하고 간결한 문장 구조를 사용하며, 불필요한 수식어를 제거합니다.',
+          '뉴스 스타일의 도입부와 마무리를 사용합니다: "안녕하세요, 오늘의 건강 뉴스를 전해드립니다", "이상으로 전해드렸습니다"'
+        ],
+        preview: '해당 톤으로 변환하면 <strong>명확한 발음과 핵심 위주의 긴박한 문체</strong>로 뉴스 앵커 스타일로 설명합니다.',
+        endingExamples: ['중요한 소식입니다', '확인해보세요', '알아야 할', '주의해야 할', '전해드렸습니다']
+      }
+    };
+
+    // 톤 선택 시 미리보기 업데이트
+    function updateTonePreview() {
+      var tone = document.getElementById('toneSelect').value;
+      var previewEl = document.getElementById('tonePreview');
+      if (!previewEl) return;
+
+      var persona = tonePersonaMap[tone];
+      if (persona && persona.preview) {
+        previewEl.innerHTML = persona.preview;
+        previewEl.classList.add('show');
+      } else {
+        previewEl.classList.remove('show');
+      }
+    }
+
+    function buildTonePrefix(tone) {
+      var persona = tonePersonaMap[tone];
+      if (!persona) {
+        persona = tonePersonaMap['senior-expert'];
+      }
+
+      var parts = [];
+      
+      // 기본 지시사항
+      parts.push('2단계에서 분석된 시니어 건강 전문가의 톤앤매너를 유지하면서, 시청 지속 시간을 극대화할 수 있는 자연스러운 구어체로 작성합니다.');
+      parts.push('');
+      
+      // 톤별 상세 규칙 주입
+      parts.push('=== 선택된 톤앤매너: ' + persona.name + ' ===');
+      parts.push('');
+      parts.push('다음 규칙을 100% 준수하여 대본을 작성하세요:');
+      persona.rules.forEach(function(rule) {
+        parts.push('- ' + rule);
+      });
+      parts.push('');
+      
+      // 강력한 제약 사항
+      parts.push('=== 필수 제약 사항 ===');
+      parts.push('1. 선택된 톤앤매너에 따라 어미(Ending)와 어휘(Vocabulary)를 100% 재구성하세요.');
+      parts.push('2. 이전 톤과 내용이 70% 이상 달라야 하며, 특히 문장 종결 어미를 톤에 맞춰 완전히 바꿔서 출력하세요.');
+      parts.push('3. 다음 어미 예시를 반드시 사용하세요: ' + persona.endingExamples.join(', '));
+      parts.push('4. 톤에 맞지 않는 어미나 표현을 절대 사용하지 마세요.');
+      parts.push('5. 전체 대본의 80% 이상이 선택된 톤의 어미로 종결되어야 합니다.');
+      parts.push('');
+
+      return parts.join('\n');
+    }
+
+    // 키워드 파싱 (쉼표로 구분)
+    function parseKeywords(keywordString) {
+      if (!keywordString || !keywordString.trim()) return [];
+      return keywordString
+        .split(',')
+        .map(function(k) { return k.trim(); })
+        .filter(function(k) { return k.length > 0; });
+    }
+
+    // 키워드 검증 (대본에 포함 여부 확인)
+    function validateKeywords(script, keywords) {
+      if (!keywords || keywords.length === 0) return { valid: true, missing: [] };
+      
+      var missing = [];
+      keywords.forEach(function(keyword) {
+        if (!script.includes(keyword)) {
+          missing.push(keyword);
+        }
+      });
+      
+      return {
+        valid: missing.length === 0,
+        missing: missing
+      };
+    }
+
+    // 수치 보호 정규식: 대본 내 수치 데이터 추출
+    var NUMERICAL_PATTERN = /\d+(\.\d+)?\s*(분|시간|km|m|kg|g|리터|L|회|개|번|step|보|세|살|%|도)/g;
+    
+    function extractNumericalData(text) {
+      if (!text) return [];
+      var matches = [];
+      var match;
+      while ((match = NUMERICAL_PATTERN.exec(text)) !== null) {
+        matches.push(match[0].trim());
+      }
+      return matches;
+    }
+
+    // 수치 검증: 변환 전후 수치 비교
+    function validateNumericalData(originalScript, generatedScript) {
+      var originalNumerics = extractNumericalData(originalScript);
+      var generatedNumerics = extractNumericalData(generatedScript);
+      
+      if (originalNumerics.length === 0) {
+        return { valid: true, missing: [], extra: [] };
+      }
+      
+      var missing = [];
+      originalNumerics.forEach(function(numeric) {
+        var found = generatedNumerics.some(function(gen) {
+          return gen === numeric || gen.includes(numeric.split(/\s/)[0]);
+        });
+        if (!found) {
+          missing.push(numeric);
+        }
+      });
+      
+      return {
+        valid: missing.length === 0,
+        missing: missing,
+        original: originalNumerics,
+        generated: generatedNumerics
+      };
+    }
+
+    // 실제 API 호출용 프롬프트 생성 (백엔드로 전송)
+    function buildApiPrompt(tone) {
+      var persona = tonePersonaMap[tone] || tonePersonaMap['senior-expert'];
+      var scenes = parseStorylineLines();
+      
+      // 형식 및 길이 정보 가져오기
+      var format = currentFormat; // 'shorts' or 'longform'
+      var duration = currentDuration; // '30s', '1m', etc.
+      var targetMinutes = parseTargetDuration(duration);
+      
+      // 키워드 가져오기
+      var keywordsInput = document.getElementById('requiredKeywordsInput');
+      var keywords = [];
+      if (keywordsInput && keywordsInput.value.trim()) {
+        keywords = parseKeywords(keywordsInput.value);
+      } else if (requiredKeywords.length > 0) {
+        keywords = requiredKeywords;
+      }
+      
+      // 형식 및 길이에 따른 씬 개수 조절 (목표 분수 × 2)
+      var sceneCount = scenes.length;
+      if (format === 'shorts') {
+        // 쇼츠: 1분 = 5~6개 씬
+        if (targetMinutes <= 1) {
+          sceneCount = Math.max(5, Math.min(6, Math.round(targetMinutes * 5.5)));
+        } else {
+          sceneCount = Math.round(targetMinutes * 2);
+        }
+      } else {
+        // 롱폼: 목표 분수 × 2 (최소 20개 이상)
+        sceneCount = Math.max(20, Math.round(targetMinutes * 2));
+        // 40분 이상은 최소 80개
+        if (targetMinutes >= 60) {
+          sceneCount = Math.max(120, sceneCount);
+        } else if (targetMinutes >= 40) {
+          sceneCount = Math.max(80, sceneCount);
+        }
+      }
+
+      // 씬 목록 조정 (반복 금지: 빈 씬으로 확장)
+      var adjustedScenes = scenes.slice(0, sceneCount);
+      if (targetMinutes >= 60) {
+        adjustedScenes = [];
+        for (var emptyIdx = 0; emptyIdx < 120; emptyIdx += 1) {
+          adjustedScenes.push('');
+        }
+      } else if (adjustedScenes.length < sceneCount) {
+        var startIndex = adjustedScenes.length;
+        for (var si = startIndex; si < sceneCount; si += 1) {
+          adjustedScenes.push('');
+        }
+      }
+      
+      // 롱폼 섹션형 구조 여부 확인 (40분 이상)
+      var useChapterStructure = format === 'longform' && targetMinutes >= 40;
+      var chapterCount = 0;
+      var chapters = [];
+      
+      if (useChapterStructure) {
+        // 60분: 12개 챕터 고정 (5분씩)
+        if (targetMinutes >= 60) {
+          chapterCount = 12;
+        } else {
+          // 40분 이상: 8개 이상의 전문적인 섹션으로 구성
+          chapterCount = Math.max(8, Math.round(targetMinutes / 5)); // 5분당 1개 섹션
+        }
+        // 각 섹션에 키워드 배분
+        var keywordsPerChapter = Math.ceil(keywords.length / chapterCount);
+        for (var i = 0; i < chapterCount; i++) {
+          var chapterKeywords = [];
+          for (var j = 0; j < keywordsPerChapter && (i * keywordsPerChapter + j) < keywords.length; j++) {
+            chapterKeywords.push(keywords[i * keywordsPerChapter + j]);
+          }
+          chapters.push({
+            chapterNum: i + 1,
+            title: '섹션 ' + (i + 1),
+            keywords: chapterKeywords.length > 0 ? chapterKeywords : keywords.slice(0, 1), // 최소 1개 키워드
+            sceneCount: targetMinutes >= 60 ? 10 : Math.ceil(sceneCount / chapterCount) // 각 섹션당 씬 개수
+          });
+        }
+      }
+      
+      var prompt = {
+        title: blueprint.title || '(제목 미정)',
+        target: blueprint.target || '(타겟 미정)',
+        hook: blueprint.hook || '(훅 미정)',
+        storyline: blueprint.storyline || '',
+        scenes: adjustedScenes,
+        sceneCount: sceneCount, // 목표 씬 개수
+        requiredSceneCount: sceneCount, // 필수 씬 개수
+        format: format, // 'shorts' or 'longform'
+        duration: duration, // '30s', '1m', etc.
+        targetMinutes: targetMinutes, // 목표 분량 (분 단위)
+        targetWordCount: Math.round(targetMinutes * 160), // 목표 단어 수 (1분당 160단어 기준)
+        perSceneMinWords: targetMinutes >= 60 ? 200 : undefined,
+        tone: tone,
+        requiredKeywords: keywords, // 필수 키워드 추가
+        useChapterStructure: useChapterStructure, // 챕터 구조 사용 여부
+        chapterCount: chapterCount, // 챕터 개수
+        chapters: chapters, // 챕터 목록
+        tonePersona: {
+          name: persona.name,
+          rules: persona.rules,
+          endingExamples: persona.endingExamples
+        },
+        constraints: [
+          '선택된 톤앤매너에 따라 어미(Ending)와 어휘(Vocabulary)를 100% 재구성하세요.',
+          '이전 톤과 내용이 70% 이상 달라야 하며, 특히 문장 종결 어미를 톤에 맞춰 완전히 바꿔서 출력하세요.',
+          '전체 대본의 80% 이상이 선택된 톤의 어미로 종결되어야 합니다.',
+          '톤에 맞지 않는 어미나 표현을 절대 사용하지 마세요.'
+        ],
+        formatInstructions: format === 'shorts' 
+          ? '쇼츠 형식: 세로형 영상에 적합한 빠른 호흡의 대본을 작성하세요. 각 씬은 짧고 임팩트 있게 구성하며, 시청자의 주의를 즉시 끌 수 있는 강렬한 문장으로 시작하세요.'
+          : (useChapterStructure 
+            ? '롱폼 형식 (섹션형 구조): 깊이 있는 정보 전달 위주의 대본을 작성하세요. 먼저 전체 목차(챕터)를 만들고, 각 챕터별로 대본을 생성하여 합치는 방식으로 작성하세요. 각 섹션은 독립적인 주제와 핵심 키워드를 가지며, 서론-본론(섹션 1,2,3...)-결론의 계층 구조로 구성하세요.'
+            : '롱폼 형식: 깊이 있는 정보 전달 위주의 대본을 작성하세요. 각 씬은 충분한 설명과 근거를 포함하며, 시청자가 이해하고 따라할 수 있도록 상세하게 구성하세요.'),
+        durationInstructions: '목표 영상 길이는 ' + (targetMinutes < 1 ? Math.round(targetMinutes * 60) + '초' : targetMinutes + '분') + '입니다. 이 길이에 맞춰 총 ' + sceneCount + '개의 씬으로 구성하고, 각 씬의 대사 분량을 적절히 조절하여 목표 길이를 달성하세요. **중요: 1분당 구어체 기준 약 160단어 이상을 작성하라. 목표 시간에 맞춰 최소 ' + Math.round(targetMinutes * 160) + '단어 이상의 대사를 작성하라.**',
+        numericalProtection: {
+          enabled: true,
+          instruction: '대본 내 탐지된 모든 수치 데이터(예: 30분, 2리터, 5회)는 **불변의 상수**로 취급하라. 말투를 바꿀 때 수치를 반올림하거나 임의로 변경하는 행위를 절대 금지한다. 수치와 단위는 원형 그대로 유지해야 한다.'
+        },
+        instruction: '2단계에서 분석된 시니어 건강 전문가의 톤앤매너를 유지하면서, 시청 지속 시간을 극대화할 수 있는 자연스러운 구어체로 작성하되, 선택된 톤의 규칙을 100% 준수하여 작성하세요.'
+      };
+
+      return prompt;
+    }
+
+    var antigravityAbortController = null;
+    var antigravityStopRequested = false;
+    var longformState = {
+      totalScenes: 120,
+      completedScenes: 0,
+      totalChapters: 12
+    };
+
+    function initLongformDashboard() {
+      var dashboard = document.getElementById('longformDashboard');
+      var indicatorWrap = document.getElementById('chapterIndicators');
+      if (dashboard) dashboard.style.display = 'block';
+      if (indicatorWrap) {
+        indicatorWrap.innerHTML = '';
+        for (var i = 0; i < longformState.totalChapters; i += 1) {
+          var el = document.createElement('div');
+          el.className = 'chapter-indicator';
+          indicatorWrap.appendChild(el);
+        }
+      }
+      updateLongformDashboard();
+    }
+
+    function updateLongformDashboard() {
+      var fill = document.getElementById('longformProgressFill');
+      var text = document.getElementById('longformProgressText');
+      var durationText = document.getElementById('longformDurationText');
+      var indicators = document.querySelectorAll('#chapterIndicators .chapter-indicator');
+      var percent = longformState.totalScenes > 0
+        ? Math.min(100, Math.round((longformState.completedScenes / longformState.totalScenes) * 100))
+        : 0;
+      if (fill) fill.style.width = percent + '%';
+      if (text) text.textContent = longformState.completedScenes + '/' + longformState.totalScenes + ' 씬 생성 중...';
+      if (durationText) {
+        var editor = document.getElementById('scriptEditor');
+        var words = editor ? editor.value.trim().split(/\s+/).filter(function(w) { return w.length > 0; }).length : 0;
+        var estimatedMinutes = Math.round(words / 160);
+        durationText.textContent = '예상 길이: ' + estimatedMinutes + '분';
+      }
+      if (indicators && indicators.length > 0) {
+        var doneChapters = Math.floor(longformState.completedScenes / 10);
+        indicators.forEach(function(ind, idx) {
+          ind.classList.remove('active', 'done');
+          if (idx < doneChapters) {
+            ind.classList.add('done');
+          } else if (idx === doneChapters) {
+            ind.classList.add('active');
+          }
+        });
+      }
+    }
+
+    function incrementLongformProgress(count) {
+      longformState.completedScenes = Math.min(longformState.totalScenes, longformState.completedScenes + count);
+      updateLongformDashboard();
+    }
+
+    function resetLongformProgress() {
+      longformState.completedScenes = 0;
+      updateLongformDashboard();
+    }
+
+    function statusLog(message) {
+      var windowEl = document.getElementById('statusWindow');
+      var bodyEl = document.getElementById('statusWindowBody');
+      if (!windowEl || !bodyEl) return;
+      windowEl.style.display = 'block';
+      var line = document.createElement('div');
+      line.className = 'status-window-line';
+      line.textContent = message;
+      bodyEl.appendChild(line);
+      bodyEl.scrollTop = bodyEl.scrollHeight;
+    }
+
+    function statusReplace(message) {
+      var bodyEl = document.getElementById('statusWindowBody');
+      if (!bodyEl) return;
+      bodyEl.innerHTML = '';
+      statusLog(message);
+    }
+
+    function wait(ms) {
+      return new Promise(function(resolve) {
+        setTimeout(resolve, ms);
+      });
+    }
+
+    async function postJsonWithRetry(url, payload, attempts, label) {
+      var lastError = null;
+      for (var attempt = 1; attempt <= attempts; attempt += 1) {
+        try {
+          var response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal: antigravityAbortController ? antigravityAbortController.signal : undefined
+          });
+          if (!response.ok) {
+            var errText = '';
+            try {
+              var errData = await response.json();
+              if (errData && errData.error) {
+                errText = errData.error;
+              } else {
+                errText = JSON.stringify(errData);
+              }
+            } catch (e) {
+              try {
+                errText = await response.text();
+              } catch (e2) {}
+            }
+            throw new Error((label || 'API') + ' 응답 실패: ' + response.status + (errText ? ' - ' + errText : ''));
+          }
+          return await response.json();
+        } catch (err) {
+          lastError = err;
+          statusReplace((label || 'API') + ' 재시도 중... (' + attempt + '/' + attempts + ')');
+          await wait(800);
+        }
+      }
+      throw lastError || new Error((label || 'API') + ' 요청 실패');
+    }
+
+    async function splitAndDispatchToAntigravity(apiPrompt, overrides, requestFn) {
+      var payload = {
+        title: apiPrompt.title,
+        storyline: apiPrompt.storyline,
+        requiredKeywords: apiPrompt.requiredKeywords || [],
+        targetMinutes: apiPrompt.targetMinutes,
+        requiredSceneCount: apiPrompt.requiredSceneCount,
+        tone: apiPrompt.tone,
+        format: apiPrompt.format
+      };
+      if (overrides) {
+        if (overrides.sectionCountOverride) payload.sectionCountOverride = overrides.sectionCountOverride;
+        if (overrides.scenesPerSectionOverride) payload.scenesPerSectionOverride = overrides.scenesPerSectionOverride;
+      }
+
+      if (apiPrompt.targetMinutes >= 60) {
+        var sectionCount = 12;
+        var scenesPerSection = 10;
+        var previousContext = '';
+        var collectedScripts = [];
+
+        statusReplace('[1/' + sectionCount + '] 챕터 생성 대기...');
+
+        for (var i = 0; i < sectionCount; i += 1) {
+          if (antigravityStopRequested) break;
+
+          statusReplace('[' + (i + 1) + '/' + sectionCount + '] 챕터 생성 중... (5분 단위)');
+          var keywordLine = (apiPrompt.requiredKeywords && apiPrompt.requiredKeywords.length > 0)
+            ? ('필수 키워드: ' + apiPrompt.requiredKeywords.join(', ') + ' (변형 금지)')
+            : '필수 키워드 없음';
+          var seniorExpertTone = {
+            name: '시니어 건강 전문가',
+            rules: [
+              '신뢰감 있는 전문 용어를 사용하되, 문장 끝은 격식체로 유지합니다.',
+              '의학적 용어는 이해하기 쉽게 풀어 설명합니다.',
+              '존댓말을 일관되게 유지합니다.',
+              '차분하고 신뢰감 있게 전달합니다.'
+            ]
+          };
+          var segmentPrompt = Object.assign({}, apiPrompt, {
+            targetMinutes: 5,
+            requiredSceneCount: scenesPerSection,
+            sectionTitle: '섹션 ' + (i + 1),
+            sectionIndex: i + 1,
+            totalSections: sectionCount,
+            previous_context: previousContext,
+            systemInstruction: '너는 시니어 건강 전문가다. 구어체로 대사만 작성하라. 12회 릴레이 중 동일 톤을 유지하라.',
+            tonePersona: seniorExpertTone,
+            instruction: (apiPrompt.instruction ? apiPrompt.instruction + '\n' : '') +
+              '시니어 건강 전문가 구어체 지침을 최우선으로 적용하라.\n너는 시니어 건강 전문가다. 구어체로 대사만 작성하라.\n' +
+              keywordLine + '\n' +
+              (previousContext
+                ? '[시작 문장 가이드] ' + previousContext + '\n당신은 이전 장면에 이어지는 내용을 작성해야 합니다. 반드시 [시작 문장 가이드]의 흐름과 톤을 유지하며 자연스럽게 대사를 시작하십시오.'
+                : '')
+          });
+
+          console.log('[Generate Script Segment] request:', segmentPrompt);
+          antigravityAbortController = new AbortController();
+          var segmentData = requestFn
+            ? await requestFn(segmentPrompt)
+            : await postJsonWithRetry('/api/generate-script', segmentPrompt, 3, 'Generate Script Segment');
+          console.log('[Generate Script Segment] response:', segmentData);
+
+          var segmentScript = segmentData.script || '';
+          collectedScripts.push(segmentScript);
+          previousContext = segmentData.last_two_sentences || getLastSentence(segmentScript) || previousContext;
+          incrementLongformProgress(segmentData.scene_count || scenesPerSection);
+
+          // 실시간 대본 반영 및 분량 갱신
+          var editorEl = document.getElementById('scriptEditor');
+          var currentScript = collectedScripts.join('\n\n');
+          if (editorEl) {
+            editorEl.value = cleanScriptForDisplay(currentScript);
+          }
+          updateDurationGauge();
+        }
+
+        statusReplace('챕터 생성 완료');
+        return { script: collectedScripts.join('\n\n') };
+      }
+
+      console.log('[Antigravity Test] request payload:', payload);
+      antigravityAbortController = new AbortController();
+      var data = await postJsonWithRetry('/api/antigravity/dispatch', payload, 3, 'Antigravity Dispatch');
+      console.log('[Antigravity Test] response data:', data);
+      return data;
+    }
+
+    var antigravityProgressTimer = null;
+    function startAntigravityProgress(totalScenes) {
+      var durationGauge = document.getElementById('durationGauge');
+      var durationText = document.getElementById('durationText');
+      if (durationGauge && durationText) {
+        durationGauge.className = 'duration-gauge warning';
+      }
+      var completed = 0;
+      if (durationText) {
+        durationText.innerHTML = '현재 분량 보강 중... (' + completed + '/' + totalScenes + ' 씬 완료)';
+      }
+      if (antigravityProgressTimer) {
+        clearInterval(antigravityProgressTimer);
+      }
+      antigravityProgressTimer = setInterval(function() {
+        if (completed < totalScenes) {
+          completed += 1;
+          if (durationText) {
+            durationText.innerHTML = '현재 분량 보강 중... (' + completed + '/' + totalScenes + ' 씬 완료)';
+          }
+        }
+      }, 2000);
+    }
+
+    function stopAntigravityProgress(totalScenes) {
+      if (antigravityProgressTimer) {
+        clearInterval(antigravityProgressTimer);
+        antigravityProgressTimer = null;
+      }
+      var durationGauge = document.getElementById('durationGauge');
+      var durationText = document.getElementById('durationText');
+      if (durationGauge && durationText) {
+        durationGauge.className = 'duration-gauge success';
+        durationText.innerHTML = '현재 분량 보강 중... (' + totalScenes + '/' + totalScenes + ' 씬 완료)';
+      }
+    }
+
+    function cleanScriptForDisplay(script) {
+      return String(script || '')
+        .replace(/^\[씬\s*\d+\]\s*/gm, '')
+        .replace(/역할:.*$/gm, '')
+        .replace(/지시사항:.*$/gm, '')
+        .replace(/인사이트:.*$/gm, '')
+        .replace(/이 부분에서는.*$/gm, '')
+        .replace(/알겠습니다[.!]?/gm, '')
+        .replace(/작성된 대본입니다[.!]?/gm, '')
+        .trim();
+    }
+
+    function showApiConnectionError(message) {
+      var validationEl = document.getElementById('keywordValidation');
+      if (!validationEl) return;
+      validationEl.className = 'keyword-validation';
+      validationEl.style.color = '#ef4444';
+      validationEl.style.fontWeight = '700';
+      validationEl.textContent = message || 'API 연결 확인 필요';
+    }
+
+    function scanAndRegenerateInvalidScenes(script, apiPrompt) {
+      var forbidden = ['지시사항', '역할', '이 부분에서는', '인사이트'];
+      var scenes = parseScenesFromScript(script);
+      var invalidIndexes = [];
+      scenes.forEach(function(scene, idx) {
+        if (forbidden.some(function(word) { return scene.script.includes(word); })) {
+          invalidIndexes.push(idx);
+        }
+      });
+
+      if (invalidIndexes.length === 0) {
+        return Promise.resolve(script);
+      }
+
+      return invalidIndexes.reduce(function(chain, idx) {
+        return chain.then(async function(currentScript) {
+          var currentScenes = parseScenesFromScript(currentScript);
+          var prevSceneText = idx > 0 ? currentScenes[idx - 1].script : '';
+          var prevSentence = getLastSentence(prevSceneText);
+          var regenPrompt = Object.assign({}, apiPrompt);
+          regenPrompt.targetMinutes = 1;
+          regenPrompt.requiredSceneCount = 1;
+          var regenResult = await splitAndDispatchToAntigravity(regenPrompt, {
+            sectionCountOverride: 1,
+            scenesPerSectionOverride: 1
+          });
+          if (regenResult && regenResult.script) {
+            currentScenes[idx].script = regenResult.script.replace(/^\[씬\s*\d+\]\s*/g, '').trim();
+          }
+          return rebuildScriptFromScenes(currentScenes);
+        });
+      }, Promise.resolve(script));
+    }
+
+    function parseScenesFromScript(script) {
+      var lines = String(script || '').split(/\r?\n/);
+      var scenes = [];
+      var current = null;
+      lines.forEach(function(line) {
+        var match = line.match(/^\[씬\s*(\d+)\]\s*(.*)$/);
+        if (match) {
+          if (current) scenes.push(current);
+          current = { sceneNum: Number(match[1]), script: match[2] || '' };
+        } else if (current) {
+          current.script += (current.script ? '\n' : '') + line;
+        }
+      });
+      if (current) scenes.push(current);
+      return scenes;
+    }
+
+    function rebuildScriptFromScenes(scenes) {
+      return scenes.map(function(scene, idx) {
+        var num = idx + 1;
+        return '[씬 ' + num + '] ' + scene.script;
+      }).join('\n');
+    }
+
+    function getLastSentence(text) {
+      var sentences = String(text || '').split(/(?<=[.!?。！？])\s+/).filter(Boolean);
+      if (!sentences.length) return '';
+      return sentences[sentences.length - 1];
+    }
+
+    async function runAntigravityTest5Min() {
+      var tone = document.getElementById('toneSelect')?.value || 'senior-expert';
+      var apiPrompt = buildApiPrompt(tone);
+      apiPrompt.targetMinutes = 5;
+      apiPrompt.requiredSceneCount = 10;
+      apiPrompt.format = 'longform';
+
+      startAntigravityProgress(10);
+      var data = await splitAndDispatchToAntigravity(apiPrompt, {
+        sectionCountOverride: 2,
+        scenesPerSectionOverride: 5
+      });
+      stopAntigravityProgress(10);
+
+      if (data && data.script) {
+        document.getElementById('scriptEditor').value = data.script;
+        updateDurationGauge();
+      }
+    }
+
+    function renderScenePreview() {
+      var grid = document.getElementById('sceneGrid');
+      if (!grid) return;
+      var scenes = parseStorylineLines();
+      grid.innerHTML = scenes
+        .map(function(scene, idx) {
+          return (
+            '<div class="scene-card">' +
+            '<div class="scene-title">씬 ' +
+            (idx + 1) +
+            '</div>' +
+            '<div class="scene-body">' +
+            scene +
+            '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
+    }
+
+    // 영상 형식 및 길이 선택 변수
+    var currentFormat = 'shorts'; // 'shorts' or 'longform'
+    var currentDuration = '1m'; // '30s', '1m', '2m', '3m', '5m', '10m', '20m', '30m', '40m', '50m', '60m'
+
+    // 형식별 길이 옵션
+    var durationOptions = {
+      shorts: [
+        { value: '30s', label: '30초' },
+        { value: '1m', label: '1분' },
+        { value: '2m', label: '2분' },
+        { value: '3m', label: '3분' }
+      ],
+      longform: [
+        { value: '5m', label: '5분' },
+        { value: '10m', label: '10분' },
+        { value: '20m', label: '20분' },
+        { value: '30m', label: '30분' },
+        { value: '40m', label: '40분' },
+        { value: '50m', label: '50분' },
+        { value: '60m', label: '60분' }
+      ]
+    };
+
+    // 형식 선택 토글
+    function initFormatToggle() {
+      var formatShorts = document.getElementById('formatShorts');
+      var formatLongform = document.getElementById('formatLongform');
+      var durationSelect = document.getElementById('durationSelect');
+
+      if (formatShorts && formatLongform) {
+        formatShorts.addEventListener('click', function() {
+          currentFormat = 'shorts';
+          formatShorts.classList.add('active');
+          formatLongform.classList.remove('active');
+          updateDurationOptions();
+        });
+
+        formatLongform.addEventListener('click', function() {
+          currentFormat = 'longform';
+          formatLongform.classList.add('active');
+          formatShorts.classList.remove('active');
+          updateDurationOptions();
+        });
+      }
+    }
+
+    // 길이 옵션 동적 업데이트
+    function updateDurationOptions() {
+      var durationSelect = document.getElementById('durationSelect');
+      if (!durationSelect) return;
+
+      var options = durationOptions[currentFormat];
+      durationSelect.innerHTML = '';
+      
+      options.forEach(function(opt) {
+        var option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.label;
+        durationSelect.appendChild(option);
+      });
+
+      // 첫 번째 옵션을 기본값으로 설정
+      if (options.length > 0) {
+        currentDuration = options[0].value;
+        durationSelect.value = currentDuration;
+        updateTargetDuration();
+      }
+    }
+
+    // 목표 길이 업데이트
+    function updateTargetDuration() {
+      var targetEl = document.getElementById('targetDuration');
+      if (targetEl) {
+        var durationLabel = durationOptions[currentFormat].find(function(opt) {
+          return opt.value === currentDuration;
+        });
+        if (durationLabel) {
+          targetEl.textContent = durationLabel.label;
+        }
+      }
+    }
+
+    // 길이 선택 이벤트
+    function initDurationSelect() {
+      var durationSelect = document.getElementById('durationSelect');
+      if (durationSelect) {
+        durationSelect.addEventListener('change', function() {
+          currentDuration = this.value;
+          updateTargetDuration();
+          updateDurationGauge();
+        });
+      }
+    }
+
+    // 분량 계산 (씬 개수 기준: 씬당 30초)
+    function calculateScriptDuration(script) {
+      if (!script || !script.trim()) return 0;
+      var scenes = script
+        .split(/\n{2,}/)
+        .map(function(s) { return s.trim(); })
+        .filter(function(s) { return s.length > 0; });
+      var sceneCount = scenes.length;
+      return (sceneCount * 30) / 60; // 분 단위
+    }
+
+    // 분량을 초/분 형식으로 변환
+    function formatDuration(minutes) {
+      if (minutes < 1) {
+        return Math.round(minutes * 60) + '초';
+      } else {
+        var mins = Math.floor(minutes);
+        var secs = Math.round((minutes - mins) * 60);
+        if (secs === 60) {
+          mins += 1;
+          secs = 0;
+        }
+        if (secs === 0) {
+          return mins + '분';
+        } else {
+          return mins + '분 ' + secs + '초';
+        }
+      }
+    }
+
+    // 목표 길이를 분 단위로 변환
+    function parseTargetDuration(durationStr) {
+      if (durationStr.endsWith('s')) {
+        return parseInt(durationStr) / 60; // 초를 분으로
+      } else if (durationStr.endsWith('m')) {
+        return parseInt(durationStr); // 분
+      }
+      return 1; // 기본값
+    }
+
+    // 분량 게이지 업데이트
+    function updateDurationGauge() {
+      var scriptEditor = document.getElementById('scriptEditor');
+      var durationGauge = document.getElementById('durationGauge');
+      var durationText = document.getElementById('durationText');
+      
+      if (!scriptEditor || !durationGauge || !durationText) return;
+
+      var script = scriptEditor.value;
+      var currentMinutes = calculateScriptDuration(script);
+      var targetMinutes = parseTargetDuration(currentDuration);
+      
+      var currentFormatted = formatDuration(currentMinutes);
+      var targetFormatted = durationOptions[currentFormat].find(function(opt) {
+        return opt.value === currentDuration;
+      });
+      if (targetFormatted) {
+        targetFormatted = targetFormatted.label;
+      } else {
+        targetFormatted = currentDuration;
+      }
+
+      durationText.innerHTML = '현재 분량: <strong>' + currentFormatted + '</strong> / 목표: <strong>' + targetFormatted + '</strong>';
+
+      // 게이지 색상 업데이트
+      durationGauge.className = 'duration-gauge';
+      var diff = Math.abs(currentMinutes - targetMinutes);
+      var tolerance = targetMinutes * 0.2; // 20% 허용 오차
+
+      if (currentMinutes === 0) {
+        // 대본이 없을 때
+        durationGauge.className = 'duration-gauge';
+      } else if (diff <= tolerance) {
+        // 목표 범위 내
+        durationGauge.classList.add('success');
+      } else if (currentMinutes < targetMinutes * 0.5 || currentMinutes > targetMinutes * 1.5) {
+        // 너무 짧거나 길 때
+        durationGauge.classList.add('error');
+      } else {
+        // 경고 범위
+        durationGauge.classList.add('warning');
+      }
+    }
+
+    // 버튼 및 초기 렌더
+    (function initPage() {
+      renderRecap();
+      renderScenePreview();
+
+      // 형식 및 길이 선택 초기화
+      initFormatToggle();
+      initDurationSelect();
+      updateDurationOptions();
+      updateTargetDuration();
+
+      // 대본 에디터 입력 시 분량 게이지 업데이트
+      var scriptEditor = document.getElementById('scriptEditor');
+      if (scriptEditor) {
+        scriptEditor.addEventListener('input', function() {
+          updateDurationGauge();
+        });
+      }
+
+      var stopBtn = document.getElementById('btnStopAndSave');
+      if (stopBtn) {
+        stopBtn.addEventListener('click', function() {
+          antigravityStopRequested = true;
+          if (antigravityAbortController) {
+            antigravityAbortController.abort();
+          }
+          var scriptText = document.getElementById('scriptEditor').value.trim();
+          var payload = {
+            script: scriptText,
+            tone: document.getElementById('toneSelect').value,
+            format: currentFormat,
+            duration: currentDuration,
+            targetMinutes: parseTargetDuration(currentDuration),
+            savedAt: new Date().toISOString()
+          };
+          localStorage.setItem('step3InterruptedScript', JSON.stringify(payload));
+          alert('생성이 중단되었습니다. 현재 결과물이 저장되었습니다.');
+        });
+      }
+
+      // 톤 선택 시 미리보기 업데이트
+      var toneSelect = document.getElementById('toneSelect');
+      if (toneSelect) {
+        toneSelect.addEventListener('change', function() {
+          updateTonePreview();
+        });
+        // 초기 미리보기 표시
+        updateTonePreview();
+      }
+
+      // Antigravity 5분 테스트: URL에 ?ag_test=1이면 자동 실행
+      try {
+        if (window.location.search.includes('ag_test=1')) {
+          runAntigravityTest5Min();
+        }
+      } catch (e) {}
+
+      // 키워드 입력 필드 이벤트
+      var keywordsInput = document.getElementById('requiredKeywordsInput');
+      if (keywordsInput) {
+        keywordsInput.addEventListener('input', function() {
+          var keywords = parseKeywords(this.value);
+          requiredKeywords = keywords;
+          // 검증 메시지 초기화
+          var validationEl = document.getElementById('keywordValidation');
+          if (validationEl) {
+            validationEl.className = 'keyword-validation';
+            validationEl.textContent = '';
+          }
+        });
+      }
+
+      var btnGen = document.getElementById('btnGenerateScript');
+      if (btnGen) {
+        btnGen.addEventListener('click', async function() {
+          // 키워드 가져오기 (id 통합 지원)
+          var keywordsInput = document.getElementById('required-keywords-input') ||
+            document.getElementById('requiredKeywordsInput');
+          var requiredKeywords = [];
+          if (keywordsInput && keywordsInput.value.trim()) {
+            requiredKeywords = parseKeywords(keywordsInput.value);
+          }
+          var keywords = requiredKeywords;
+
+          alert('대본 엔진 가동!');
+          var tone = document.getElementById('toneSelect').value;
+          
+          if (keywords.length === 0) {
+            if (!confirm('필수 키워드가 입력되지 않았습니다. 그래도 대본을 생성하시겠습니까?')) {
+              return;
+            }
+          }
+          
+          // 로딩 상태 표시
+          btnGen.disabled = true;
+          btnGen.textContent = 'AI 대본 생성 중...';
+          
+          var validationEl = document.getElementById('keywordValidation');
+          if (validationEl) {
+            validationEl.className = 'keyword-validation';
+            validationEl.textContent = '';
+          }
+          
+          try {
+            // 실제 API 호출 (백엔드)
+            var apiPrompt = buildApiPrompt(tone);
+            
+            // 원본 대본 추가 (수치 보호용)
+            var originalScript = step3Data && step3Data.script ? step3Data.script : '';
+            if (originalScript) {
+              apiPrompt.originalScript = originalScript;
+            }
+
+            var refinementAttempt = 0;
+            var maxRefine = 1;
+
+            async function requestScript(promptPayload) {
+              return postJsonWithRetry('/api/generate-script', promptPayload, 3, 'Script API');
+            }
+
+            // 60분 배치 생성 진행 상태 표시
+            if (apiPrompt.targetMinutes >= 60) {
+              longformState.totalChapters = 12;
+              longformState.totalScenes = 120;
+              resetLongformProgress();
+              initLongformDashboard();
+              startAntigravityProgress(longformState.totalScenes);
+            }
+
+            var data = null;
+            if (apiPrompt.targetMinutes >= 60) {
+              // 터미널 로그: Antigravity 전송 확인
+              try {
+                await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/antigravity/log', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    message: '[SYSTEM] 안티그레이비티 서버로 데이터 전송 시작'
+                  })
+                });
+                if (apiPrompt.targetMinutes >= 60) {
+                  await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/antigravity/log', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      message: '[SYSTEM] 60분 대본 생성 시퀀스 시작...'
+                    })
+                  });
+                }
+              } catch (e) {}
+              data = await splitAndDispatchToAntigravity(apiPrompt, null, requestScript);
+            } else {
+              data = await requestScript(apiPrompt);
+            }
+            var script = '';
+            var validation = { valid: true, missing: [] };
+            var numericalValidation = { valid: true, missing: [] };
+
+            if (!data || !data.script) {
+              throw new Error('API 응답이 비어 있습니다. 잠시 후 다시 시도해 주세요.');
+            }
+            script = data.script;
+
+            // 분량 자동 보강 (1회)
+            if (data && data.needs_refine && refinementAttempt < maxRefine) {
+              refinementAttempt += 1;
+              var durationGauge = document.getElementById('durationGauge');
+              var durationText = document.getElementById('durationText');
+              if (durationGauge && durationText) {
+                durationGauge.className = 'duration-gauge refining';
+                durationText.innerHTML = '분량이 부족하여 AI가 내용을 보강하고 있습니다... (1/1회)';
+              }
+
+              apiPrompt.refinementInstruction = '현재 대본의 논리 구조는 유지하되, 각 씬(Scene)별로 시니어들이 이해하기 쉬운 구체적인 사례와 추가 설명을 덧붙여 분량을 2배로 확장하라.';
+              apiPrompt.refinementAttempt = refinementAttempt;
+              var refinedData = apiPrompt.targetMinutes >= 10
+                ? await splitAndDispatchToAntigravity(apiPrompt)
+                : await requestScript(apiPrompt);
+              if (refinedData && refinedData.script) {
+                data = refinedData;
+                script = refinedData.script;
+              }
+            }
+
+            // 데이터 무결성 검사 및 재생성
+            if (apiPrompt.targetMinutes >= 10) {
+              script = await scanAndRegenerateInvalidScenes(script, apiPrompt);
+            }
+
+            // 배치 생성 완료 표시
+            if (apiPrompt.targetMinutes >= 60) {
+              stopAntigravityProgress(longformState.totalScenes);
+            }
+
+            // 서버 사이드 검증 결과 사용 (있는 경우)
+            if (data && data.keywordValidation) {
+              validation = data.keywordValidation;
+            } else {
+              // 클라이언트 사이드 검증
+              validation = validateKeywords(script, keywords);
+            }
+
+            // 서버 사이드 수치 검증 결과 사용 (있는 경우)
+            if (data && data.numericalValidation) {
+              numericalValidation = data.numericalValidation;
+            } else if (originalScript && originalScript !== script) {
+              // 클라이언트 사이드 수치 검증
+              numericalValidation = validateNumericalData(originalScript, script);
+            }
+            
+            // 대본 설정 (출력부 필터링)
+            var displayScript = cleanScriptForDisplay(script);
+            document.getElementById('scriptEditor').value = displayScript;
+            
+            // 분량 게이지 업데이트
+            updateDurationGauge();
+            
+            // 씬별 시각 묘사 자동 변환 (씬 최적화)
+            try {
+              var scenes = parseStorylineLines();
+              var visualPrompts = generateSceneVisualPrompts(script, scenes);
+              if (visualPrompts && visualPrompts.length > 0) {
+                // 시각 묘사 데이터를 localStorage에 저장 (Step 4-1에서 사용)
+                var visualData = {
+                  scenes: visualPrompts,
+                  generatedAt: new Date().toISOString(),
+                  tone: tone
+                };
+                localStorage.setItem('step3VisualPrompts', JSON.stringify(visualData));
+                console.log('[Step 3] 씬별 시각 묘사 자동 변환 완료:', visualPrompts.length + '개 씬');
+              }
+            } catch (e) {
+              console.warn('[Step 3] 시각 묘사 변환 실패:', e);
+              // 실패해도 계속 진행
+            }
+            
+            // Step 3 Success 로그
+            console.log('[Step 3 Success] 대본 생성 완료', {
+              tone: tone,
+              keywords: keywords,
+              scriptLength: script.length,
+              keywordValidation: validation,
+              numericalValidation: numericalValidation
+            });
+            
+            // 서버 로그 (옵션)
+            try {
+              await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  step: 3,
+                  stepName: '대본 생성',
+                  status: 'success',
+                  data: {
+                    tone: tone,
+                    keywordsCount: keywords.length,
+                    scriptLength: script.length,
+                    keywordValidation: validation.valid,
+                    numericalValidation: numericalValidation.valid
+                  }
+                })
+              }).catch(function(e) {
+                console.warn('서버 로그 전송 실패:', e);
+              });
+            } catch (e) {
+              console.warn('서버 로그 전송 실패:', e);
+            }
+            
+            // 수치 보호 검증 결과 처리 (강화)
+            if (!numericalValidation.valid && numericalValidation.missing.length > 0) {
+              console.error('[Step 3] 수치 보호 검증 실패:', {
+                missing: numericalValidation.missing,
+                original: originalNumerics,
+                generated: generatedNumerics
+              });
+              
+              var missingNumerics = numericalValidation.missing.map(function(n) { return "'" + n + "'"; }).join(', ');
+              var originalNumerics = extractNumericalData(originalScript);
+              var generatedNumerics = extractNumericalData(script);
+              
+              // 즉시 경고 팝업 표시
+              var warningMessage = '⚠️ 전문가가 제안한 핵심 수치입니다.\n\n' +
+                                   '누락된 수치: ' + missingNumerics + '\n\n' +
+                                   '원본 수치: ' + originalNumerics.join(', ') + '\n' +
+                                   '생성된 수치: ' + generatedNumerics.join(', ') + '\n\n' +
+                                   '수치 데이터가 변경되면 건강 정보의 정확성이 떨어질 수 있습니다.\n' +
+                                   '대본을 다시 생성하시겠습니까?';
+              
+              if (!confirm(warningMessage)) {
+                // 사용자가 취소한 경우에도 경고 표시
+                if (validationEl) {
+                  validationEl.className = 'keyword-validation warning';
+                  validationEl.innerHTML = '<strong>⚠️ 수치 보호 경고:</strong> 다음 수치 데이터가 누락되었습니다: ' + missingNumerics + 
+                                           '<br><small>원본: ' + originalNumerics.join(', ') + ' → 생성: ' + generatedNumerics.join(', ') + '</small>';
+                }
+                return; // 사용자가 취소하면 중단
+              }
+              
+              // 재생성 버튼 추가
+              if (validationEl) {
+                validationEl.className = 'keyword-validation warning';
+                validationEl.innerHTML = '<strong>⚠️ 수치 보호 경고:</strong> 다음 수치 데이터가 누락되었습니다: ' + missingNumerics + 
+                                         '<br><small>원본: ' + originalNumerics.join(', ') + ' → 생성: ' + generatedNumerics.join(', ') + '</small>' +
+                                         '<br>대본을 다시 생성하시겠습니까?';
+                
+                var retryBtn = document.createElement('button');
+                retryBtn.textContent = '수치 포함하여 다시 생성';
+                retryBtn.style.cssText = 'margin-top: 8px; padding: 6px 12px; background: #f59e0b; color: #fff; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;';
+                retryBtn.onclick = function() {
+                  btnGen.click();
+                };
+                
+                var existingBtn = validationEl.querySelector('button');
+                if (existingBtn) existingBtn.remove();
+                validationEl.appendChild(retryBtn);
+              }
+              
+              // 재생성 실행
+              btnGen.click();
+              return;
+            } else if (numericalValidation.valid) {
+              console.log('[Step 3] 수치 보호 검증 성공: 모든 수치 데이터가 유지되었습니다.');
+            }
+            
+            // 키워드 검증
+            if (keywords.length > 0) {
+              
+              if (!validation.valid) {
+                // 누락된 키워드가 있는 경우
+                var missingList = validation.missing.map(function(k) { return "'" + k + "'"; }).join(', ');
+                var message = '⚠️ 필수 키워드 ' + missingList + '가 누락되었습니다.';
+                
+                if (validationEl) {
+                  validationEl.className = 'keyword-validation warning';
+                  validationEl.innerHTML = '<strong>경고:</strong> ' + message + '<br>다시 생성하시겠습니까?';
+                  
+                  // 재생성 버튼 추가
+                  var retryBtn = document.createElement('button');
+                  retryBtn.textContent = '키워드 포함하여 다시 생성';
+                  retryBtn.style.cssText = 'margin-top: 8px; padding: 6px 12px; background: #f59e0b; color: #fff; border: none; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;';
+                  retryBtn.onclick = function() {
+                    btnGen.click(); // 재생성
+                  };
+                  
+                  // 기존 버튼 제거 후 추가
+                  var existingBtn = validationEl.querySelector('button');
+                  if (existingBtn) existingBtn.remove();
+                  validationEl.appendChild(retryBtn);
+                }
+                
+                // 사용자에게 알림
+                if (confirm(message + '\n\n다시 생성하시겠습니까?')) {
+                  btnGen.click(); // 재생성
+                  return;
+                }
+              } else {
+                // 모든 키워드가 포함된 경우
+                if (validationEl) {
+                  validationEl.className = 'keyword-validation success';
+                  validationEl.innerHTML = '<strong>✓ 검증 완료:</strong> 모든 필수 키워드가 대본에 포함되었습니다.';
+                }
+              }
+            }
+          } catch (error) {
+            console.error('대본 생성 오류:', error);
+            statusReplace('오류: ' + (error && error.message ? error.message : '대본 생성 실패'));
+            showApiConnectionError('API 연결 확인 필요');
+            alert('대본 생성 실패: ' + (error && error.message ? error.message : 'API 오류'));
+          } finally {
+            btnGen.disabled = false;
+            btnGen.textContent = 'AI 대본 초안 생성하기';
+          }
+        });
+      }
+
+      var btnNext = document.getElementById('btnGoToStep4');
+      if (btnNext) {
+        btnNext.addEventListener('click', function() {
+          var scriptText = document.getElementById('scriptEditor').value.trim();
+          if (!scriptText) {
+            if (!confirm('대본이 비어 있습니다. 그래도 다음 단계로 이동하시겠습니까?')) return;
+          }
+          var tone = document.getElementById('toneSelect').value;
+          var keywordsInput = document.getElementById('requiredKeywordsInput');
+          var keywords = [];
+          if (keywordsInput && keywordsInput.value.trim()) {
+            keywords = parseKeywords(keywordsInput.value);
+          }
+          
+          // Step 3 데이터 저장 (형식 및 길이 정보 포함)
+          var step3Payload = {
+            script: scriptText,
+            tone: tone,
+            keywords: keywords,
+            format: currentFormat,
+            duration: currentDuration,
+            targetMinutes: parseTargetDuration(currentDuration),
+            blueprint: blueprint,
+            fromStep2: fromStep2,
+            scenes: parseStorylineLines()
+          };
+          localStorage.setItem('step3Blueprint', JSON.stringify(step3Payload));
+          localStorage.setItem('currentFormat', currentFormat);
+          localStorage.setItem('currentDuration', currentDuration);
+          
+          var payload = {
+            blueprint: blueprint,
+            fromStep2: fromStep2,
+            script: scriptText,
+            scenes: parseStorylineLines(),
+            tone: tone,
+            tonePersona: tonePersonaMap[tone] || tonePersonaMap['senior-expert'],
+            requiredKeywords: keywords
+          };
+          localStorage.setItem('step4JsonPayload', JSON.stringify(payload));
+          window.location.href = 'step-4-1.html';
+        });
+      }
+    })();
+
+    // 로그인 로직 (다른 페이지와 동일)
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) { alert('ID와 비밀번호를 입력하세요.'); return; }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) { return u.id === id && u.password === pw; });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) { logout(); alert('로그아웃되었습니다.'); }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+    checkLoginStatus();
+  </script>
+</body>
+</html>

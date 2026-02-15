@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>4-2. 이미지 생성</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+    /* 1~2단계(AI 창작)와 3단계(사용자 제어) 시각적 구분 */
+    .workflow-list li:nth-child(3) .workflow-item {
+      margin-top: 10px;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 14px;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { flex: 1; }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    .content-card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .field-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    /* Engine selector */
+    .engine-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .engine-option {
+      flex: 1;
+      min-width: 140px;
+      padding: 12px 16px;
+      background: #fff;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+    }
+    .engine-option:hover {
+      border-color: #cbd5e0;
+      background: #f7fafc;
+    }
+    .engine-option.selected {
+      border-color: #805ad5;
+      background: #f3e8ff;
+      color: #553c9a;
+      font-weight: 600;
+    }
+
+    /* Scene cards */
+    .scene-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .scene-card {
+      display: grid;
+      grid-template-columns: 200px 1fr 180px;
+      gap: 16px;
+      padding: 16px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      align-items: start;
+    }
+    .scene-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .scene-num {
+      font-size: 16px;
+      font-weight: 700;
+      color: #553c9a;
+    }
+    .scene-prompt {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.5;
+      max-height: 80px;
+      overflow: hidden;
+      cursor: pointer;
+      padding: 8px;
+      background: #f7fafc;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+    }
+    .scene-prompt:hover {
+      background: #edf2f7;
+    }
+    .scene-prompt.expanded {
+      max-height: none;
+      overflow: visible;
+    }
+    .scene-character-select {
+      margin: 12px 0;
+      padding: 12px;
+      background: #f7fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .character-select-dropdown {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 13px;
+      background: #fff;
+      cursor: pointer;
+    }
+    .character-select-dropdown:focus {
+      outline: none;
+      border-color: #805ad5;
+      box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.1);
+    }
+    .scene-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      background: #f7fafc;
+      border: 2px dashed #cbd5e0;
+      border-radius: 8px;
+      position: relative;
+    }
+    .scene-preview img {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 6px;
+    }
+    .scene-preview.loading {
+      border-color: #805ad5;
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e2e8f0;
+      border-top-color: #805ad5;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .scene-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .btn-scene {
+      padding: 10px 16px;
+      background: #805ad5;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-scene:hover { background: #6b46c1; }
+    .btn-scene:disabled {
+      background: #cbd5e0;
+      cursor: not-allowed;
+    }
+    .btn-scene-secondary {
+      background: #4a5568;
+    }
+    .btn-scene-secondary:hover { background: #2d3748; }
+    .btn-scene-success {
+      background: #48bb78;
+    }
+    .btn-scene-success:hover { background: #38a169; }
+
+    .btn-primary {
+      padding: 10px 16px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #c62828; }
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Batch actions */
+    .batch-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item active">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>4-2. 이미지 생성</h1>
+          <p class="subtitle">씬별 이미지를 생성하고 관리합니다</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 엔진 선택 패널 -->
+      <div class="content-card">
+        <div class="field-label">생성 엔진 선택</div>
+        <div class="engine-selector" id="engineSelector">
+          <button type="button" class="engine-option selected" data-engine="nano_basic">
+            🍌 나노바나나 (기본)
+          </button>
+          <button type="button" class="engine-option" data-engine="nano_hq">
+            🍌 나노바나나 (고품질)
+          </button>
+          <button type="button" class="engine-option" data-engine="imagefx">
+            ✨ ImageFX
+          </button>
+          <button type="button" class="engine-option" data-engine="whisk">
+            🌪️ 위스크 (Whisk)
+          </button>
+          <button type="button" class="engine-option" data-engine="midjourney">
+            🎨 미드저니 (Midjourney)
+          </button>
+        </div>
+      </div>
+
+      <!-- 씬별 이미지 생성 작업대 -->
+      <div class="content-card">
+        <div class="field-label">씬별 이미지 생성</div>
+        <div class="batch-actions">
+          <button class="btn-primary" type="button" id="btnGenerateAll">모든 씬 일괄 생성하기</button>
+        </div>
+        <div class="scene-list" id="sceneList">
+          <!-- 씬 카드들이 여기에 동적으로 생성됩니다 -->
+        </div>
+      </div>
+
+      <!-- 다음 단계 이동 -->
+      <div style="margin-top: 24px;">
+        <button class="btn-primary" type="button" id="btnGoToStep5">5. TTS 생성 단계로 이동</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    var selectedEngine = 'nano_basic';
+    var jsonData = null;
+    var sceneStates = {};
+
+    // Step4-1 -> Step4-2 데이터 로드
+    (function() {
+      try {
+        var payloadRaw = localStorage.getItem('step42JsonData');
+        if (!payloadRaw) {
+          document.getElementById('sceneList').innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">4-1단계에서 전달된 JSON 데이터가 없습니다.</div>';
+          return;
+        }
+        jsonData = JSON.parse(payloadRaw);
+        if (!jsonData.scenes || !jsonData.scenes.length) {
+          document.getElementById('sceneList').innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">씬 데이터가 없습니다.</div>';
+          return;
+        }
+        renderSceneCards();
+      } catch (e) {
+        console.error('데이터 로드 실패:', e);
+        document.getElementById('sceneList').innerHTML = (
+          '<div class="content-card" style="text-align: center; padding: 40px 20px;">' +
+          '<div style="font-size: 16px; font-weight: 600; color: #e53935; margin-bottom: 12px;">데이터를 불러오는 중 오류가 발생했습니다</div>' +
+          '<div style="font-size: 13px; color: #666; margin-bottom: 20px;">4-1단계에서 JSON 데이터를 생성한 후 다시 시도해 주세요.</div>' +
+          '<button class="btn-primary" onclick="window.location.href=\'step-4-1.html\'" style="margin-top: 8px;">4-1. JSON 생성 단계로 이동</button>' +
+          '</div>'
+        );
+      }
+    })();
+
+    // 엔진 선택
+    (function() {
+      var selector = document.getElementById('engineSelector');
+      if (!selector) return;
+      selector.querySelectorAll('.engine-option').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          selector.querySelectorAll('.engine-option').forEach(function(b) {
+            b.classList.remove('selected');
+          });
+          this.classList.add('selected');
+          selectedEngine = this.getAttribute('data-engine');
+        });
+      });
+    })();
+
+    // 씬 카드 렌더링
+    function renderSceneCards() {
+      var container = document.getElementById('sceneList');
+      if (!container || !jsonData || !jsonData.scenes) return;
+
+      container.innerHTML = jsonData.scenes
+        .map(function(scene, idx) {
+          var sceneId = 'scene-' + scene.scene_num;
+          sceneStates[sceneId] = {
+            scene_num: scene.scene_num,
+            prompt: scene.image_prompt || '',
+            imageUrl: null,
+            isLoading: false,
+            hasError: false
+          };
+
+          return (
+            '<div class="scene-card" data-scene-id="' +
+            sceneId +
+            '">' +
+            '<div class="scene-info">' +
+            '<div class="scene-num">씬 ' +
+            scene.scene_num +
+            '</div>' +
+            '<div class="scene-prompt" onclick="togglePrompt(this)">' +
+            (scene.image_prompt || '(프롬프트 없음)') +
+            '</div>' +
+            '</div>' +
+            '<div class="scene-character-select">' +
+            '<label style="font-size: 12px; font-weight: 600; color: #4a5568; margin-bottom: 6px; display: block;">👤 등장인물 선택</label>' +
+            '<select class="character-select-dropdown" id="character-select-' + sceneId + '" data-scene-id="' + sceneId + '" onchange="updateSceneCharacter(\'' + sceneId + '\')">' +
+            '<option value="">AI 랜덤 생성 (지정 안 함)</option>' +
+            '</select>' +
+            '</div>' +
+            '<div class="scene-preview" id="preview-' +
+            sceneId +
+            '">' +
+            '<div style="color: #999; font-size: 13px; padding: 20px; text-align: center; background: #f7fafc; border-radius: 8px; border: 1px dashed #cbd5e0;">' +
+            '<div style="font-size: 14px; font-weight: 600; color: #4a5568; margin-bottom: 4px;">이미지 생성 대기 중</div>' +
+            '<div style="font-size: 12px; color: #718096;">생성하기 버튼을 클릭하여 이미지를 생성하세요</div>' +
+            '</div>' +
+            '</div>' +
+            '<div class="scene-actions">' +
+            '<button class="btn-scene" type="button" onclick="generateImage(\'' +
+            sceneId +
+            '\')">생성하기</button>' +
+            '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
+      
+      // 캐릭터 드롭다운 채우기
+      loadCharacterOptions();
+    }
+
+    // 캐릭터 옵션 로드
+    function loadCharacterOptions() {
+      var characters = getCharacters();
+      document.querySelectorAll('.character-select-dropdown').forEach(function(select) {
+        var currentValue = select.value;
+        select.innerHTML = '<option value="">AI 랜덤 생성 (지정 안 함)</option>';
+        
+        characters.forEach(function(char) {
+          var label = '';
+          if (char.role === 'narrator') {
+            label = '성우/프리젠터';
+          } else if (char.role === 'main') {
+            label = '주인공 ' + String.fromCharCode(65 + char.index) + (char.name ? ' (' + char.name + ')' : '');
+          } else if (char.role === 'sub') {
+            label = '조연 ' + String.fromCharCode(65 + char.index) + (char.name ? ' (' + char.name + ')' : '');
+          }
+          
+          var option = document.createElement('option');
+          option.value = char.role + '-' + char.index;
+          option.textContent = label;
+          if (option.value === currentValue) {
+            option.selected = true;
+          }
+          select.appendChild(option);
+        });
+      });
+    }
+
+    function getCharacters() {
+      var chars = localStorage.getItem('characters');
+      return chars ? JSON.parse(chars) : [];
+    }
+
+    function updateSceneCharacter(sceneId) {
+      var select = document.getElementById('character-select-' + sceneId);
+      if (!select) return;
+      
+      var value = select.value;
+      if (!sceneStates[sceneId]) {
+        sceneStates[sceneId] = {};
+      }
+      sceneStates[sceneId].selectedCharacter = value;
+    }
+
+    // 프롬프트 토글
+    function togglePrompt(el) {
+      el.classList.toggle('expanded');
+    }
+
+    // 이미지 생성 API 호출 (단일 엔드포인트, engine 파라미터만 변경)
+    async function generateImage(sceneId) {
+      var state = sceneStates[sceneId];
+      if (!state || state.isLoading) return;
+
+      var scene = jsonData.scenes.find(function(s) {
+        return s.scene_num === state.scene_num;
+      });
+      if (!scene) return;
+
+      state.isLoading = true;
+      state.hasError = false;
+      updateSceneUI(sceneId);
+
+      try {
+        // 선택된 캐릭터 정보 가져오기
+        var characterRef = null;
+        var selectedChar = sceneStates[sceneId].selectedCharacter;
+        if (selectedChar) {
+          var parts = selectedChar.split('-');
+          var role = parts[0];
+          var index = parseInt(parts[1]);
+          var characters = getCharacters();
+          var char = characters.find(function(c) {
+            return c.role === role && c.index === index;
+          });
+          if (char && char.imageUrl) {
+            characterRef = {
+              character_id: char.characterId,
+              reference_image_url: char.imageUrl,
+              embedding_data: char.embeddingData
+            };
+          }
+        }
+
+        var response = await fetch((window.__API_BASE__ || 'http://localhost:4000') + '/api/generate-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            prompt: scene.image_prompt || '',
+            engine: selectedEngine,
+            character_reference: characterRef, // 캐릭터 레퍼런스 추가
+            use_face_swap: true // InsightFace 후처리 활성화
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('이미지 생성 실패: ' + response.statusText);
+        }
+
+        var result = await response.json();
+        state.imageUrl = result.imageUrl || result.url || result.data?.url;
+        state.isLoading = false;
+        updateSceneUI(sceneId);
+      } catch (error) {
+        console.error('이미지 생성 오류:', error);
+        state.isLoading = false;
+        state.hasError = true;
+        state.errorMessage = error.message || '이미지 생성에 실패했습니다.';
+        updateSceneUI(sceneId);
+      }
+    }
+
+    // 씬 UI 업데이트
+    function updateSceneUI(sceneId) {
+      var state = sceneStates[sceneId];
+      if (!state) return;
+
+      var card = document.querySelector('[data-scene-id="' + sceneId + '"]');
+      var preview = document.getElementById('preview-' + sceneId);
+      var actions = card.querySelector('.scene-actions');
+
+      if (!card || !preview || !actions) return;
+
+      // 미리보기 업데이트
+      if (state.isLoading) {
+        preview.className = 'scene-preview loading';
+        preview.innerHTML = '<div class="loading-spinner"></div>';
+      } else if (state.imageUrl) {
+        preview.className = 'scene-preview';
+        preview.innerHTML = '<img src="' + state.imageUrl + '" alt="씬 ' + state.scene_num + ' 이미지" />';
+      } else if (state.hasError) {
+        preview.className = 'scene-preview';
+        preview.innerHTML = (
+          '<div style="padding: 20px; text-align: center;">' +
+          '<div style="color: #e53935; font-size: 14px; font-weight: 600; margin-bottom: 8px;">생성 실패</div>' +
+          '<div style="color: #666; font-size: 12px; margin-bottom: 12px;">' + (state.errorMessage || '이미지 생성에 실패했습니다') + '</div>' +
+          '<button class="btn-scene" style="font-size: 11px; padding: 6px 12px;" onclick="window.location.href=\'index.html#settings\'">API 설정 바로가기</button>' +
+          '</div>'
+        );
+      } else {
+        preview.className = 'scene-preview';
+        preview.innerHTML = '<div style="color: #999; font-size: 13px;">이미지 미리보기</div>';
+      }
+
+      // 액션 버튼 업데이트
+      if (state.isLoading) {
+        actions.innerHTML = '<button class="btn-scene" disabled>생성 중...</button>';
+      } else if (state.imageUrl) {
+        actions.innerHTML =
+          '<button class="btn-scene btn-scene-secondary" type="button" onclick="generateImage(\'' +
+          sceneId +
+          '\')">재생성</button>' +
+          '<button class="btn-scene btn-scene-success" type="button" onclick="downloadImage(\'' +
+          sceneId +
+          '\')">다운로드</button>';
+      } else if (state.hasError) {
+        actions.innerHTML =
+          '<button class="btn-scene" type="button" onclick="generateImage(\'' +
+          sceneId +
+          '\')">재시도</button>';
+      } else {
+        actions.innerHTML =
+          '<button class="btn-scene" type="button" onclick="generateImage(\'' +
+          sceneId +
+          '\')">생성하기</button>';
+      }
+    }
+
+    // 이미지 다운로드
+    function downloadImage(sceneId) {
+      var state = sceneStates[sceneId];
+      if (!state || !state.imageUrl) return;
+
+      var link = document.createElement('a');
+      link.href = state.imageUrl;
+      link.download = 'scene-' + state.scene_num + '.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // 모든 씬 일괄 생성
+    (function() {
+      var btnAll = document.getElementById('btnGenerateAll');
+      if (btnAll) {
+        btnAll.addEventListener('click', function() {
+          if (!jsonData || !jsonData.scenes) return;
+          jsonData.scenes.forEach(function(scene) {
+            var sceneId = 'scene-' + scene.scene_num;
+            if (sceneStates[sceneId] && !sceneStates[sceneId].isLoading) {
+              generateImage(sceneId);
+            }
+          });
+        });
+      }
+    })();
+
+    // 5단계로 이동
+    (function() {
+      var btnNext = document.getElementById('btnGoToStep5');
+      if (btnNext) {
+        btnNext.addEventListener('click', function() {
+          var images = [];
+          Object.keys(sceneStates).forEach(function(sceneId) {
+            var state = sceneStates[sceneId];
+            if (state.imageUrl) {
+              images.push({
+                scene_num: state.scene_num,
+                imageUrl: state.imageUrl,
+                prompt: state.prompt
+              });
+            }
+          });
+
+          var payload = {
+            jsonData: jsonData,
+            generatedImages: images,
+            engine: selectedEngine
+          };
+          localStorage.setItem('step5ImageData', JSON.stringify(payload));
+          window.location.href = 'step-6.html';
+        });
+      }
+    })();
+
+    // 로그온 시스템
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 입력하세요.');
+        return;
+      }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) {
+        return u.id === id && u.password === pw;
+      });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) {
+          logout();
+          alert('로그아웃되었습니다.');
+        }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+    checkLoginStatus();
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+  </script>
+</body>
+</html>

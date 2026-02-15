@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>7. 제목/설명 작성</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      min-height: 100vh;
+    }
+    .layout { display: flex; min-height: 100vh; padding-top: 0; }
+    .sidebar {
+      width: 300px;
+      background: linear-gradient(180deg, #fafbff 0%, #f2f4f8 100%);
+      border-right: 1px solid #e8ecf4;
+      padding: 20px 16px 24px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: 0.05em;
+      color: #2d3748;
+      margin-top: 8px;
+      margin-bottom: 0;
+      padding-left: 4px;
+      text-align: left;
+    }
+    .sidebar-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    /* 현재 프로젝트 */
+    .project-label {
+      font-size: 12px;
+      color: #718096;
+      margin-bottom: 6px;
+    }
+    .project-name-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .project-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .project-name-edit {
+      color: #718096;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .project-name-edit:hover {
+      color: #3182ce;
+    }
+    /* 프로젝트 액션 한 줄 배치 */
+    .project-actions-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .sidebar-btn-inline {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .sidebar-btn-inline-primary {
+      background: linear-gradient(135deg, #805ad5 0%, #6b46c1 100%);
+      color: #fff;
+    }
+    .sidebar-btn-inline-primary:hover {
+      background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+    }
+    .sidebar-btn-inline-secondary {
+      background: #fff;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    .sidebar-btn-inline-secondary:hover {
+      background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+    .workflow-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+    .workflow-list { list-style: none; padding-right: 4px; }
+    .workflow-item {
+      display: block;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4a5568;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .workflow-item:hover { background: #f7fafc; border-color: #cbd5e0; color: #2d3748; }
+    .workflow-item.active {
+      background: linear-gradient(135deg, #e9d8fd 0%, #e2e8f0 100%);
+      border-color: #b794f4;
+      color: #553c9a;
+      font-weight: 600;
+    }
+
+    .main {
+      flex: 1;
+      padding: 24px 32px 40px;
+      overflow-y: auto;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      margin-top: 0;
+      padding-top: 0;
+    }
+    .title-area { flex: 1; }
+    .title-area h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 4px;
+      margin-top: 0;
+      line-height: 1.3;
+    }
+    .title-area .subtitle {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+    .login-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .login-input {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 4px;
+      font-size: 13px;
+      box-sizing: border-box;
+      transition: background-color 0.2s, border-color 0.2s;
+      width: 140px;
+    }
+    .login-input::placeholder { color: #a0aec0; }
+    .login-input:disabled {
+      background-color: #E0E0E0;
+      border-color: #999;
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .btn-admin, .btn-login {
+      padding: 0 12px;
+      height: 32px;
+      background: #e0e0e0;
+      color: #333;
+      border: 1px solid #c0c0c0;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-admin:hover, .btn-login:hover { background: #d5d5d5; }
+
+    .content-card {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .field-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 8px;
+    }
+    .section-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    /* Video Recap */
+    .summary-card {
+      background: #fff7fb;
+      border-color: #fed7e2;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .summary-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.8);
+      border: 1px solid #fed7e2;
+    }
+    .summary-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #d53f8c;
+      margin-bottom: 2px;
+    }
+    .summary-value {
+      font-size: 13px;
+      color: #333;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+
+    /* Aggro slider */
+    .aggro-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .aggro-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2d3748;
+      min-width: 100px;
+    }
+    .aggro-slider-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+    .aggro-slider {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      background: #e2e8f0;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    .aggro-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #805ad5;
+      cursor: pointer;
+    }
+    .aggro-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #805ad5;
+      cursor: pointer;
+      border: none;
+    }
+    .aggro-value {
+      font-size: 12px;
+      font-weight: 600;
+      color: #553c9a;
+      min-width: 120px;
+      text-align: right;
+    }
+
+    /* Title suggestions */
+    .title-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .title-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+    }
+    .title-item.selected {
+      background: #f3e8ff;
+      border-color: #805ad5;
+    }
+    .title-text {
+      flex: 1;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+    }
+    .btn-select {
+      padding: 6px 12px;
+      background: #805ad5;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-select:hover { background: #6b46c1; }
+    .btn-select.selected {
+      background: #48bb78;
+    }
+
+    /* Description */
+    .description-textarea {
+      width: 100%;
+      min-height: 200px;
+      padding: 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      box-sizing: border-box;
+      line-height: 1.6;
+    }
+
+    /* Hashtags */
+    .tag-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 12px;
+      background: #f7fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+    .tag-item {
+      display: inline-block;
+      padding: 6px 12px;
+      background: #fff;
+      border: 1px solid #cbd5e0;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #4a5568;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tag-item:hover {
+      background: #edf2f7;
+      border-color: #805ad5;
+      color: #553c9a;
+    }
+    .tag-item.hashtag {
+      color: #3182ce;
+      font-weight: 600;
+    }
+    .btn-copy-tags {
+      margin-top: 12px;
+      padding: 8px 16px;
+      background: #4a5568;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-copy-tags:hover { background: #2d3748; }
+
+    .btn-primary {
+      padding: 10px 16px;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary:hover { background: #c62828; }
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">HANRA STUDIO</div>
+
+      <!-- 현재 프로젝트 -->
+      <div class="sidebar-card">
+        <div class="project-label">현재 프로젝트</div>
+        <div class="project-name-row">
+          <span class="project-name">새로운 프로젝트</span>
+          <span class="project-name-edit" title="이름 수정">✎</span>
+        </div>
+        <div class="project-actions-row">
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-primary" id="btnCreateProject">
+            P생성
+          </button>
+          <button type="button" class="sidebar-btn-inline sidebar-btn-inline-secondary" id="btnProjectList">
+            P목록
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="workflow-title">진행 단계</div>
+        <ul class="workflow-list">
+          <li><a href="ai-automation-project.html" class="workflow-item">1. 주제 추천</a></li>
+          <li><a href="step-2.html" class="workflow-item">2. AI 대본 생성</a></li>
+          <li><a href="step-3.html" class="workflow-item">3. 대본 직접 입력</a></li>
+          <li><a href="step-4-1.html" class="workflow-item">4-1. JSON 생성</a></li>
+          <li><a href="step-4-2.html" class="workflow-item">4-2. 이미지 생성</a></li>
+          <li><a href="step-6.html" class="workflow-item">5. TTS 생성</a></li>
+          <li><a href="step-5-2.html" class="workflow-item">5-2. BGM 삽입</a></li>
+          <li><a href="step-7.html" class="workflow-item">6. 영상 렌더링</a></li>
+          <li><a href="step-8.html" class="workflow-item active">7. 제목/설명 작성</a></li>
+          <li><a href="step-9.html" class="workflow-item">8. 썸네일 생성기</a></li>
+          <li><a href="step-10.html" class="workflow-item">9. 최종 제작</a></li>
+          <li><a href="step-11.html" class="workflow-item">10. 쇼츠 자동 변환</a></li>
+          <li><a href="step-12.html" class="workflow-item">11. 채널 매니저</a></li>
+          <li><a href="step-13.html" class="workflow-item">12. 작업 보관함</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="header-row">
+        <div class="title-area">
+          <h1>7. 제목/설명 작성</h1>
+          <p class="subtitle">유튜브 최적화된 제목과 설명을 생성합니다</p>
+        </div>
+        <div class="header-right">
+          <div class="login-inline-row">
+            <input type="text" class="login-input" id="loginId" placeholder="ID" />
+            <input type="password" class="login-input" id="loginPw" placeholder="Password" />
+            <button type="button" class="btn-admin" id="btnAdmin">관리</button>
+            <button type="button" class="btn-login" id="btnLogin">로그온</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 영상 데이터 요약 -->
+      <div class="content-card summary-card">
+        <div class="field-label">영상 데이터 요약</div>
+        <div class="summary-grid" id="videoRecap">
+          <!-- 동적으로 채워집니다 -->
+        </div>
+      </div>
+
+      <!-- AI 제목 및 설명 생성 -->
+      <div class="content-card">
+        <div class="field-label">AI 제목 및 설명 생성</div>
+        <p class="section-desc">유튜브 알고리즘에 최적화된 제목과 설명을 생성합니다.</p>
+        
+        <!-- 어그로 지수 슬라이더 -->
+        <div class="aggro-controls">
+          <div class="aggro-label">어그로 지수</div>
+          <div class="aggro-slider-container">
+            <span style="font-size: 12px; color: #666;">약함(정보 중심)</span>
+            <input type="range" class="aggro-slider" id="aggroSlider" min="1" max="5" step="1" value="3" />
+            <span style="font-size: 12px; color: #666;">강함(호기심 자극)</span>
+            <span class="aggro-value" id="aggroValue">보통</span>
+          </div>
+        </div>
+
+        <button class="btn-primary" type="button" id="btnGenerateTitle">유튜브 최적화 제목/설명 생성하기</button>
+
+        <!-- 제목 추천 -->
+        <div id="titleSuggestions" style="display: none;">
+          <div class="field-label" style="margin-top: 20px;">제목 추천</div>
+          <div class="title-list" id="titleList"></div>
+        </div>
+
+        <!-- 영상 설명 -->
+        <div id="descriptionSection" style="display: none;">
+          <div class="field-label" style="margin-top: 20px;">영상 설명</div>
+          <textarea class="description-textarea" id="descriptionText" placeholder="영상 설명이 여기에 생성됩니다..."></textarea>
+        </div>
+      </div>
+
+      <!-- 해시태그 및 태그 추출 -->
+      <div class="content-card" id="hashtagSection" style="display: none;">
+        <div class="field-label">추천 해시태그 및 태그</div>
+        <p class="section-desc">알고리즘 노출에 유리한 해시태그와 태그를 추천합니다.</p>
+        <div class="tag-cloud" id="tagCloud"></div>
+        <button class="btn-copy-tags" type="button" id="btnCopyTags">전체 태그 복사하기</button>
+      </div>
+
+      <!-- 다음 단계 이동 -->
+      <div style="margin-top: 24px;">
+        <button class="btn-primary" type="button" id="btnGoToStep8">8. 썸네일 생성기 단계로 이동</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    var aggroLevel = 3;
+    var selectedTitle = '';
+    var videoData = null;
+    var blueprintData = null;
+
+    // Step7 -> Step8 데이터 로드
+    (function() {
+      try {
+        var videoPayloadRaw = localStorage.getItem('step7VideoData');
+        var step2PayloadRaw = localStorage.getItem('step2Payload');
+        var step3PayloadRaw = localStorage.getItem('step4JsonPayload');
+
+        if (!videoPayloadRaw) {
+          document.getElementById('videoRecap').innerHTML = '<div class="summary-item"><div class="summary-value">이전 단계 데이터가 없습니다.</div></div>';
+          return;
+        }
+
+        videoData = JSON.parse(videoPayloadRaw);
+        if (step2PayloadRaw) {
+          blueprintData = JSON.parse(step2PayloadRaw);
+        }
+        if (step3PayloadRaw) {
+          var step3Data = JSON.parse(step3PayloadRaw);
+          if (step3Data.blueprint) {
+            blueprintData = step3Data.blueprint;
+          }
+        }
+
+        renderVideoRecap();
+      } catch (e) {
+        console.error('데이터 로드 실패:', e);
+        document.getElementById('videoRecap').innerHTML = '<div class="summary-item"><div class="summary-value">데이터를 불러오는 중 오류가 발생했습니다.</div></div>';
+      }
+    })();
+
+    // 영상 데이터 요약 렌더링
+    function renderVideoRecap() {
+      var container = document.getElementById('videoRecap');
+      if (!container) return;
+
+      var rows = [];
+      if (blueprintData && blueprintData.title) {
+        rows.push({ label: '최종 주제', value: blueprintData.title });
+      }
+      if (blueprintData && blueprintData.target) {
+        rows.push({ label: '타겟 시청자', value: blueprintData.target });
+      }
+      if (blueprintData && blueprintData.hook) {
+        rows.push({ label: '훅 문구', value: blueprintData.hook });
+      }
+      if (blueprintData && blueprintData.storyline) {
+        var storySummary = blueprintData.storyline.split('\n').slice(0, 3).join(' / ');
+        rows.push({ label: '전체 대본 요약', value: storySummary });
+      }
+
+      if (!rows.length) {
+        container.innerHTML = '<div class="summary-item"><div class="summary-value">요약 데이터가 없습니다.</div></div>';
+        return;
+      }
+
+      container.innerHTML = rows
+        .map(function(row) {
+          return (
+            '<div class="summary-item">' +
+            '<div class="summary-label">' + row.label + '</div>' +
+            '<div class="summary-value">' + String(row.value) + '</div>' +
+            '</div>'
+          );
+        })
+        .join('');
+    }
+
+    // 어그로 지수 슬라이더
+    (function() {
+      var slider = document.getElementById('aggroSlider');
+      var valueDisplay = document.getElementById('aggroValue');
+      if (!slider || !valueDisplay) return;
+
+      var labels = {
+        1: '약함(정보 중심)',
+        2: '약간 약함',
+        3: '보통',
+        4: '약간 강함',
+        5: '강함(호기심 자극)'
+      };
+
+      slider.addEventListener('input', function() {
+        aggroLevel = parseInt(this.value, 10);
+        valueDisplay.textContent = labels[aggroLevel] || '보통';
+      });
+    })();
+
+    // 제목 및 설명 생성
+    function generateTitleAndDescription() {
+      if (!blueprintData) {
+        alert('영상 데이터가 없습니다.');
+        return;
+      }
+
+      var title = blueprintData.title || '';
+      var target = blueprintData.target || '';
+      var hook = blueprintData.hook || '';
+      var storyline = blueprintData.storyline || '';
+
+      // 어그로 지수에 따른 프롬프트 조정
+      var aggroPrompt = '';
+      if (aggroLevel <= 2) {
+        aggroPrompt = '정보 중심의 명확하고 정직한 제목을 작성하세요.';
+      } else if (aggroLevel === 3) {
+        aggroPrompt = '균형잡힌 제목을 작성하세요. 정보와 호기심을 적절히 섞어주세요.';
+      } else {
+        aggroPrompt = '호기심을 자극하는 강렬한 제목을 작성하세요. 클릭률(CTR)을 극대화할 수 있는 문구를 사용하세요.';
+      }
+
+      // 제목 5개 생성
+      var titles = generateTitles(title, hook, aggroLevel);
+      renderTitleSuggestions(titles);
+
+      // 설명 생성 (타임스탬프 포함)
+      var description = generateDescription(title, storyline, target);
+      document.getElementById('descriptionText').value = description;
+      document.getElementById('descriptionSection').style.display = 'block';
+
+      // 해시태그 생성
+      var tags = generateHashtags(title, target);
+      renderHashtags(tags);
+      document.getElementById('hashtagSection').style.display = 'block';
+    }
+
+    // 제목 생성 (5개)
+    function generateTitles(baseTitle, hook, aggro) {
+      var titles = [];
+      var patterns = [];
+
+      if (aggro <= 2) {
+        patterns = [
+          baseTitle + ' 완벽 가이드',
+          baseTitle + '에 대해 알아야 할 모든 것',
+          baseTitle + ' - 초보자를 위한 설명',
+          baseTitle + '의 핵심 정리',
+          baseTitle + ' 상세 분석'
+        ];
+      } else if (aggro === 3) {
+        patterns = [
+          baseTitle + ' - 당신이 몰랐던 사실',
+          baseTitle + '의 놀라운 진실',
+          baseTitle + ' 이것만 알면 끝',
+          baseTitle + ' - 전문가가 알려주는 비밀',
+          baseTitle + '의 모든 것'
+        ];
+      } else {
+        patterns = [
+          baseTitle + ' - 충격적인 결과가 나왔다!',
+          baseTitle + ' 이것 때문에 실패했다',
+          baseTitle + ' - 전문가도 놀란 진실',
+          baseTitle + ' 이렇게 하면 안 된다',
+          baseTitle + ' - 당신이 모르는 위험한 사실'
+        ];
+      }
+
+      return patterns.slice(0, 5);
+    }
+
+    // 설명 생성 (타임스탬프 포함)
+    function generateDescription(title, storyline, target) {
+      var lines = [];
+      lines.push(title);
+      lines.push('');
+      lines.push('이 영상에서는 ' + (target || '시청자') + '를 위해 ' + title + '에 대해 자세히 알아봅니다.');
+      lines.push('');
+      lines.push('📌 주요 내용:');
+
+      if (storyline) {
+        var storyLines = storyline.split('\n').filter(function(l) {
+          return l.trim().length > 0;
+        });
+        var time = 0;
+        storyLines.forEach(function(line, idx) {
+          var minutes = Math.floor(time / 60);
+          var seconds = Math.floor(time % 60);
+          var timeStr = String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+          var cleanLine = line.replace(/^[0-9]+\)|^[0-9]+\./, '').trim();
+          if (cleanLine) {
+            lines.push('[' + timeStr + '] ' + cleanLine);
+            time += 30;
+          }
+        });
+      }
+
+      lines.push('');
+      lines.push('💡 이 영상이 도움이 되셨다면 좋아요와 구독 부탁드립니다!');
+      lines.push('');
+      lines.push('#유튜브 #영상 #정보');
+
+      return lines.join('\n');
+    }
+
+    // 해시태그 생성
+    function generateHashtags(title, target) {
+      var tags = [];
+      var keywords = title.split(/[\s\/\-]/).filter(function(k) {
+        return k.length > 1;
+      });
+
+      keywords.slice(0, 5).forEach(function(kw) {
+        tags.push({ text: '#' + kw, type: 'hashtag' });
+      });
+
+      var commonTags = ['유튜브', '영상', '정보', '팁', '가이드', '튜토리얼', '리뷰', '추천'];
+      commonTags.slice(0, 8).forEach(function(tag) {
+        tags.push({ text: tag, type: 'tag' });
+      });
+
+      return tags;
+    }
+
+    // 제목 추천 렌더링
+    function renderTitleSuggestions(titles) {
+      var container = document.getElementById('titleList');
+      if (!container) return;
+
+      container.innerHTML = titles
+        .map(function(title, idx) {
+          return (
+            '<div class="title-item" data-index="' +
+            idx +
+            '">' +
+            '<div class="title-text">' +
+            title +
+            '</div>' +
+            '<button class="btn-select" type="button" onclick="selectTitle(' +
+            idx +
+            ', \'' +
+            title.replace(/'/g, "\\'") +
+            '\')">선택</button>' +
+            '</div>'
+          );
+        })
+        .join('');
+
+      document.getElementById('titleSuggestions').style.display = 'block';
+    }
+
+    // 제목 선택
+    function selectTitle(index, title) {
+      selectedTitle = title;
+      document.querySelectorAll('.title-item').forEach(function(item) {
+        item.classList.remove('selected');
+      });
+      document.querySelectorAll('.btn-select').forEach(function(btn) {
+        btn.classList.remove('selected');
+        btn.textContent = '선택';
+      });
+
+      var selectedItem = document.querySelector('[data-index="' + index + '"]');
+      if (selectedItem) {
+        selectedItem.classList.add('selected');
+        var btn = selectedItem.querySelector('.btn-select');
+        if (btn) {
+          btn.classList.add('selected');
+          btn.textContent = '선택됨';
+        }
+      }
+    }
+
+    // 해시태그 렌더링
+    function renderHashtags(tags) {
+      var container = document.getElementById('tagCloud');
+      if (!container) return;
+
+      container.innerHTML = tags
+        .map(function(tag) {
+          return '<span class="tag-item ' + tag.type + '">' + tag.text + '</span>';
+        })
+        .join('');
+    }
+
+    // 태그 복사
+    (function() {
+      var btnCopy = document.getElementById('btnCopyTags');
+      if (btnCopy) {
+        btnCopy.addEventListener('click', function() {
+          var tags = [];
+          document.querySelectorAll('.tag-item').forEach(function(tag) {
+            tags.push(tag.textContent);
+          });
+          var text = tags.join(' ');
+          navigator.clipboard
+            .writeText(text)
+            .then(function() {
+              btnCopy.textContent = '복사 완료!';
+              setTimeout(function() {
+                btnCopy.textContent = '전체 태그 복사하기';
+              }, 2000);
+            })
+            .catch(function(err) {
+              console.error('복사 실패:', err);
+              alert('복사에 실패했습니다. 수동으로 선택하여 복사해 주세요.');
+            });
+        });
+      }
+    })();
+
+    // 생성 버튼
+    (function() {
+      var btnGen = document.getElementById('btnGenerateTitle');
+      if (btnGen) {
+        btnGen.addEventListener('click', generateTitleAndDescription);
+      }
+    })();
+
+    // 8단계로 이동
+    (function() {
+      var btnNext = document.getElementById('btnGoToStep8');
+      if (btnNext) {
+        btnNext.addEventListener('click', function() {
+          if (!selectedTitle) {
+            alert('제목을 선택해 주세요.');
+            return;
+          }
+
+          var payload = {
+            videoData: videoData,
+            blueprint: blueprintData,
+            selectedTitle: selectedTitle,
+            description: document.getElementById('descriptionText').value || '',
+            hashtags: Array.from(document.querySelectorAll('.tag-item')).map(function(t) {
+              return t.textContent;
+            }),
+            aggroLevel: aggroLevel
+          };
+          localStorage.setItem('step8TitleData', JSON.stringify(payload));
+          window.location.href = 'step-9.html';
+        });
+      }
+    })();
+
+    // 로그온 시스템
+    var isLoggedIn = false;
+    function checkLoginStatus() {
+      var loginStatus = localStorage.getItem('isLoggedIn');
+      var loginTime = localStorage.getItem('loginTime');
+      if (loginStatus === 'true' && loginTime) {
+        var loginDate = new Date(loginTime);
+        var now = new Date();
+        var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+        if (hoursDiff < 24) {
+          isLoggedIn = true;
+          updateUIForLogin();
+          return true;
+        }
+      }
+      isLoggedIn = false;
+      updateUIForLogout();
+      return false;
+    }
+    function login() {
+      var id = document.getElementById('loginId').value.trim();
+      var pw = document.getElementById('loginPw').value.trim();
+      if (!id || !pw) {
+        alert('ID와 비밀번호를 입력하세요.');
+        return;
+      }
+      var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+      var user = users.find(function(u) {
+        return u.id === id && u.password === pw;
+      });
+      if (user) {
+        isLoggedIn = true;
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('loginTime', new Date().toISOString());
+        localStorage.setItem('currentUserId', id);
+        updateUIForLogin();
+        alert('로그온되었습니다.');
+        document.getElementById('loginId').value = '';
+        document.getElementById('loginPw').value = '';
+      } else {
+        alert('승인된 ID와 비밀번호가 아닙니다.');
+      }
+    }
+    function logout() {
+      isLoggedIn = false;
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('loginTime');
+      localStorage.removeItem('currentUserId');
+      updateUIForLogout();
+    }
+    function updateUIForLogin() {
+      document.getElementById('btnLogin').textContent = '로그아웃';
+      document.getElementById('btnLogin').onclick = function() {
+        if (confirm('로그아웃하시겠습니까?')) {
+          logout();
+          alert('로그아웃되었습니다.');
+        }
+      };
+      document.getElementById('loginId').disabled = true;
+      document.getElementById('loginPw').disabled = true;
+    }
+    function updateUIForLogout() {
+      document.getElementById('btnLogin').textContent = '로그온';
+      document.getElementById('btnLogin').onclick = login;
+      document.getElementById('loginId').disabled = false;
+      document.getElementById('loginPw').disabled = false;
+    }
+    document.getElementById('btnAdmin').onclick = function() {
+      alert('관리 페이지는 메인(index.html)에서 이용하세요.');
+    };
+    document.getElementById('btnLogin').onclick = login;
+    checkLoginStatus();
+
+    // 프로젝트 버튼 권한 체크 및 이벤트
+    (function() {
+      function checkAdminPermission() {
+        var loginStatus = localStorage.getItem('isLoggedIn');
+        var loginTime = localStorage.getItem('loginTime');
+        if (loginStatus === 'true' && loginTime) {
+          var loginDate = new Date(loginTime);
+          var now = new Date();
+          var hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+          if (hoursDiff < 24) {
+            var currentUserId = localStorage.getItem('currentUserId');
+            var users = JSON.parse(localStorage.getItem('approvedUsers') || '[]');
+            var user = users.find(function(u) { return u.id === currentUserId; });
+            return user && user.isAdmin === true;
+          }
+        }
+        return false;
+      }
+      
+      function updateProjectButtonsVisibility() {
+        var hasPermission = checkAdminPermission();
+        var btnCreate = document.getElementById('btnCreateProject');
+        var btnList = document.getElementById('btnProjectList');
+        if (btnCreate) {
+          btnCreate.style.display = hasPermission ? 'block' : 'none';
+          btnCreate.disabled = !hasPermission;
+        }
+        if (btnList) {
+          btnList.style.display = hasPermission ? 'block' : 'none';
+          btnList.disabled = !hasPermission;
+        }
+      }
+      
+      var btnCreate = document.getElementById('btnCreateProject');
+      var btnList = document.getElementById('btnProjectList');
+      
+      if (btnCreate) {
+        btnCreate.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          alert('프로젝트 생성 기능은 준비 중입니다.');
+        };
+      }
+      
+      if (btnList) {
+        btnList.onclick = function() {
+          if (!checkAdminPermission()) {
+            alert('관리 권한이 필요합니다. 로그인 후 관리 권한을 받아주세요.');
+            return;
+          }
+          window.location.href = '/';
+        };
+      }
+      
+      updateProjectButtonsVisibility();
+      setInterval(updateProjectButtonsVisibility, 5000);
+    })();
+  </script>
+</body>
+</html>
