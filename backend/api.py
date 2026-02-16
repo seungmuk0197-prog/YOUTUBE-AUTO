@@ -419,7 +419,8 @@ Rules:
                 titles.append(line)
         
         logger.info(f"Parsed {len(titles)} titles from response")
-        
+        titles = [ensure_topic_in_title(t) for t in titles]
+
         # 15개로 제한 (더 많으면 자르고, 적으면 변형 제목 생성)
         if len(titles) > 15:
             titles = titles[:15]

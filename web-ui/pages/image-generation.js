@@ -67,6 +67,21 @@ const ImageGeneration = () => {
     const [viewMode, setViewMode] = useState('grid'); // grid, timeline
     const [activeCharacterId, setActiveCharacterId] = useState(null); // 현재 활성 캐릭터 (썸네일 일관성 적용용)
 
+    const resolveImageUrlFromPayload = (payload) => {
+        if (!payload || typeof payload !== 'object') return null;
+        const candidates = [
+            payload.imageUrl,
+            payload.url,
+            payload.result?.imageUrl,
+            payload.result?.url,
+            payload.data?.[0]?.url,
+            payload.data?.[0]?.imageUrl,
+            payload.output?.[0]?.url,
+            payload.output?.[0]?.imageUrl,
+        ];
+        return candidates.find(Boolean) || null;
+    };
+
     // 초기 로딩 추적 (Strict Mode 중복 방지 + ID 변경 시 리셋)
     const initRef = useRef({ projectId: null, started: false, finished: false });
     const lastGoodScenesRef = useRef([]);
@@ -248,7 +263,7 @@ const ImageGeneration = () => {
                 sceneId: `char_${character.id}`,
                 sequence: 1,
                 aspectRatio: '1:1',
-                style: selectedStyle.id
+                styleId: selectedStyle.id
             })
         });
 
@@ -273,16 +288,16 @@ const ImageGeneration = () => {
             throw new Error('API did not return imageUrl');
         }
 
-        return {
-            url: imageUrl.startsWith('http') ? imageUrl : `${window.location.origin}${imageUrl}`,
-            metadata: {
-                createdAt: new Date().toISOString(),
-                prompt: prompt,
-                model: 'dall-e-3',
-                type: 'character'
-            }
+            return {
+                url: imageUrl.startsWith('http') ? imageUrl : `${window.location.origin}${imageUrl}`,
+                metadata: {
+                    createdAt: new Date().toISOString(),
+                    prompt: prompt,
+                    model: 'dall-e-3',
+                    type: 'character'
+                }
+            };
         };
-    };
 
     // 캐릭터 전체 이미지 생성 (순차 처리)
     const handleGenerateCharacters = async () => {
@@ -772,7 +787,6 @@ const ImageGeneration = () => {
 
         return (
             <div className="full-grid-view">
-                {renderCharacterGrid()}
 
                 <div className="grid-view-container section-thumbnail thumbnail-box">
                     {/* 씬 이미지 헤더 */}
@@ -1134,6 +1148,8 @@ const ImageGeneration = () => {
                     </div>
                 </div>
 
+                {renderCharacterGrid()}
+
                 {generationStatus === 'generating'
                     ? renderGenerationProgress()
                     : (viewMode === 'grid' || true) // Timeline view also uses Grid layout for now
@@ -1371,18 +1387,16 @@ const ImageGeneration = () => {
 
         .ratio-toggle {
             display: flex;
-            background: #f0f0f0;
-            border-radius: 8px;
-            padding: 4px;
-            width: fit-content;
-            border: 1px solid #d4d4d4;
+            gap: 8px;
+            width: 100%;
         }
 
         .ratio-btn {
-            padding: 10px 32px;
-            border-radius: 6px;
-            border: none;
-            background: transparent;
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: 1px solid #d4d4d4;
+            background: #fff;
             color: #718096;
             font-weight: 600;
             cursor: pointer;
@@ -1390,15 +1404,51 @@ const ImageGeneration = () => {
         }
 
         .ratio-btn.active {
-            background: #667eea;
+            background: #5b21b6;
             color: #fff;
-            font-weight: 700;
+            border-color: #5b21b6;
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .style-grid-container {
+            margin-top: 12px;
         }
 
         .style-grid {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 8px;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .style-card {
+            border-radius: 14px;
+            padding: 14px 16px;
+            min-height: 96px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, border 0.2s;
+            border: 1px solid transparent;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .style-card.active {
+            border-color: #5b21b6;
+            background: #eef2ff;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(79, 70, 229, 0.25);
+        }
+
+        .style-name {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .style-desc {
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.4;
         }
 
         .style-card {

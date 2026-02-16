@@ -1,3 +1,8 @@
+# runtime/project data
+projects/
+outputs/
+*.log
+
 # Node
 node_modules/
 .next/
@@ -24,3 +29,9 @@ temp/
 # secrets
 .env
 .env.*
+nul
+nul/
+**/nul
+git add .gitignore
+git add -A
+git status

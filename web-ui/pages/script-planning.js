@@ -4,9 +4,13 @@ import Head from 'next/head';
 import StudioLayout from '../components/StudioLayout';
 import { fetchProject, updateProject } from '../lib/api';
 
+const DRAFT_STORAGE_KEY = 'scriptPlanningDraft';
+
 export default function ScriptPlanning() {
     const router = useRouter();
     const { projectId } = router.query;
+    const fromStep = router.query?.from || '';
+    const [draftLoaded, setDraftLoaded] = useState(false);
 
     // Basic Info
     const [topic, setTopic] = useState('');
@@ -15,7 +19,7 @@ export default function ScriptPlanning() {
     const [coreMessage, setCoreMessage] = useState('');
     const [viewerPainPoint, setViewerPainPoint] = useState('');
 
-    // Options
+    const DURATION_OPTIONS = [30, 60, 120, 150, 300, 600, 1200, 1800, 2400];
     const [duration, setDuration] = useState(60);
     const [tone, setTone] = useState('');
     const [audience, setAudience] = useState('');
@@ -65,6 +69,101 @@ export default function ScriptPlanning() {
         }
         loadData();
     }, [projectId]);
+
+    useEffect(() => {
+        if (draftLoaded) return;
+        if (typeof window === 'undefined') {
+            setDraftLoaded(true);
+            return;
+        }
+
+        let draftData = null;
+        try {
+            const saved = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+            if (!saved) {
+                return;
+            }
+            draftData = JSON.parse(saved);
+            const storedProjectId = draftData?.projectId || '';
+
+            if (projectId) {
+                if (storedProjectId && storedProjectId !== projectId) {
+                    draftData = null;
+                }
+            } else if (storedProjectId) {
+                draftData = null;
+            }
+        } catch (error) {
+            console.warn('Failed to load script planning draft', error);
+            draftData = null;
+        } finally {
+            setDraftLoaded(true);
+        }
+
+        if (!draftData) return;
+
+        if (draftData.topic) setTopic(draftData.topic);
+        if (draftData.coreMessage) setCoreMessage(draftData.coreMessage);
+        if (draftData.viewerPainPoint) setViewerPainPoint(draftData.viewerPainPoint);
+        if (draftData.duration) setDuration(draftData.duration);
+        if (draftData.tone) setTone(draftData.tone);
+        if (draftData.audience) setAudience(draftData.audience);
+        if (draftData.style) setStyle(draftData.style);
+        if (draftData.structure) setStructure(draftData.structure);
+        if (draftData.additionalRequests) setAdditionalRequests(draftData.additionalRequests);
+        if (Array.isArray(draftData.hookType)) setHookType(draftData.hookType);
+        if (draftData.emotionIntensity !== undefined && draftData.emotionIntensity !== null) {
+            setEmotionIntensity(draftData.emotionIntensity);
+        }
+    }, [draftLoaded, projectId]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const payload = {
+            projectId: projectId || '',
+            topic,
+            coreMessage,
+            viewerPainPoint,
+            duration,
+            tone,
+            audience,
+            style,
+            structure,
+            additionalRequests,
+            hookType,
+            emotionIntensity
+        };
+        try {
+            window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload));
+        } catch (error) {
+            console.warn('Failed to persist script planning draft', error);
+        }
+    }, [
+        projectId,
+        topic,
+        coreMessage,
+        viewerPainPoint,
+        duration,
+        tone,
+        audience,
+        style,
+        structure,
+        additionalRequests,
+        hookType,
+        emotionIntensity
+    ]);
+
+    const formatDurationLabel = (seconds) => {
+        if (seconds < 60) {
+            return `${seconds}초`;
+        }
+        const minutes = Math.floor(seconds / 60);
+        const remainder = seconds % 60;
+        if (remainder === 0) {
+            return `${minutes}분`;
+        }
+        return `${minutes}분 ${remainder}초`;
+    };
 
     const handleHookToggle = (e) => {
         const value = e.target.value;
@@ -196,12 +295,19 @@ export default function ScriptPlanning() {
         alert('임시 저장되었습니다.');
     };
 
+    const previousStepLabel = fromStep === 'topic' ? '주제 추천' : (projectId ? '프로젝트' : '프로젝트 목록');
+    const nextStepLabel = 'AI 대본 생성';
+
     const goBack = () => {
+        if (fromStep === 'topic') {
+            router.push('/');
+            return;
+        }
         if (projectId) {
             router.push(`/project?id=${projectId}`);
-        } else {
-            router.back();
+            return;
         }
+        router.push('/projects?filter=active');
     };
 
     // 주제와 영상길이만 선택되어 있어도 버튼 활성화
@@ -221,11 +327,27 @@ export default function ScriptPlanning() {
 
             <div className="script-planning-container">
                 {/* 헤더 */}
-                <header>
-                    <button onClick={goBack} className="back-btn">← 뒤로</button>
+            <header>
+                <div className="header-top">
+                    <button onClick={goBack} className="back-btn">
+                        ← 이전 단계: {previousStepLabel}
+                    </button>
+                    <div className="step-direction-row">
+                        <div className="step-direction">
+                            <span className="step-label">이전 단계</span>
+                            <span className="step-value">{previousStepLabel}</span>
+                        </div>
+                        <div className="step-direction">
+                            <span className="step-label">다음 단계</span>
+                            <span className="step-value next">{nextStepLabel}</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="header-title-row">
                     <h1>AI 대본 기획</h1>
                     <span className="step-badge">단계 2/6</span>
-                </header>
+                </div>
+            </header>
 
                 {/* 메인 컨텐츠 */}
                 <main className="planning-content">
@@ -262,17 +384,17 @@ export default function ScriptPlanning() {
                         {/* 영상 길이 (확장됨) */}
                         <div className="option-group required">
                             <label>영상 길이 <span className="required-mark">*</span></label>
-                            <div className="duration-grid">
-                                {[30, 60, 120, 180, 300, 600, 1200, 1800, 2400, 3000, 3600].map(val => (
-                                    <button
-                                        key={val}
-                                        className={duration === val ? 'active' : ''}
-                                        onClick={() => setDuration(val)}
-                                    >
-                                        {val < 60 ? `${val}초` : `${val / 60}분`}
-                                    </button>
-                                ))}
-                            </div>
+                        <div className="duration-grid">
+                            {DURATION_OPTIONS.map(val => (
+                                <button
+                                    key={val}
+                                    className={duration === val ? 'active' : ''}
+                                    onClick={() => setDuration(val)}
+                                >
+                                        {formatDurationLabel(val)}
+                                </button>
+                            ))}
+                        </div>
                         </div>
 
                         {/* 핵심 한 줄 메시지 (필수) */}
@@ -476,7 +598,7 @@ export default function ScriptPlanning() {
                         <div className="preview-grid">
                             <div className="preview-item">
                                 <span className="label">길이:</span>
-                                <span className="value">{duration < 60 ? `${duration}초` : `${duration / 60}분`}</span>
+                                <span className="value">{formatDurationLabel(duration)}</span>
                             </div>
                             <div className="preview-item">
                                 <span className="label">톤:</span>
@@ -538,6 +660,41 @@ export default function ScriptPlanning() {
             font-weight: 700;
             color: #2d3748;
             margin: 0;
+        }
+        .header-top {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .step-direction-row {
+            display: flex;
+            gap: 16px;
+        }
+        .step-direction {
+            display: flex;
+            flex-direction: column;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .step-direction .step-label {
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .step-direction .step-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .step-direction .step-value.next {
+            color: #8b5cf6;
+        }
+        .header-title-row {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
         }
 
         .back-btn {

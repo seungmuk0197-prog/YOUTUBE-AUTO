@@ -199,47 +199,54 @@ export default function HomePage() {
       }
       return;
     }
-    
-    // 진행 상태 초기화
+
+    await requestTitleSuggestions(topic);
+  }
+
+  async function requestTitleSuggestions(promptTopic) {
+    if (!promptTopic) {
+      alert('주제를 입력해주세요.');
+      return;
+    }
+
     setGenerationProgress(0);
     setEstimatedTimeRemaining(12);
     setGenerationStartTime(Date.now());
     setSuggestionsLoading(true);
-    
+
     try {
-      console.log('[HomePage] Requesting title suggestions for topic:', topic);
-      
+      console.log('[HomePage] Requesting title suggestions for topic:', promptTopic);
+
       let res;
       try {
         res = await fetch('/api/title-suggestions', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'X-Request-Id': `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
           },
-          body: JSON.stringify({ topic }),
+          body: JSON.stringify({ topic: promptTopic }),
         });
       } catch (fetchError) {
         console.error('[HomePage] Fetch error:', fetchError);
         throw new Error(`백엔드 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인해주세요. (${fetchError.message})`);
       }
-      
+
       console.log('[HomePage] Title suggestions response status:', res.status);
-      
+
       let data;
       try {
         const text = await res.text();
         console.log('[HomePage] Title suggestions response text:', text.substring(0, 500));
-        
+
         if (!text || text.trim().length === 0) {
           throw new Error('서버에서 빈 응답을 받았습니다.');
         }
-        
-        // HTML 에러 페이지인지 확인
+
         if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<!doctype')) {
           throw new Error(`서버가 HTML 에러 페이지를 반환했습니다. (상태: ${res.status})`);
         }
-        
+
         data = JSON.parse(text);
       } catch (parseError) {
         console.error('[HomePage] Failed to parse response as JSON:', parseError);
@@ -248,29 +255,27 @@ export default function HomePage() {
         }
         throw parseError;
       }
-      
+
       if (!res.ok) {
         const errorMsg = data?.error || `HTTP ${res.status}: ${res.statusText}`;
         console.error('[HomePage] Title suggestions API error:', errorMsg);
         throw new Error(errorMsg);
       }
-      
+
       if (!data?.ok) {
         const errorMsg = data?.error || '제목 생성 실패';
         console.error('[HomePage] Title suggestions API returned ok=false:', errorMsg);
         throw new Error(errorMsg);
       }
-      
+
       if (!data.titles || !Array.isArray(data.titles) || data.titles.length === 0) {
         console.error('[HomePage] Title suggestions empty or invalid:', data);
         throw new Error('제목 후보를 받지 못했습니다. 다시 시도해주세요.');
       }
-      
-      // 완료 상태로 설정
+
       setGenerationProgress(100);
       setEstimatedTimeRemaining(0);
-      
-      // 약간의 딜레이 후 결과 표시 (UI 애니메이션을 위해)
+
       setTimeout(() => {
         setTitleSuggestions(data.titles);
         setSelectedTitle(null);
@@ -354,7 +359,7 @@ export default function HomePage() {
       // 프로젝트 생성 성공 시 2단계(대본 기획)로 바로 이동
       if (project && project.id) {
         console.log('[HomePage] Project created successfully, navigating to script-planning step', { projectId: project.id });
-        router.replace(`/script-planning?projectId=${project.id}`);
+        router.push(`/script-planning?projectId=${project.id}&from=topic`);
       } else {
         console.error('[HomePage] Project created but missing id', { project });
         alert('프로젝트 생성은 성공했지만 프로젝트 ID를 받지 못했습니다. 프로젝트 목록에서 확인해주세요.');
@@ -400,6 +405,43 @@ export default function HomePage() {
   };
 
   // 액션 버튼 컴포넌트
+  const buildTrendPrompt = (trend) => {
+    const tags = Array.isArray(trend.tags) ? trend.tags.filter(Boolean) : [];
+    if (tags.length === 0) return trend.title;
+    return `${trend.title} (${tags.join(', ')})`;
+  };
+
+  const handleTrendSelection = async (trend) => {
+    if (suggestionsLoading) return;
+    const isSame = selectedTrend?.rank === trend.rank && selectedTrend?.title === trend.title;
+    const nextTrend = isSame ? null : trend;
+    setSelectedTrend(nextTrend);
+    if (!nextTrend) return;
+
+    const prompt = buildTrendPrompt(nextTrend);
+    setTopicInput(nextTrend.title);
+    setScriptText('');
+    await requestTitleSuggestions(prompt);
+  };
+
+  const handleCategorySelection = async (category) => {
+    if (suggestionsLoading) return;
+    const isSame = selectedCategory?.id === category.id;
+    const nextCategory = isSame ? null : category;
+
+    setSelectedCategory(nextCategory);
+    if (!nextCategory) {
+      setTitleSuggestions([]);
+      setSelectedTitle(null);
+      return;
+    }
+
+    const prompt = nextCategory.label;
+    setTopicInput(nextCategory.label);
+    setScriptText('');
+    await requestTitleSuggestions(prompt);
+  };
+
   const ActionButtons = () => (
     <div style={{
       display: 'flex',
@@ -652,7 +694,7 @@ export default function HomePage() {
             <button
               key={cat.id}
               type="button"
-              onClick={() => setSelectedCategory((prev) => (prev?.id === cat.id ? null : cat))}
+              onClick={() => void handleCategorySelection(cat)}
               className={`category-card ${selectedCategory?.id === cat.id ? 'selected' : ''}`}
             >
               <span className="category-icon">{cat.icon}</span>
@@ -689,7 +731,7 @@ export default function HomePage() {
           {(trendTab === 'weekly' ? TRENDING_TOPICS : DAILY_HOT_TOPICS).map((topic) => (
             <button
               key={`${trendTab}-${topic.rank}`}
-              onClick={() => setSelectedTrend((prev) => (prev?.rank === topic.rank ? null : topic))}
+              onClick={() => handleTrendSelection(topic)}
               className={`trend-card ${selectedTrend?.rank === topic.rank ? 'selected' : ''}`}
             >
               <div className="trend-card-header">
