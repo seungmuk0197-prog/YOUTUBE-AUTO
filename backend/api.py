@@ -18,6 +18,7 @@ from uuid import uuid4
 from PIL import Image, ImageDraw, ImageFont
 import openai
 import requests
+import traceback
 
 from dotenv import load_dotenv
 import hashlib
@@ -33,7 +34,7 @@ print("OPENAI KEY EXISTS:", bool(os.getenv("OPENAI_API_KEY")))
 from backend.project_manager import ProjectManager
 from backend.models import Project, Scene
 from src.common.logger import logger
-from src.video.tts import generate_tts, get_audio_duration
+from src.video.tts import get_audio_duration
 from src.video.render import render_video_simple
 from src.video.srt import format_timestamp, split_sentences_ko, write_srt
 import mimetypes
@@ -49,6 +50,10 @@ CORS(app,
 
 # 프로젝트 매니저 초기화
 pm = ProjectManager(projects_root=str(project_root / "projects"))
+
+# TTS 저장 경로 (스페셜 센터)
+STORAGE_ROOT = project_root / "storage" / "projects"
+STORAGE_ROOT.mkdir(parents=True, exist_ok=True)
 try:
     migration_result = pm.migrate_duplicate_projects()
     logger.info(
@@ -176,6 +181,46 @@ def _validate_and_resolve_path(project_id: str, relative_path: str):
         raise FileNotFoundError('file not found')
 
     return full
+
+
+def _resolve_storage_tts_path(project_id: str, filename: str):
+    """Storage projects root → files inside per-project tts folder"""
+    if not filename:
+        raise ValueError("filename is required")
+    if filename.startswith('/') or filename.startswith('\\'):
+        raise ValueError("absolute filenames are not allowed")
+    if ':' in filename:
+        raise ValueError("invalid filename")
+
+    tts_dir = STORAGE_ROOT / project_id / "tts"
+    tts_dir.mkdir(parents=True, exist_ok=True)
+
+    target = (tts_dir / filename).resolve()
+    root = tts_dir.resolve()
+    if not str(target).startswith(str(root)):
+        raise ValueError("filename points outside TTS storage")
+    if not target.exists():
+        raise FileNotFoundError("TTS file not found")
+    return target
+
+
+@app.route('/files/projects/<project_id>/tts/<path:filename>', methods=['GET'])
+def serve_storage_tts(project_id, filename):
+    """Serve TTS assets stored under storage/projects"""
+    try:
+        full_path = _resolve_storage_tts_path(project_id, filename)
+    except FileNotFoundError:
+        return jsonify({'ok': False, 'error': 'TTS file not found'}), 404
+    except ValueError as err:
+        return jsonify({'ok': False, 'error': str(err)}), 400
+
+    suffix = full_path.suffix.lower()
+    if suffix == '.wav':
+        mime = 'audio/wav'
+    else:
+        mime = 'audio/mpeg'
+    return send_file(str(full_path), mimetype=mime)
+
 
 
 
@@ -2296,92 +2341,168 @@ def generate_image(project_id):
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 
+def _synthesize_openai_tts(text: str, voice: str, model: str = "gpt-4o-mini-tts") -> bytes:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY is not configured")
+
+    client = openai.OpenAI(api_key=api_key)
+    response = client.audio.speech.create(
+        model=model,
+        voice=voice,
+        input=text,
+    )
+
+    data = None
+    if isinstance(response, (bytes, bytearray)):
+        data = response
+    elif hasattr(response, "read"):
+        data = response.read()
+    elif hasattr(response, "audio"):
+        data = response.audio
+    elif hasattr(response, "content"):
+        data = response.content
+
+    if data is None:
+        raise RuntimeError("OpenAI TTS response missing audio payload")
+    return data
+
+
 @app.route('/api/projects/<project_id>/generate/tts', methods=['POST'])
 def generate_tts_endpoint(project_id):
-    """씬별 TTS 생성 - PR-4 (Issue #3: supports speed parameter)"""
+    """씬별 TTS 생성 (Step 5 MVP)"""
+    trace_id = str(uuid4())
+    data = request.get_json() or {}
+    voice = data.get('voice', 'alloy')
+    format_value = (data.get('format') or 'mp3').lower()
     try:
-        logger.info(f"TTS endpoint hit: project_id={project_id}")
-        data = request.get_json() or {}
-        scene_id = data.get('sceneId')
-        speed = float(data.get('speed', 1.0))  # Issue #3: Accept speed parameter
-        
-        # Clamp speed to reasonable range
-        speed = max(0.7, min(1.3, speed))
-        
-        if not scene_id:
-            return jsonify({'ok': False, 'error': 'sceneId is required'}), 400
-        
-        # 프로젝트 로드
-        project = pm.get_project(project_id)
-        if not project:
-            return jsonify({'ok': False, 'error': 'Project not found'}), 404
-        
-        # 씬 찾기
-        scene_idx = None
-        for i, s in enumerate(project.scenes):
-            if s.id == scene_id:
-                scene_idx = i
-                break
-        
-        if scene_idx is None:
-            return jsonify({'ok': False, 'error': f'Scene {scene_id} not found'}), 404
-        
-        scene = project.scenes[scene_idx]
-        
-        # 나레이션 텍스트 (한국어 우선, 없으면 영어)
-        narration = scene.narration_ko or scene.narration_en or ""
-        if not narration.strip():
-            return jsonify({'ok': False, 'error': 'Scene narration is empty'}), 400
-        
-        # 오디오 파일 경로 (Issue #1, #3: unique filename per speed to avoid cache issues)
-        project_dir = pm.get_project_dir(project_id)
-        audio_dir = project_dir / 'assets' / 'audio'
-        audio_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Use timestamp in filename to ensure uniqueness per generation
-        import time
-        timestamp = int(time.time() * 1000)
-        speed_suffix = f"_{int(speed*100)}" if speed != 1.0 else ""
-        audio_filename = f'{scene_id}_{timestamp}{speed_suffix}.mp3'
-        audio_path = audio_dir / audio_filename
-        
-        # TTS 생성 (Issue #3: pass speed parameter)
-        success = generate_tts(
-            text=narration,
-            output_path=str(audio_path),
-            voice="ko-KR-SunHiNeural",
-            rate=speed
-        )
-        
-        if not success or not audio_path.exists():
-            return jsonify({'ok': False, 'error': 'TTS generation failed'}), 500
-        
-        # 오디오 길이 측정
+        speed = float(data.get('speed', 1.0))
+    except (TypeError, ValueError):
+        speed = 1.0
+
+    speed = max(0.7, min(1.3, speed))
+    logger.info(f"[TTS] request traceId={trace_id} project={project_id} voice={voice} format={format_value} speed={speed}")
+
+    if not data.get('sceneId'):
+        return jsonify({
+            'sceneId': None,
+            'status': 'failed',
+            'error': 'sceneId is required',
+            'type': 'BadRequest',
+            'traceId': trace_id
+        }), 400
+
+    if format_value not in ('mp3', 'wav'):
+        return jsonify({
+            'sceneId': data.get('sceneId'),
+            'status': 'failed',
+            'error': 'format must be mp3 or wav',
+            'type': 'BadRequest',
+            'traceId': trace_id
+        }), 400
+
+    scene_id = data.get('sceneId')
+    project = pm.get_project(project_id)
+    if not project:
+        return jsonify({
+            'sceneId': scene_id,
+            'status': 'failed',
+            'error': 'Project not found',
+            'type': 'NotFound',
+            'traceId': trace_id
+        }), 404
+
+    scene_idx = next((idx for idx, s in enumerate(project.scenes) if s.id == scene_id), None)
+    if scene_idx is None:
+        return jsonify({
+            'sceneId': scene_id,
+            'status': 'failed',
+            'error': f'Scene {scene_id} not found',
+            'type': 'NotFound',
+            'traceId': trace_id
+        }), 404
+
+    scene = project.scenes[scene_idx]
+    narration_sources = [
+        ('narration_ko', scene.narration_ko),
+        ('narration_en', scene.narration_en),
+        ('scene_text', getattr(scene, 'text', None)),
+        ('image_prompt_en', scene.image_prompt_en),
+        ('scene_title', scene.title),
+        ('project_script', project.script),
+        ('project_blueprint_core', project.blueprint.get('coreMessage') if project.blueprint else None),
+        ('project_topic', project.topic),
+    ]
+    narration = ""
+    for key, value in narration_sources:
+        if value and isinstance(value, str) and value.strip():
+            narration = value.strip()
+            logger.debug(f"[TTS] narration fallback='{key}' len={len(narration)}")
+            break
+
+    if not narration:
+        scene.ttsStatus = 'failed'
+        scene.ttsError = 'Scene narration is empty'
+        scene.ttsTraceId = trace_id
+        pm.save_project(project)
+        return jsonify({
+            'sceneId': scene_id,
+            'status': 'failed',
+            'error': 'Scene narration is empty',
+            'type': 'BadRequest',
+            'traceId': trace_id
+        }), 400
+
+    tts_dir = STORAGE_ROOT / project_id / "tts"
+    tts_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{scene_id}.{format_value}"
+    audio_path = tts_dir / filename
+
+    try:
+        audio_bytes = _synthesize_openai_tts(narration, voice)
+        with open(audio_path, 'wb') as out_file:
+            out_file.write(audio_bytes)
+
         duration = get_audio_duration(str(audio_path))
         if duration is None:
-            return jsonify({'ok': False, 'error': 'Failed to measure audio duration'}), 500
-        
-        # 프로젝트 업데이트
-        scene.audio_path = f'assets/audio/{audio_filename}'
+            raise RuntimeError("Failed to measure audio duration")
+
+        scene.audio_path = str(audio_path.relative_to(project_root))
+        scene.ttsStatus = 'success'
+        scene.ttsAudioUrl = f"/files/projects/{project_id}/tts/{filename}"
+        scene.ttsTraceId = trace_id
+        scene.ttsError = None
+        scene.ttsUpdatedAt = datetime.now().astimezone().isoformat()
         scene.durationSec = duration
         project.scenes[scene_idx] = scene
-        
-        # 프로젝트 저장
         pm.save_project(project)
-        
-        logger.info(f"TTS 생성 완료: {project_id}/{scene_id} (속도: {speed}x, 길이: {duration:.2f}초)")
-        
+
+        logger.info(f"[TTS] success traceId={trace_id} scene={scene_id} (duration={duration:.2f}s)")
         return jsonify({
-            'ok': True,
             'sceneId': scene_id,
-            'audioPath': f'assets/audio/{audio_filename}',
+            'status': 'success',
+            'audioUrl': scene.ttsAudioUrl,
             'durationSec': duration,
-            'speed': speed  # Issue #3: return speed in response
+            'speed': speed,
+            'traceId': trace_id
         }), 200
-        
-    except Exception as e:
-        logger.error(f"TTS 생성 실패: {e}")
-        return jsonify({'ok': False, 'error': str(e)}), 500
+
+    except Exception as exc:
+        error_type = type(exc).__name__
+        error_msg = str(exc) or 'TTS generation failed'
+        scene.ttsStatus = 'failed'
+        scene.ttsError = error_msg
+        scene.ttsTraceId = trace_id
+        pm.save_project(project)
+        logger.error(f"[TTS] traceId={trace_id} project={project_id} scene={scene_id} voice={voice} format={format_value} speed={speed} error={error_msg}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'sceneId': scene_id,
+            'status': 'failed',
+            'error': error_msg,
+            'type': error_type,
+            'traceId': trace_id
+        }), 500
 
 
 @app.route('/api/projects/<project_id>/render/preview', methods=['POST'])

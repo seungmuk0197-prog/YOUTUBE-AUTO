@@ -67,6 +67,7 @@ class Scene:
     """씬 정의"""
     id: str
     title: str = ""
+    text: str = ""
     narration_ko: str = ""
     narration_en: str = ""
     image_prompt_en: str = ""
@@ -81,6 +82,11 @@ class Scene:
     transition: str = "none"
     effects: Dict[str, Any] = field(default_factory=dict)
     characterId: Optional[str] = None
+    ttsStatus: str = "idle"
+    ttsAudioUrl: Optional[str] = None
+    ttsUpdatedAt: Optional[str] = None
+    ttsError: Optional[str] = None
+    ttsTraceId: Optional[str] = None
 
 
 
@@ -245,10 +251,10 @@ class Project:
             # accept legacy `text` key and map to `narration_ko`
             s_copy = dict(s)
             if 'text' in s_copy:
+                text_value = s_copy['text']
                 if not s_copy.get('narration_ko'):
-                    s_copy['narration_ko'] = s_copy.get('text')
-                # remove legacy key to avoid unexpected kwargs
-                del s_copy['text']
+                    s_copy['narration_ko'] = text_value
+                s_copy['text'] = text_value
             
             # map frontend camelCase to backend snake_case
             if 'duration' in s_copy:
