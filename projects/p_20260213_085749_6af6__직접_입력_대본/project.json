@@ -1,0 +1,65 @@
+{
+  "id": "p_20260213_085749_6af6",
+  "createdAt": "2026-02-13T08:57:49.221988+09:00",
+  "created_at": "2026-02-13T08:57:49.221988+09:00",
+  "updatedAt": "2026-02-16T01:44:33.528280+09:00",
+  "updated_at": "2026-02-13T09:36:44.705897+09:00",
+  "topic": "직접 입력 대본",
+  "name": "직접 입력 대본",
+  "provider": "imagen4",
+  "aspectRatio": "16:9",
+  "blueprint": {
+    "topic": "직접 입력",
+    "length": 60
+  },
+  "script": "",
+  "characters": [],
+  "scenes": [],
+  "thumbnail": {
+    "text": "",
+    "mode": "with_text",
+    "path": null
+  },
+  "settings": {
+    "video": {
+      "fps": 30,
+      "width": 1280,
+      "height": 720
+    },
+    "tts": {
+      "voice": "alloy",
+      "format": "mp3"
+    },
+    "bgm": {
+      "enabled": false,
+      "path": null,
+      "volume": 0.15
+    },
+    "subtitles": {
+      "enabled": false
+    }
+  },
+  "status": {
+    "script": "pending",
+    "images": "pending",
+    "tts": "pending",
+    "render": "pending",
+    "archived": false,
+    "isPinned": false,
+    "lastOpenedAt": null
+  },
+  "lastRun": {
+    "timingsMs": {},
+    "error": null
+  },
+  "folderName": "p_20260213_085749_6af6__직접_입력_대본",
+  "hasScript": false,
+  "hasScenesJson": false,
+  "scenesCount": 0,
+  "imagesCount": 0,
+  "previewImageUrl": null,
+  "hasTts": false,
+  "ttsCount": 0,
+  "hasVideo": false,
+  "title": "직접 입력 대본"
+}

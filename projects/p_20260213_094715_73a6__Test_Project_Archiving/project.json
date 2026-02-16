@@ -1,0 +1,63 @@
+{
+  "id": "p_20260213_094715_73a6",
+  "createdAt": "2026-02-13T09:47:15.890677+09:00",
+  "created_at": "2026-02-13T09:47:15.890677+09:00",
+  "updatedAt": "2026-02-16T01:44:33.735725+09:00",
+  "updated_at": "2026-02-13T10:40:27.596765",
+  "topic": "Test Project Archiving",
+  "name": "Test Project Archiving",
+  "provider": "imagen4",
+  "aspectRatio": "16:9",
+  "blueprint": {},
+  "script": "",
+  "characters": [],
+  "scenes": [],
+  "thumbnail": {
+    "text": "",
+    "mode": "with_text",
+    "path": null
+  },
+  "settings": {
+    "video": {
+      "fps": 30,
+      "width": 1280,
+      "height": 720
+    },
+    "tts": {
+      "voice": "alloy",
+      "format": "mp3"
+    },
+    "bgm": {
+      "enabled": false,
+      "path": null,
+      "volume": 0.15
+    },
+    "subtitles": {
+      "enabled": false
+    }
+  },
+  "status": {
+    "script": "pending",
+    "images": "pending",
+    "tts": "pending",
+    "render": "pending",
+    "archived": false,
+    "isPinned": false,
+    "lastOpenedAt": null
+  },
+  "lastRun": {
+    "timingsMs": {},
+    "error": null
+  },
+  "folderName": "p_20260213_094715_73a6__Test_Project_Archiving",
+  "hasScript": false,
+  "hasScenesJson": false,
+  "scenesCount": 0,
+  "imagesCount": 0,
+  "previewImageUrl": null,
+  "hasTts": false,
+  "ttsCount": 0,
+  "hasVideo": false,
+  "title": "Test Project Archiving",
+  "archivedAt": "2026-02-13T10:40:27.658315+09:00"
+}

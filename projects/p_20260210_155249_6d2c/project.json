@@ -1,0 +1,349 @@
+{
+  "id": "p_20260210_155249_6d2c",
+  "createdAt": "2026-02-10T15:52:49.195186+09:00",
+  "created_at": "2026-02-10T15:52:49.195186+09:00",
+  "updatedAt": "2026-02-16T01:44:31.876577+09:00",
+  "updated_at": "2026-02-13T09:35:51.655204+09:00",
+  "topic": "테스트중 수정합니다.",
+  "name": "테스트중 수정합니다.",
+  "provider": "imagen4",
+  "aspectRatio": "16:9",
+  "blueprint": {},
+  "script": "",
+  "characters": [],
+  "scenes": [
+    {
+      "id": "5b76086d-2b33-42a1-bea9-7223121399f0",
+      "title": "Scene 1",
+      "narration_ko": "test script",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_001_20260212_203423.png",
+      "audio_path": "assets/audio/5b76086d-2b33-42a1-bea9-7223121399f0.mp3",
+      "durationSec": 2.304,
+      "text": "test script"
+    },
+    {
+      "id": "scene_2_20260212203353",
+      "title": "Scene 2",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_002_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_3_20260212203353",
+      "title": "Scene 3",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_003_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_4_20260212203353",
+      "title": "Scene 4",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_004_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_5_20260212203353",
+      "title": "Scene 5",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_005_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_6_20260212203353",
+      "title": "Scene 6",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_006_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_7_20260212203353",
+      "title": "Scene 7",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_007_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_8_20260212203353",
+      "title": "Scene 8",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_008_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_9_20260212203353",
+      "title": "Scene 9",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_009_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_10_20260212203353",
+      "title": "Scene 10",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_010_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_11_20260212203353",
+      "title": "Scene 11",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_011_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_12_20260212203423",
+      "title": "Scene 12",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_012_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_13_20260212203423",
+      "title": "Scene 13",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_013_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_14_20260212203423",
+      "title": "Scene 14",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_014_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_15_20260212203423",
+      "title": "Scene 15",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_015_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_16_20260212203423",
+      "title": "Scene 16",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_016_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_17_20260212203423",
+      "title": "Scene 17",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_017_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_18_20260212203423",
+      "title": "Scene 18",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_018_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_19_20260212203423",
+      "title": "Scene 19",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_019_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_20_20260212203423",
+      "title": "Scene 20",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_020_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_21_20260212203423",
+      "title": "Scene 21",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_021_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_22_20260212203423",
+      "title": "Scene 22",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_022_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_23_20260212203423",
+      "title": "Scene 23",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_023_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_24_20260212203423",
+      "title": "Scene 24",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_024_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_25_20260212203423",
+      "title": "Scene 25",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_025_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    },
+    {
+      "id": "scene_26_20260212203423",
+      "title": "Scene 26",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "",
+      "image_path": "assets/images/scenes/scene_026_20260212_203423.png",
+      "audio_path": null,
+      "durationSec": null,
+      "text": ""
+    }
+  ],
+  "thumbnail": {
+    "text": "",
+    "mode": "with_text",
+    "path": null
+  },
+  "settings": {
+    "video": {
+      "fps": 30,
+      "width": 1280,
+      "height": 720
+    },
+    "tts": {
+      "voice": "alloy",
+      "format": "mp3"
+    },
+    "bgm": {
+      "enabled": false,
+      "path": null,
+      "volume": 0.15
+    },
+    "subtitles": {
+      "enabled": true
+    }
+  },
+  "status": {
+    "script": "pending",
+    "images": "pending",
+    "tts": "pending",
+    "render": "pending",
+    "archived": false,
+    "isPinned": false,
+    "lastOpenedAt": null
+  },
+  "lastRun": {
+    "timingsMs": {},
+    "error": null
+  },
+  "folderName": "p_20260210_155249_6d2c",
+  "hasScript": false,
+  "hasScenesJson": false,
+  "scenesCount": 0,
+  "imagesCount": 62,
+  "previewImageUrl": "/api/projects/p_20260210_155249_6d2c/files/assets/images/scene_1_20260212_120035.png",
+  "hasTts": true,
+  "ttsCount": 1,
+  "hasVideo": false,
+  "title": "테스트중 수정합니다."
+}

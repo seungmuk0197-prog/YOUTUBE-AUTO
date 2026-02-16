@@ -1,0 +1,62 @@
+{
+  "id": "p_20260212_151019_9fc1",
+  "createdAt": "2026-02-12T15:10:19.839173+09:00",
+  "created_at": "2026-02-12T15:10:19.839173+09:00",
+  "updatedAt": "2026-02-16T01:44:31.943217+09:00",
+  "updated_at": "2026-02-13T09:29:19.926129+09:00",
+  "topic": "Verification Project",
+  "name": "Verification Project",
+  "provider": "imagen4",
+  "aspectRatio": "16:9",
+  "blueprint": {},
+  "script": "",
+  "characters": [],
+  "scenes": [],
+  "thumbnail": {
+    "text": "",
+    "mode": "with_text",
+    "path": null
+  },
+  "settings": {
+    "video": {
+      "fps": 30,
+      "width": 1280,
+      "height": 720
+    },
+    "tts": {
+      "voice": "alloy",
+      "format": "mp3"
+    },
+    "bgm": {
+      "enabled": false,
+      "path": null,
+      "volume": 0.15
+    },
+    "subtitles": {
+      "enabled": false
+    }
+  },
+  "status": {
+    "script": "pending",
+    "images": "pending",
+    "tts": "pending",
+    "render": "pending",
+    "archived": false,
+    "isPinned": false,
+    "lastOpenedAt": null
+  },
+  "lastRun": {
+    "timingsMs": {},
+    "error": null
+  },
+  "folderName": "p_20260212_151019_9fc1",
+  "hasScript": false,
+  "hasScenesJson": false,
+  "scenesCount": 0,
+  "imagesCount": 1,
+  "previewImageUrl": "/api/projects/p_20260212_151019_9fc1/files/assets/images/scene_1_20260212_151039.png",
+  "hasTts": false,
+  "ttsCount": 0,
+  "hasVideo": false,
+  "title": "Verification Project"
+}

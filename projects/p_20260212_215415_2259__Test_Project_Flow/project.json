@@ -1,0 +1,92 @@
+{
+  "id": "p_20260212_215415_2259",
+  "createdAt": "2026-02-12T21:54:15.213948+09:00",
+  "created_at": "2026-02-12T21:54:15.213948+09:00",
+  "updatedAt": "2026-02-16T01:44:32.921358+09:00",
+  "updated_at": "2026-02-13T08:56:22.534935+09:00",
+  "topic": "Test Project Flow",
+  "name": "Test Project Flow",
+  "provider": "imagen4",
+  "aspectRatio": "16:9",
+  "blueprint": {
+    "topic": "Test Topic",
+    "length": 60,
+    "tone": "humorous",
+    "coreMessage": "AI is cool",
+    "viewerPainPoint": "Manual coding is hard",
+    "targetAudience": "Developers"
+  },
+  "script": "Scene 1: Hello World. Scene 2: AI Automation.",
+  "characters": [],
+  "scenes": [
+    {
+      "id": "s1",
+      "title": "",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "A computer screen",
+      "image_path": null,
+      "audio_path": null,
+      "durationSec": 5,
+      "text": ""
+    },
+    {
+      "id": "s2",
+      "title": "",
+      "narration_ko": "",
+      "narration_en": "",
+      "image_prompt_en": "Robot working",
+      "image_path": null,
+      "audio_path": null,
+      "durationSec": 5,
+      "text": ""
+    }
+  ],
+  "thumbnail": {
+    "text": "",
+    "mode": "with_text",
+    "path": null
+  },
+  "settings": {
+    "video": {
+      "fps": 30,
+      "width": 1280,
+      "height": 720
+    },
+    "tts": {
+      "voice": "alloy",
+      "format": "mp3"
+    },
+    "bgm": {
+      "enabled": false,
+      "path": null,
+      "volume": 0.15
+    },
+    "subtitles": {
+      "enabled": false
+    }
+  },
+  "status": {
+    "script": "pending",
+    "images": "pending",
+    "tts": "pending",
+    "render": "pending",
+    "archived": false,
+    "isPinned": false,
+    "lastOpenedAt": null
+  },
+  "lastRun": {
+    "timingsMs": {},
+    "error": null
+  },
+  "folderName": "p_20260212_215415_2259__Test_Project_Flow",
+  "hasScript": false,
+  "hasScenesJson": false,
+  "scenesCount": 0,
+  "imagesCount": 0,
+  "previewImageUrl": null,
+  "hasTts": false,
+  "ttsCount": 0,
+  "hasVideo": false,
+  "title": "Test Project Flow"
+}

@@ -35,3 +35,10 @@ nul/
 git add .gitignore
 git add -A
 git status
+projects/
+outputs/
+__pycache__/
+*.pyc
+node_modules/
+.next/
+projects/
