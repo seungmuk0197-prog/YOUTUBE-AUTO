@@ -54,6 +54,9 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
     const [targetScenesCount, setTargetScenesCount] = useState(0);
     const [errors, setErrors] = useState({});
     const [characterErrors, setCharacterErrors] = useState({});
+    const [generationStartTime, setGenerationStartTime] = useState(null);
+    const [averageSceneDurationMs, setAverageSceneDurationMs] = useState(12000);
+    const [estimatedRemainingSeconds, setEstimatedRemainingSeconds] = useState(0);
 
     // Image Settings
     const [aspectRatio, setAspectRatio] = useState('16:9');
@@ -370,61 +373,77 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         let failure = 0;
         let completedDurationsMs = 0;
 
-        for (let idx = 0; idx < pendingScenes.length; idx++) {
-            const scene = pendingScenes[idx];
-            const sceneIndex = scene.index ?? scene.sequence ?? (idx + 1);
-            const iterationStart = Date.now();
+        try {
+            for (let idx = 0; idx < pendingScenes.length; idx++) {
+                const scene = pendingScenes[idx];
+                const sceneIndex = scene.index ?? scene.sequence ?? (idx + 1);
+                const iterationStart = Date.now();
 
-            try {
-                const imageData = await generateSingleImage(scene, sceneIndex);
-                success++;
-                updatedImages[scene.id] = imageData;
-                delete updatedErrors[scene.id];
-            } catch (error) {
-                console.error(`[ImageGeneration] Scene ${idx + 1} failed`, error);
-                failure++;
-                updatedErrors[scene.id] = error.message || '이미지 생성 실패';
-            } finally {
-                const duration = Date.now() - iterationStart;
-                completedDurationsMs += duration;
-                const completedCount = success + failure;
-                const avgDuration = completedDurationsMs / completedCount;
-                setAverageSceneDurationMs(avgDuration);
-                const remainingScenes = Math.max(pendingScenes.length - completedCount, 0);
-                const remainingSeconds = Math.ceil((avgDuration * remainingScenes) / 1000);
-                setEstimatedRemainingSeconds(remainingSeconds);
+                try {
+                    const imageData = await generateSingleImage(scene, sceneIndex);
+                    success++;
+                    updatedImages[scene.id] = imageData;
+                    delete updatedErrors[scene.id];
+                } catch (error) {
+                    console.error(`[ImageGeneration] Scene ${idx + 1} failed`, error);
+                    failure++;
+                    updatedErrors[scene.id] = error.message || '이미지 생성 실패';
+                } finally {
+                    const duration = Date.now() - iterationStart;
+                    completedDurationsMs += duration;
+                    const completedCount = success + failure;
+                    const avgDuration = completedDurationsMs / completedCount;
+                    setAverageSceneDurationMs(avgDuration);
+                    const remainingScenes = Math.max(pendingScenes.length - completedCount, 0);
+                    const remainingSeconds = Math.ceil((avgDuration * remainingScenes) / 1000);
+                    setEstimatedRemainingSeconds(remainingSeconds);
 
-                setGeneratedImages({ ...updatedImages });
-                setErrors({ ...updatedErrors });
-                setSuccessCount(success);
-                setFailCount(failure);
+                    setGeneratedImages({ ...updatedImages });
+                    setErrors({ ...updatedErrors });
+                    setSuccessCount(success);
+                    setFailCount(failure);
+                }
             }
-        }
 
-        if (projectId) {
-            saveProjectData(projectId, PROJECT_DATA_KEYS.GENERATED_IMAGES, updatedImages);
-        }
+            if (projectId) {
+                saveProjectData(projectId, PROJECT_DATA_KEYS.GENERATED_IMAGES, updatedImages);
+            }
 
-        setGenerationStatus('completed');
-        setTargetScenesCount(0);
-        setEstimatedRemainingSeconds(0);
+            setGenerationStatus('completed');
+            setTargetScenesCount(0);
+            setEstimatedRemainingSeconds(0);
 
-        const totalSuccessCount = Object.keys(updatedImages).length;
-        alert(`✅ 이미지 생성 완료!\n성공: ${success}개\n실패: ${failure}개`);
+            const totalSuccessCount = Object.keys(updatedImages).length;
+            alert(`✅ 이미지 생성 완료!\n성공: ${success}개\n실패: ${failure}개`);
 
-        if (typeof window !== 'undefined' && projectId) {
-            window.dispatchEvent(new CustomEvent('projectImagesUpdated', {
-                detail: { projectId, imagesCount: totalSuccessCount }
-            }));
-            if (window.location.pathname.includes('/project')) {
-                window.dispatchEvent(new CustomEvent('projectDataRefresh', {
-                    detail: { projectId }
+            if (typeof window !== 'undefined' && projectId) {
+                window.dispatchEvent(new CustomEvent('projectImagesUpdated', {
+                    detail: { projectId, imagesCount: totalSuccessCount }
                 }));
+                if (window.location.pathname.includes('/project')) {
+                    window.dispatchEvent(new CustomEvent('projectDataRefresh', {
+                        detail: { projectId }
+                    }));
+                }
             }
+        } catch (error) {
+            console.error('[ImageGeneration] handleGenerateAll fatal error', error);
+            setGenerationStatus('error');
+            setTargetScenesCount(0);
+            setEstimatedRemainingSeconds(0);
+            alert('이미지 생성 중 오류가 발생했습니다. 콘솔을 확인하세요.');
+        } finally {
+            setGenerating(false);
+            setGeneratingIndex(null);
         }
+    };
 
-        setGenerating(false);
-        setGeneratingIndex(null);
+    const formatDurationLabel = (seconds) => {
+        if (seconds === null || seconds === undefined || Number.isNaN(seconds)) return '00:00';
+        const safeSeconds = Math.max(0, Math.floor(seconds));
+        const mins = Math.floor(safeSeconds / 60);
+        const secs = safeSeconds % 60;
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     };
 
     // 개별 이미지 생성
@@ -435,7 +454,10 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         }
 
         let charactersPayload = [];
-        if (activeCharacterId) {
+        const selectedChars = characters.filter(c => selectedCharacterIds.has(c.id));
+        if (selectedChars.length > 0) {
+            charactersPayload = selectedChars;
+        } else if (activeCharacterId) {
             const activeChar = characters.find(c => c.id === activeCharacterId);
             if (activeChar) {
                 charactersPayload.push(activeChar);
@@ -646,6 +668,21 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         });
     };
 
+    const handleDownloadCharacters = () => {
+        const entries = Object.entries(generatedCharacterImages);
+        if (entries.length === 0) {
+            alert('다운로드할 캐릭터 이미지가 없습니다.');
+            return;
+        }
+
+        entries.forEach(([charId, image], idx) => {
+            if (!image || !image.url) return;
+            const char = characters.find(c => c.id === charId);
+            const filename = `character_${char?.name?.replace(/\s+/g, '_') || charId}_${idx + 1}.png`;
+            handleDownloadImage(image.url, filename);
+        });
+    };
+
     // 캐릭터 선택 로직
     const toggleCharacterSelection = (charId) => {
         const newSelected = new Set(selectedCharacterIds);
@@ -734,13 +771,22 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                         <h3>캐릭터</h3>
                         <span className="char-box-count">{generatedCount}/{characters.length}</span>
                     </div>
-                    <button
-                        className="btn-char-generate"
-                        onClick={handleGenerateCharacters}
-                        disabled={isGenerating}
-                    >
-                        {isGenerating ? '생성 중...' : '전체 생성'}
-                    </button>
+                    <div className="char-box-actions">
+                        <button
+                            className="btn-char-generate"
+                            onClick={handleGenerateCharacters}
+                            disabled={isGenerating}
+                        >
+                            {isGenerating ? '생성 중...' : '전체 생성'}
+                        </button>
+                        <button
+                            className="btn-download-all"
+                            onClick={handleDownloadCharacters}
+                            disabled={Object.keys(generatedCharacterImages).length === 0}
+                        >
+                            ⬇ 캐릭터 전체 다운로드
+                        </button>
+                    </div>
                 </div>
 
                 <div className="char-list character-grid">
@@ -932,19 +978,71 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                                     </div>
 
                                     {/* 텍스트 영역 (하단) */}
-                                    <div className="card-info-area">
-                                        <div className="info-title">
-                                            Scene {index + 1}
+                                    <div className="scene-caption">
+                                        <div className="scene-header">
+                                            <span className="scene-number">Scene {index + 1}</span>
+                                            <span className="scene-time">
+                                                {scene.startTime !== undefined && scene.endTime !== undefined
+                                                    ? `${scene.startTime.toFixed(1)}s · ${scene.endTime.toFixed(1)}s`
+                                                    : `${scene.duration ? `${scene.duration}s` : '시간 정보 없음'}`
+                                                }
+                                            </span>
                                         </div>
-                                        <div className="info-desc">
-                                            {scene.text}
-                                        </div>
+                                        <p>{scene.text}</p>
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
                 </div>
+            </div>
+        );
+    };
+
+    const renderTimelineView = () => {
+        if (scenes.length === 0) {
+            return (
+                <div className="timeline-empty">
+                    <p>아직 생성할 씬이 없습니다.</p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="timeline-view">
+                <div className="timeline-line" />
+                {scenes.map((scene, index) => {
+                    const image = generatedImages[scene.id];
+                    const status = image ? 'completed' : errors[scene.id] ? 'error' : 'pending';
+                    const sceneIndex = scene.index ?? scene.sequence ?? index;
+                    const timeLabel = scene.startTime !== undefined && scene.endTime !== undefined
+                        ? `${scene.startTime.toFixed(1)}s - ${scene.endTime.toFixed(1)}s`
+                        : `제${index + 1}장`;
+
+                    return (
+                        <div key={scene.id} className={`timeline-item ${status}`}>
+                            <div className="timeline-marker">
+                                {status === 'completed' && '✓'}
+                                {status === 'error' && '⚠'}
+                            </div>
+                            <div className="timeline-content">
+                                <div className="timeline-heading">
+                                    <span>씬 {sceneIndex}</span>
+                                    <span className="timeline-time">{timeLabel}</span>
+                                </div>
+                                <p>{scene.text}</p>
+                                {image && (
+                                    <img src={image.url} alt={`Scene ${index + 1}`} />
+                                )}
+                                {!image && (
+                                    <div className="timeline-placeholder">
+                                        {status === 'error' ? '이미지 생성 실패' : '이미지 없음'}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
         );
     };
@@ -958,6 +1056,7 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         const attempted = Math.min(totalTargets, completed + failed);
         const pending = Math.max(totalTargets - attempted, 0);
         const progress = totalTargets > 0 ? Math.min(100, (attempted / totalTargets) * 100) : 0;
+        const remainingTimeLabel = formatDurationLabel(estimatedRemainingSeconds);
 
         return (
             <div className="modal-overlay">
@@ -1010,8 +1109,8 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                     </div>
 
                     <div className="generation-tips">
-                        <p>💡 평균 생성 시간: 씬당 약 10-15초</p>
-                        <p>⏱️ 예상 완료 시간: {Math.ceil(pending * 12 / 60)}분</p>
+                        <p>💡 평균 생성 시간: 씬당 약 {Math.max(1, Math.round(averageSceneDurationMs / 1000))}초</p>
+                        <p>⏱️ 예측 남은 시간: {remainingTimeLabel} ({pending} 씬)</p>
                     </div>
 
                     <button
@@ -1183,9 +1282,7 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
 
                 {generationStatus === 'generating'
                     ? renderGenerationProgress()
-                    : (viewMode === 'grid' || true) // Timeline view also uses Grid layout for now
-                        ? renderGridView()
-                        : renderGridView()
+                    : (viewMode === 'grid' ? renderGridView() : renderTimelineView())
                 }
 
             </div>
@@ -1494,8 +1591,8 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
 
         .style-card {
             border-radius: 14px;
-            padding: 14px 16px;
-            min-height: 96px;
+            padding: 10px 12px;
+            min-height: 58px;
             box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s, border 0.2s;
@@ -1526,7 +1623,7 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         .style-card {
             border: 1px solid rgba(0,0,0,0.08);
             border-radius: 6px;
-            padding: 8px 10px;
+            padding: 6px 8px;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
@@ -2126,6 +2223,85 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
             cursor: not-allowed;
             background: transparent;
         }
+        .timeline-view {
+            position: relative;
+            padding-left: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .timeline-line {
+            position: absolute;
+            left: 16px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: #d4d4d4;
+        }
+        .timeline-item {
+            position: relative;
+            padding-left: 32px;
+            padding-right: 16px;
+        }
+        .timeline-marker {
+            position: absolute;
+            left: -9px;
+            top: 8px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #667eea;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+        .timeline-item.completed .timeline-marker {
+            background: #22c55e;
+            border-color: #16a34a;
+            color: #fff;
+        }
+        .timeline-item.error .timeline-marker {
+            background: #f87171;
+            border-color: #b91c1c;
+            color: #fff;
+        }
+        .timeline-item.pending .timeline-marker {
+            color: #6366f1;
+        }
+        .timeline-content {
+            background: #fff;
+            border-radius: 12px;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+        }
+        .timeline-heading {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .timeline-time {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .timeline-content img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-top: 8px;
+        }
+        .timeline-placeholder {
+            margin-top: 12px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #475569;
+        }
 
         .image-card-new {
             background: #fff;
@@ -2281,7 +2457,7 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         }
 
         .card-info-area {
-            padding: 16px;
+            padding: 12px 14px;
             border-top: 1px solid #e2e8f0;
             background: #fff;
             flex: 1;
@@ -2290,21 +2466,38 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
             gap: 6px;
         }
 
-        .info-title {
-            font-size: 15px;
+        .scene-caption {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 13px;
+            color: #1e293b;
+        }
+
+        .scene-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             font-weight: 700;
             color: #1a202c;
         }
 
-        .info-desc {
-            font-size: 13px;
-            color: #718096;
+        .scene-number {
+            font-size: 14px;
+        }
+
+        .scene-time {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .scene-caption p {
+            margin: 0;
             line-height: 1.5;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            font-size: 13px;
+            color: #475569;
         }
 
         .scenes-grid {
@@ -2413,6 +2606,11 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                         display: flex;
                         align-items: center;
                         gap: 10px;
+                    }
+                    .char-box-actions {
+                        display: flex;
+                        gap: 8px;
+                        align-items: center;
                     }
                     .char-box-title h3 {
                         margin: 0;
