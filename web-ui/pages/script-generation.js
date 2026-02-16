@@ -1819,7 +1819,30 @@ ${generatedScript}
             cursor: not-allowed;
             box-shadow: none;
         }
+        .page-nav {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 12px 0;
+        }
+        .btn-nav {
+            padding: 8px 16px;
+            border: 1px solid #cbd5e0;
+            background: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-nav.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-color: transparent;
+        }
             `}</style>
+            <div className="page-nav">
+                <button className="btn-nav" onClick={() => router.push(router.query.projectId ? `/script-planning?projectId=${router.query.projectId}` : '/script-planning')}>← 이전 페이지</button>
+                <button className="btn-nav primary" onClick={() => router.push(router.query.projectId ? `/json-generation?projectId=${router.query.projectId}` : '/json-generation')}>다음 페이지 →</button>
+            </div>
         </StudioLayout>
     );
 };

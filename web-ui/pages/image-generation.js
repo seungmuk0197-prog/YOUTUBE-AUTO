@@ -249,8 +249,13 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         }
 
         // 캐릭터 설명과 역할을 조합하여 프롬프트 생성
-        const styleFlavor = selectedStyle ? `${selectedStyle.name} style - ${selectedStyle.desc}` : 'Realistic style';
-        const rawPrompt = `Character Design: ${character.name}. Role: ${character.role}. Description: ${character.description || ''}. Style: ${styleFlavor}.`;
+        const styleFlavor = selectedStyle ? `${selectedStyle.name} style with ${selectedStyle.desc}` : 'Realistic portrait style';
+        const personaNotes = [
+            `Name: ${character.name}`,
+            character.role ? `Role: ${character.role}` : '',
+            character.description ? `Description: ${character.description}` : ''
+        ].filter(Boolean).join(' | ');
+        const rawPrompt = `Portrait of a real human being. ${personaNotes}. Style directive: ${styleFlavor}. Keep lighting natural, focus on facial expression and body language, include props only if relevant.`;
         const prompt = clampAndLogPrompt(rawPrompt, `char_${character.id}`, character.name || character.role);
 
         const response = await fetch(`/api/projects/${pid}/generate/image`, {
@@ -504,8 +509,19 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
             charactersPayload.push(protagonistChars[0]);
         }
 
-        const styleContext = selectedStyle ? `${selectedStyle.name} style - ${selectedStyle.desc}` : '실사 스타일';
-        const combinedPrompt = `${styleContext}\n${scene.imagePrompt}`;
+        const styleContext = selectedStyle ? `${selectedStyle.name} style - ${selectedStyle.desc}` : '실사 스타일 중심의 분위기';
+        const charDescriptions = charactersPayload.map(c => {
+            const role = c.role ? ` (${c.role})` : '';
+            const desc = c.description ? `: ${c.description}` : '';
+            return `${c.name}${role}${desc}`;
+        }).join('; ');
+        const combinedPrompt = `
+            ${styleContext}
+            ${charDescriptions ? `Characters: ${charDescriptions}` : 'Characters: realistic humans'}
+            Scene: ${scene.imagePrompt}
+            ${scene.summary ? `Summary: ${scene.summary}` : ''}
+            Use cinematic lighting, clear human figures, no abstract backgrounds unless the scene specifically requires it.
+        `;
         const sendPrompt = clampAndLogPrompt(combinedPrompt, scene.id, scene.text);
         const sequenceValue = scene.sequence ?? (scenes.indexOf(scene) + 1);
 
@@ -1382,6 +1398,11 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                     : (viewMode === 'grid' ? renderGridView() : renderTimelineView())
                 }
                 {renderCharacterProgressModal()}
+
+                <div className="page-nav">
+                    <button className="btn-nav" onClick={() => router.push(projectId ? `/json-generation?projectId=${projectId}` : '/json-generation')}>← 이전 페이지</button>
+                    <button className="btn-nav primary" onClick={() => router.push(projectId ? `/project?id=${projectId}&step=tts` : '/projects?filter=active')}>다음 페이지 →</button>
+                </div>
 
             </div>
 
@@ -2585,6 +2606,26 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
             line-height: 1.5;
             font-size: 13px;
             color: #475569;
+        }
+
+        .page-nav {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 12px 24px;
+        }
+        .btn-nav {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background: #fff;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .btn-nav.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-color: transparent;
         }
 
         .scenes-grid {

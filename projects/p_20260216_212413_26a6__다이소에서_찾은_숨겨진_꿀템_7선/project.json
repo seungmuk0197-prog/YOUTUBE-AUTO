@@ -2,8 +2,8 @@
   "id": "p_20260216_212413_26a6",
   "createdAt": "2026-02-16T21:24:13.247202+09:00",
   "created_at": "2026-02-16T21:24:13.247202+09:00",
-  "updatedAt": "2026-02-17T00:44:36.878692+09:00",
-  "updated_at": "2026-02-17T00:44:36.878692+09:00",
+  "updatedAt": "2026-02-17T01:06:20.321401+09:00",
+  "updated_at": "2026-02-17T01:04:25.069424+09:00",
   "topic": "다이소에서 찾은 숨겨진 꿀템 7선",
   "name": "다이소에서 찾은 숨겨진 꿀템 7선",
   "provider": "imagen4",
@@ -68,7 +68,7 @@
       "narration_ko": "",
       "narration_en": "",
       "image_prompt_en": "",
-      "image_path": "assets/images/scene_1_20260217_004436.png",
+      "image_path": "assets/images/scene_1_20260217_010425.png",
       "audio_path": null,
       "durationSec": 12,
       "startTime": 0,
@@ -360,5 +360,14 @@
     "timingsMs": {},
     "error": null
   },
-  "folderName": "p_20260216_212413_26a6__다이소에서_찾은_숨겨진_꿀템_7선"
+  "folderName": "p_20260216_212413_26a6__다이소에서_찾은_숨겨진_꿀템_7선",
+  "hasScript": true,
+  "hasScenesJson": true,
+  "scenesCount": 10,
+  "imagesCount": 32,
+  "previewImageUrl": "/api/projects/p_20260216_212413_26a6/files/assets/images/scene_1_20260217_000214.png",
+  "hasTts": false,
+  "ttsCount": 0,
+  "hasVideo": false,
+  "title": "다이소에서 찾은 숨겨진 꿀템 7선"
 }

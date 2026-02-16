@@ -310,6 +310,14 @@ export default function ScriptPlanning() {
         router.push('/projects?filter=active');
     };
 
+    const goNext = () => {
+        if (projectId) {
+            router.push(`/script-generation?projectId=${projectId}`);
+        } else {
+            router.push('/script-generation');
+        }
+    };
+
     // 주제와 영상길이만 선택되어 있어도 버튼 활성화
     const isFormComplete =
         topic.trim() &&
@@ -635,6 +643,11 @@ export default function ScriptPlanning() {
                         {loading ? '생성 중...' : '✨ AI 대본 생성'}
                     </button>
                 </footer>
+            </div>
+
+            <div className="page-nav">
+                <button className="btn-nav" onClick={goBack}>← 이전 페이지</button>
+                <button className="btn-nav primary" onClick={goNext}>다음 페이지 →</button>
             </div>
 
             <style jsx>{`
@@ -1072,8 +1085,29 @@ export default function ScriptPlanning() {
         
         .btn-secondary:hover {
             background: #F5F3FF;
-        }
-      `}</style>
-        </StudioLayout>
+            }
+
+            .page-nav {
+                display: flex;
+                justify-content: flex-end;
+                gap: 12px;
+                padding: 12px 0;
+            }
+            .btn-nav {
+                padding: 8px 16px;
+                border: 1px solid #cbd5e0;
+                background: #fff;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: 600;
+            }
+            .btn-nav.primary {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: #fff;
+                border-color: transparent;
+            }
+        `}</style>
+            </StudioLayout>
+
     );
 }
