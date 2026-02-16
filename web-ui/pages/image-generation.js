@@ -68,6 +68,11 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
     // 이미지 생성 상태 (Characters)
     const [charGenerationStatus, setCharGenerationStatus] = useState('idle'); // idle, generating, completed, error
     const [currentCharIndex, setCurrentCharIndex] = useState(-1);
+    const [charModalOpen, setCharModalOpen] = useState(false);
+    const [charEstimatedRemainingSeconds, setCharEstimatedRemainingSeconds] = useState(0);
+    const [charGenerationStartTime, setCharGenerationStartTime] = useState(null);
+    const [charSuccessCount, setCharSuccessCount] = useState(0);
+    const [charTargetCount, setCharTargetCount] = useState(0);
 
     // UI 상태
     const [selectedScene, setSelectedScene] = useState(null);
@@ -244,7 +249,8 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         }
 
         // 캐릭터 설명과 역할을 조합하여 프롬프트 생성
-        const rawPrompt = `Character Design: ${character.name}. Role: ${character.role}. Description: ${character.description || ''}. ${selectedStyle && selectedStyle.id !== 'basic' ? selectedStyle.desc : ''}`;
+        const styleFlavor = selectedStyle ? `${selectedStyle.name} style - ${selectedStyle.desc}` : 'Realistic style';
+        const rawPrompt = `Character Design: ${character.name}. Role: ${character.role}. Description: ${character.description || ''}. Style: ${styleFlavor}.`;
         const prompt = clampAndLogPrompt(rawPrompt, `char_${character.id}`, character.name || character.role);
 
         const response = await fetch(`/api/projects/${pid}/generate/image`, {
@@ -295,20 +301,30 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         };
 
     // 캐릭터 전체 이미지 생성 (순차 처리)
-    const handleGenerateCharacters = async () => {
+    const handleGenerateCharacters = async (forceRegenerate = false) => {
         if (characters.length === 0) return;
 
         console.log('🚀 Starting character image generation');
         setCharGenerationStatus('generating');
+        setCharModalOpen(true);
+        setCharGenerationStartTime(Date.now());
+        setCharTargetCount(characters.length);
+        setCharSuccessCount(0);
 
-        const newImages = { ...generatedCharacterImages };
+        const newImages = forceRegenerate ? {} : { ...generatedCharacterImages };
         const newErrors = {};
+        if (forceRegenerate) {
+            setGeneratedCharacterImages({});
+            setCharacterErrors({});
+        }
+        let charCompletedDurationsMs = 0;
+        let charCompletedCount = 0;
 
         for (let i = 0; i < characters.length; i++) {
             const char = characters[i];
+            const iterationStart = Date.now();
 
-            // 이미 생성된 이미지는 스킵
-            if (newImages[char.id]) {
+            if (!forceRegenerate && newImages[char.id]) {
                 console.log(`⏭️ Character ${char.name}: Already generated, skipping`);
                 continue;
             }
@@ -320,8 +336,9 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                 const imageData = await generateCharacterImage(char);
                 newImages[char.id] = imageData;
                 setGeneratedCharacterImages({ ...newImages });
+                charCompletedCount++;
+                setCharSuccessCount(prev => prev + 1);
 
-                // localStorage에 저장 (projectId 기준)
                 if (projectId) {
                     saveProjectData(projectId, PROJECT_DATA_KEYS.GENERATED_CHARACTER_IMAGES, newImages);
                 }
@@ -332,32 +349,47 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                 console.error(`❌ Character ${char.name}: Failed`, error);
                 newErrors[char.id] = error.message;
                 setCharacterErrors({ ...newErrors });
+                setCharGenerationStatus('error');
+            } finally {
+                const duration = Date.now() - iterationStart;
+                charCompletedDurationsMs += duration;
+                const avgDuration = charCompletedCount > 0 ? charCompletedDurationsMs / charCompletedCount : 12000;
+                const remaining = Math.max(characters.length - charCompletedCount, 0);
+                setCharEstimatedRemainingSeconds(Math.ceil((avgDuration * remaining) / 1000));
             }
 
-            // API 레이트 리미트 방지
             if (i < characters.length - 1) {
                 await new Promise(resolve => setTimeout(resolve, 2000));
             }
         }
 
+        if (characters.length > 0) {
+            setSelectedCharacterIds(new Set(characters.map(char => char.id)));
+            setActiveCharacterId(characters[0]?.id || null);
+        }
         setCharGenerationStatus('completed');
         setCurrentCharIndex(-1);
+        setCharModalOpen(false);
+        setCharEstimatedRemainingSeconds(0);
 
         alert(`✅ 캐릭터 이미지 생성 완료!\n성공: ${Object.keys(newImages).length}개`);
     };
 
     // 전체 이미지 생성
-    const handleGenerateAll = async () => {
+    const handleGenerateAll = async (forceRegenerate = false) => {
         if (generating || !scenes.length) return;
 
-        const pendingScenes = scenes.filter(scene => !generatedImages[scene.id]);
-        if (pendingScenes.length === 0) {
+        const targetScenes = forceRegenerate ? scenes : scenes.filter(scene => !generatedImages[scene.id]);
+        if (targetScenes.length === 0) {
             setTargetScenesCount(0);
-            alert('모든 씬 이미지가 이미 생성되었습니다.');
+            alert(forceRegenerate ? '재생성할 씬이 없습니다.' : '모든 씬 이미지가 이미 생성되었습니다.');
             return;
         }
+        if (forceRegenerate) {
+            setGeneratedImages({});
+        }
 
-        setTargetScenesCount(pendingScenes.length);
+        setTargetScenesCount(targetScenes.length);
         setSuccessCount(0);
         setFailCount(0);
         setErrors({});
@@ -365,7 +397,7 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         setGenerating(true);
         setGenerationStartTime(Date.now());
         setAverageSceneDurationMs(12000);
-        setEstimatedRemainingSeconds(Math.ceil((pendingScenes.length * 12000) / 1000));
+        setEstimatedRemainingSeconds(Math.ceil((targetScenes.length * 12000) / 1000));
 
         const updatedImages = { ...generatedImages };
         const updatedErrors = { ...errors };
@@ -374,8 +406,8 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         let completedDurationsMs = 0;
 
         try {
-            for (let idx = 0; idx < pendingScenes.length; idx++) {
-                const scene = pendingScenes[idx];
+            for (let idx = 0; idx < targetScenes.length; idx++) {
+                const scene = targetScenes[idx];
                 const sceneIndex = scene.index ?? scene.sequence ?? (idx + 1);
                 const iterationStart = Date.now();
 
@@ -394,7 +426,7 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                     const completedCount = success + failure;
                     const avgDuration = completedDurationsMs / completedCount;
                     setAverageSceneDurationMs(avgDuration);
-                    const remainingScenes = Math.max(pendingScenes.length - completedCount, 0);
+                const remainingScenes = Math.max(targetScenes.length - completedCount, 0);
                     const remainingSeconds = Math.ceil((avgDuration * remainingScenes) / 1000);
                     setEstimatedRemainingSeconds(remainingSeconds);
 
@@ -454,22 +486,27 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         }
 
         let charactersPayload = [];
-        const selectedChars = characters.filter(c => selectedCharacterIds.has(c.id));
+        const protagonistChars = characters.filter(c => c.id !== 'narrator_default');
+        const selectedChars = protagonistChars.filter(c => selectedCharacterIds.has(c.id));
         if (selectedChars.length > 0) {
             charactersPayload = selectedChars;
         } else if (activeCharacterId) {
-            const activeChar = characters.find(c => c.id === activeCharacterId);
+            const activeChar = protagonistChars.find(c => c.id === activeCharacterId);
             if (activeChar) {
                 charactersPayload.push(activeChar);
             }
         } else if (scene.characterId) {
-            const linkedChar = characters.find(c => c.id === scene.characterId);
+            const linkedChar = protagonistChars.find(c => c.id === scene.characterId);
             if (linkedChar) {
                 charactersPayload.push(linkedChar);
             }
+        } else if (protagonistChars.length > 0) {
+            charactersPayload.push(protagonistChars[0]);
         }
 
-        const sendPrompt = clampAndLogPrompt(scene.imagePrompt, scene.id, scene.text);
+        const styleContext = selectedStyle ? `${selectedStyle.name} style - ${selectedStyle.desc}` : '실사 스타일';
+        const combinedPrompt = `${styleContext}\n${scene.imagePrompt}`;
+        const sendPrompt = clampAndLogPrompt(combinedPrompt, scene.id, scene.text);
         const sequenceValue = scene.sequence ?? (scenes.indexOf(scene) + 1);
 
         const response = await fetch(`/api/projects/${pid}/generate/image`, {
@@ -482,7 +519,9 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                 sceneIndex: sceneIndex ?? sequenceValue,
                 aspectRatio: aspectRatio,
                 styleId: selectedStyle.id,
-                characters: charactersPayload
+                characters: charactersPayload,
+                styleName: selectedStyle?.name,
+                styleDescription: selectedStyle?.desc
             })
         });
 
@@ -772,12 +811,19 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                         <span className="char-box-count">{generatedCount}/{characters.length}</span>
                     </div>
                     <div className="char-box-actions">
+                       <button
+                           className="btn-char-generate"
+                           onClick={handleGenerateCharacters}
+                           disabled={isGenerating}
+                       >
+                           {isGenerating ? '생성 중...' : '전체 생성'}
+                       </button>
                         <button
-                            className="btn-char-generate"
-                            onClick={handleGenerateCharacters}
+                            className="btn-char-regenerate"
+                            onClick={() => handleGenerateCharacters(true)}
                             disabled={isGenerating}
                         >
-                            {isGenerating ? '생성 중...' : '전체 생성'}
+                            🔁 캐릭터 재생성
                         </button>
                         <button
                             className="btn-download-all"
@@ -845,6 +891,52 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         );
     };
 
+    const renderCharacterProgressModal = () => {
+        if (!charModalOpen) return null;
+
+        const total = charTargetCount || 1;
+        const pending = Math.max(total - charSuccessCount, 0);
+        const progress = Math.min(100, Math.round((charSuccessCount / total) * 100));
+        const remainingLabel = formatDurationLabel(charEstimatedRemainingSeconds);
+
+        return (
+            <div className="modal-overlay">
+                <div className="modal-content generation-progress-modal" style={{ width: '420px', textAlign: 'center' }}>
+                    <div className="progress-animation">
+                        <div className="rotating-icon">🧑‍🎨</div>
+                    </div>
+                    <h2>캐릭터 이미지를 생성 중입니다</h2>
+                    <p className="current-scene">
+                        생성: {charSuccessCount} / {total}
+                    </p>
+                    <div className="progress-bar-container">
+                        <div className="progress-bar">
+                            <div className="progress-fill" style={{ width: `${progress}%` }}>
+                                <span className="progress-text">{progress}%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="progress-stats">
+                        <div className="stat-item pending">
+                            <span className="stat-icon">⏳</span>
+                            <span className="stat-count">{pending}</span>
+                            <span className="stat-label">남은</span>
+                        </div>
+                    </div>
+                    <div className="generation-tips">
+                        <p>⏱️ 예측 남은 시간: {remainingLabel}</p>
+                    </div>
+                    <button
+                        className="btn-close-modal"
+                        onClick={() => setCharModalOpen(false)}
+                    >
+                        닫기 (백그라운드 진행)
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
     const renderGridView = () => {
         const isAllSelected = scenes.length > 0 && selectedSceneIds.size === scenes.length;
 
@@ -854,27 +946,23 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                 <div className="grid-view-container section-thumbnail thumbnail-box">
                     {/* 씬 이미지 헤더 */}
                     <div className="section-header-bar">
-                        <button
-                            className="btn-generate-all"
-                            onClick={handleGenerateAll}
-                            disabled={scenes.length === 0 || generationStatus === 'generating' || generating}
-                            title={characters.length > 0 && charGenerationStatus !== 'completed' ? '캐릭터 생성을 먼저 완료해주세요' : ''}
-                            style={{
-                                backgroundColor: '#6200ea',
-                                color: 'white',
-                                border: 'none',
-                                padding: '6px 12px',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                fontWeight: '500',
-                                marginRight: '16px' // Add right margin instead
-                            }}
-                        >
-                            🎬 씬 전체 생성
-                        </button>
+                        <div className="generate-actions">
+                            <button
+                                className="btn-generate-all"
+                                onClick={() => handleGenerateAll(false)}
+                                disabled={scenes.length === 0 || generationStatus === 'generating' || generating}
+                                title={characters.length > 0 && charGenerationStatus !== 'completed' ? '캐릭터 생성을 먼저 완료해주세요' : ''}
+                            >
+                                🎬 씬 전체 생성
+                            </button>
+                            <button
+                                className="btn-regenerate-all"
+                                onClick={() => handleGenerateAll(true)}
+                                disabled={scenes.length === 0 || generationStatus === 'generating' || generating}
+                            >
+                                🔄 스타일 재생성
+                            </button>
+                        </div>
                         <div className="header-title">
                             <h3>▌씬 이미지</h3>
                             <span className="info-badge" style={{ marginLeft: '10px', fontSize: '14px' }}>
@@ -1008,37 +1096,46 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
             );
         }
 
+        const getSceneCharacter = (scene) => {
+            if (!scene.characterId) return null;
+            return characters.find(c => c.id === scene.characterId);
+        };
+
         return (
-            <div className="timeline-view">
-                <div className="timeline-line" />
+            <div className="timeline-grid">
                 {scenes.map((scene, index) => {
                     const image = generatedImages[scene.id];
                     const status = image ? 'completed' : errors[scene.id] ? 'error' : 'pending';
                     const sceneIndex = scene.index ?? scene.sequence ?? index;
-                    const timeLabel = scene.startTime !== undefined && scene.endTime !== undefined
-                        ? `${scene.startTime.toFixed(1)}s - ${scene.endTime.toFixed(1)}s`
-                        : `제${index + 1}장`;
+                    const summary = scene.summary || scene.text?.slice(0, 100) || '설명 없음';
+                    const char = getSceneCharacter(scene);
 
                     return (
-                        <div key={scene.id} className={`timeline-item ${status}`}>
-                            <div className="timeline-marker">
-                                {status === 'completed' && '✓'}
-                                {status === 'error' && '⚠'}
+                        <div key={scene.id} className={`timeline-card ${status}`}>
+                            <div className="timeline-card-header">
+                                <span>Scene {sceneIndex}</span>
+                                <span className="timeline-time">
+                                    {scene.duration ? `${scene.duration}s` :
+                                        scene.startTime !== undefined && scene.endTime !== undefined
+                                        ? `${scene.startTime.toFixed(1)}s · ${scene.endTime.toFixed(1)}s`
+                                        : '시간 정보 없음'}
+                                </span>
                             </div>
-                            <div className="timeline-content">
-                                <div className="timeline-heading">
-                                    <span>씬 {sceneIndex}</span>
-                                    <span className="timeline-time">{timeLabel}</span>
-                                </div>
-                                <p>{scene.text}</p>
-                                {image && (
+                            <div className="timeline-card-image">
+                                {image ? (
                                     <img src={image.url} alt={`Scene ${index + 1}`} />
-                                )}
-                                {!image && (
-                                    <div className="timeline-placeholder">
-                                        {status === 'error' ? '이미지 생성 실패' : '이미지 없음'}
+                                ) : (
+                                    <div className="timeline-placeholder-card">
+                                        {status === 'error' ? '⚠ 이미지 실패' : '이미지 준비 중'}
                                     </div>
                                 )}
+                            </div>
+                            <div className="timeline-card-body">
+                                <div className="timeline-card-character">
+                                    <strong>{char?.name || activeCharacterId ? characters.find(c => c.id === activeCharacterId)?.name : '캐릭터 미지정'}</strong>
+                                    {char?.role && <span className="character-role">{char.role}</span>}
+                                </div>
+                                <p>{summary}</p>
                             </div>
                         </div>
                     );
@@ -1284,6 +1381,7 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                     ? renderGenerationProgress()
                     : (viewMode === 'grid' ? renderGridView() : renderTimelineView())
                 }
+                {renderCharacterProgressModal()}
 
             </div>
 
@@ -2223,84 +2321,73 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
             cursor: not-allowed;
             background: transparent;
         }
-        .timeline-view {
-            position: relative;
-            padding-left: 40px;
-            display: flex;
-            flex-direction: column;
+        .timeline-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 16px;
         }
-        .timeline-line {
-            position: absolute;
-            left: 16px;
-            top: 8px;
-            bottom: 8px;
-            width: 2px;
-            background: #d4d4d4;
-        }
-        .timeline-item {
-            position: relative;
-            padding-left: 32px;
-            padding-right: 16px;
-        }
-        .timeline-marker {
-            position: absolute;
-            left: -9px;
-            top: 8px;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
+        .timeline-card {
             background: #fff;
-            border: 2px solid #667eea;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            display: flex;
+            flex-direction: column;
+            min-height: 100px;
+        }
+        .timeline-card.pending {
+            border-color: #cbd5e0;
+        }
+        .timeline-card-image {
+            width: 100%;
+            height: 120px;
+            overflow: hidden;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
         }
-        .timeline-item.completed .timeline-marker {
-            background: #22c55e;
-            border-color: #16a34a;
-            color: #fff;
+        .timeline-card image, .timeline-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
-        .timeline-item.error .timeline-marker {
-            background: #f87171;
-            border-color: #b91c1c;
-            color: #fff;
-        }
-        .timeline-item.pending .timeline-marker {
-            color: #6366f1;
-        }
-        .timeline-content {
-            background: #fff;
-            border-radius: 12px;
-            padding: 12px 16px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-        }
-        .timeline-heading {
-            display: flex;
-            justify-content: space-between;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-        .timeline-time {
+        .timeline-placeholder-card {
             font-size: 12px;
             color: #64748b;
         }
-        .timeline-content img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 10px;
-            margin-top: 8px;
+        .timeline-card-body {
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
-        .timeline-placeholder {
-            margin-top: 12px;
-            padding: 10px;
-            background: #f8fafc;
-            border-radius: 8px;
+        .timeline-card-header {
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            background: #f9fafb;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
             font-size: 13px;
+            color: #1f2937;
+        }
+        .timeline-card-character {
+            display: flex;
+            flex-direction: column;
+            font-size: 12px;
+            color: #4c51bf;
+        }
+        .character-role {
+            font-size: 11px;
             color: #475569;
+        }
+        .timeline-card-body p {
+            margin: 0;
+            font-size: 12px;
+            color: #1f2937;
+            line-height: 1.4;
         }
 
         .image-card-new {
@@ -2638,6 +2725,21 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
                     }
                     .btn-char-generate:disabled {
                         opacity: 0.5;
+                        cursor: not-allowed;
+                    }
+                    .btn-char-regenerate {
+                        padding: 6px 16px;
+                        background: #facc15;
+                        color: #572d01;
+                        border: none;
+                        border-radius: 6px;
+                        font-size: 13px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        margin-left: 6px;
+                    }
+                    .btn-char-regenerate:disabled {
+                        opacity: 0.6;
                         cursor: not-allowed;
                     }
 
