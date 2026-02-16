@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import StudioLayout from '../components/StudioLayout';
@@ -16,6 +16,7 @@ const JSONGeneration = () => {
     const [selectedScene, setSelectedScene] = useState(null);
     const [viewMode, setViewMode] = useState('all-scenes'); // 'all-scenes' | 'timeline' | 'json'
     const [loading, setLoading] = useState(true);
+    const didInitRef = useRef(false);
 
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [scriptHash, setScriptHash] = useState(null);
@@ -82,8 +83,10 @@ const JSONGeneration = () => {
 
     useEffect(() => {
         if (!router.isReady) return;
+        if (didInitRef.current) return;
+        didInitRef.current = true;
         loadData();
-    }, [router.isReady, projectId]);
+    }, [router.isReady]);
 
     useEffect(() => {
         if (router.isReady && !projectId && characters.length === 0) {

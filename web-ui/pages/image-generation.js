@@ -360,70 +360,71 @@ const ImageGeneration = ({ projectId: propProjectId }) => {
         setErrors({});
         setGenerationStatus('generating');
         setGenerating(true);
+        setGenerationStartTime(Date.now());
+        setAverageSceneDurationMs(12000);
+        setEstimatedRemainingSeconds(Math.ceil((pendingScenes.length * 12000) / 1000));
 
-        try {
-            const results = await Promise.allSettled(
-                pendingScenes.map((scene, index) => {
-                    const sceneIndex = scene.index ?? scene.sequence ?? index;
-                    return generateSingleImage(scene, sceneIndex);
-                })
-            );
+        const updatedImages = { ...generatedImages };
+        const updatedErrors = { ...errors };
+        let success = 0;
+        let failure = 0;
+        let completedDurationsMs = 0;
 
-            const updatedImages = { ...generatedImages };
-            const updatedErrors = { ...errors };
-            let success = 0;
-            let failure = 0;
+        for (let idx = 0; idx < pendingScenes.length; idx++) {
+            const scene = pendingScenes[idx];
+            const sceneIndex = scene.index ?? scene.sequence ?? (idx + 1);
+            const iterationStart = Date.now();
 
-            results.forEach((result, idx) => {
-                const scene = pendingScenes[idx];
-                if (!scene) return;
+            try {
+                const imageData = await generateSingleImage(scene, sceneIndex);
+                success++;
+                updatedImages[scene.id] = imageData;
+                delete updatedErrors[scene.id];
+            } catch (error) {
+                console.error(`[ImageGeneration] Scene ${idx + 1} failed`, error);
+                failure++;
+                updatedErrors[scene.id] = error.message || '이미지 생성 실패';
+            } finally {
+                const duration = Date.now() - iterationStart;
+                completedDurationsMs += duration;
+                const completedCount = success + failure;
+                const avgDuration = completedDurationsMs / completedCount;
+                setAverageSceneDurationMs(avgDuration);
+                const remainingScenes = Math.max(pendingScenes.length - completedCount, 0);
+                const remainingSeconds = Math.ceil((avgDuration * remainingScenes) / 1000);
+                setEstimatedRemainingSeconds(remainingSeconds);
 
-                if (result.status === 'fulfilled' && result.value) {
-                    success++;
-                    updatedImages[scene.id] = result.value;
-                    delete updatedErrors[scene.id];
-                } else {
-                    failure++;
-                    const message = result.status === 'rejected'
-                        ? (result.reason?.message || '이미지 생성 실패')
-                        : '이미지 생성 실패';
-                    updatedErrors[scene.id] = message;
-                }
-            });
-
-            if (projectId) {
-                saveProjectData(projectId, PROJECT_DATA_KEYS.GENERATED_IMAGES, updatedImages);
+                setGeneratedImages({ ...updatedImages });
+                setErrors({ ...updatedErrors });
+                setSuccessCount(success);
+                setFailCount(failure);
             }
-
-            setGeneratedImages(updatedImages);
-            setErrors(updatedErrors);
-            setSuccessCount(success);
-            setFailCount(failure);
-            setGenerationStatus('completed');
-            setTargetScenesCount(0);
-
-            const totalSuccessCount = Object.keys(updatedImages).length;
-            alert(`✅ 이미지 생성 완료!\n성공: ${success}개\n실패: ${failure}개`);
-
-            if (typeof window !== 'undefined' && projectId) {
-                window.dispatchEvent(new CustomEvent('projectImagesUpdated', {
-                    detail: { projectId, imagesCount: totalSuccessCount }
-                }));
-                if (window.location.pathname.includes('/project')) {
-                    window.dispatchEvent(new CustomEvent('projectDataRefresh', {
-                        detail: { projectId }
-                    }));
-                }
-            }
-        } catch (error) {
-            console.error('[ImageGeneration] handleGenerateAll error', error);
-            alert('이미지 생성 중 오류가 발생했습니다. 콘솔을 확인하세요.');
-            setGenerationStatus('error');
-            setTargetScenesCount(0);
-        } finally {
-            setGenerating(false);
-            setGeneratingIndex(null);
         }
+
+        if (projectId) {
+            saveProjectData(projectId, PROJECT_DATA_KEYS.GENERATED_IMAGES, updatedImages);
+        }
+
+        setGenerationStatus('completed');
+        setTargetScenesCount(0);
+        setEstimatedRemainingSeconds(0);
+
+        const totalSuccessCount = Object.keys(updatedImages).length;
+        alert(`✅ 이미지 생성 완료!\n성공: ${success}개\n실패: ${failure}개`);
+
+        if (typeof window !== 'undefined' && projectId) {
+            window.dispatchEvent(new CustomEvent('projectImagesUpdated', {
+                detail: { projectId, imagesCount: totalSuccessCount }
+            }));
+            if (window.location.pathname.includes('/project')) {
+                window.dispatchEvent(new CustomEvent('projectDataRefresh', {
+                    detail: { projectId }
+                }));
+            }
+        }
+
+        setGenerating(false);
+        setGeneratingIndex(null);
     };
 
     // 개별 이미지 생성

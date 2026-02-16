@@ -224,13 +224,21 @@ class Project:
     def from_dict(data: Dict[str, Any]) -> 'Project':
         """딕셔너리에서 프로젝트 생성"""
         characters = []
+        allowed_keys = {'id', 'name', 'desc_ko', 'desc_en', 'role'}
         for c in data.get('characters', []):
             c_copy = dict(c)
+            if 'descriptionKo' in c_copy:
+                if not c_copy.get('desc_ko'):
+                    c_copy['desc_ko'] = c_copy.get('descriptionKo')
+                del c_copy['descriptionKo']
             if 'description' in c_copy:
                 if not c_copy.get('desc_en'):
                     c_copy['desc_en'] = c_copy.get('description')
                 del c_copy['description']
-            characters.append(Character(**c_copy))
+
+            # Remove fields not understood by Character dataclass (e.g., userInput, imageDataUrl)
+            filtered = {k: v for k, v in c_copy.items() if k in allowed_keys}
+            characters.append(Character(**filtered))
             
         scenes = []
         for s in data.get('scenes', []):
