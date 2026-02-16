@@ -304,10 +304,61 @@ export default function ProjectPage() {
   }
 
   // step=images일 때 ImageGeneration 컴포넌트 렌더링
-  if (currentStep === 'images') {
-    // 대본과 JSON이 있는지 확인
-    const hasJson = project?.scenes?.length > 0; // scenes.json이 있다는 의미
-    if (!hasScript()) {
+    if (currentStep === 'images') {
+      // 대본과 JSON이 있는지 확인
+      const hasJson = project?.scenes?.length > 0; // scenes.json이 있다는 의미
+      if (!hasScript()) {
+        return (
+          <StudioLayout
+            project={project}
+            projectId={projectId}
+            activeStep={activeProgressStep}
+            onStepClick={handleProgressStepClick}
+          >
+            <div style={{ padding: '48px', textAlign: 'center' }}>
+              <p style={{ fontSize: '18px', color: '#718096', marginBottom: '20px' }}>대본이 입력되어 있지 않습니다.</p>
+              <button
+                onClick={() => router.push(`/project?id=${projectId}&step=script`)}
+                style={{ padding: '10px 20px', background: '#667eea', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', marginRight: '10px' }}
+              >
+                대본 편집으로 이동
+              </button>
+              <button
+                onClick={() => router.push(`/project?id=${projectId}`)}
+                style={{ padding: '10px 20px', background: 'white', color: '#4a5568', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }}
+              >
+                대시보드로 돌아가기
+              </button>
+            </div>
+          </StudioLayout>
+        );
+      }
+      if (!hasJson) {
+        return (
+          <StudioLayout
+            project={project}
+            projectId={projectId}
+            activeStep={activeProgressStep}
+            onStepClick={handleProgressStepClick}
+          >
+            <div style={{ padding: '48px', textAlign: 'center' }}>
+              <p style={{ fontSize: '18px', color: '#718096', marginBottom: '20px' }}>JSON이 생성되어 있지 않습니다.</p>
+              <button
+                onClick={() => router.push(`/json-generation?projectId=${projectId}`)}
+                style={{ padding: '10px 20px', background: '#667eea', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', marginRight: '10px' }}
+              >
+                JSON 생성으로 이동
+              </button>
+              <button
+                onClick={() => router.push(`/project?id=${projectId}`)}
+                style={{ padding: '10px 20px', background: 'white', color: '#4a5568', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }}
+              >
+                대시보드로 돌아가기
+              </button>
+            </div>
+          </StudioLayout>
+        );
+      }
       return (
         <StudioLayout
           project={project}
@@ -315,54 +366,10 @@ export default function ProjectPage() {
           activeStep={activeProgressStep}
           onStepClick={handleProgressStepClick}
         >
-          <div style={{ padding: '48px', textAlign: 'center' }}>
-            <p style={{ fontSize: '18px', color: '#718096', marginBottom: '20px' }}>대본이 입력되어 있지 않습니다.</p>
-            <button
-              onClick={() => router.push(`/project?id=${projectId}&step=script`)}
-              style={{ padding: '10px 20px', background: '#667eea', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', marginRight: '10px' }}
-            >
-              대본 편집으로 이동
-            </button>
-            <button
-              onClick={() => router.push(`/project?id=${projectId}`)}
-              style={{ padding: '10px 20px', background: 'white', color: '#4a5568', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }}
-            >
-              대시보드로 돌아가기
-            </button>
-          </div>
+          <ImageGeneration projectId={projectId} />
         </StudioLayout>
       );
     }
-    if (!hasJson) {
-      return (
-        <StudioLayout
-          project={project}
-          projectId={projectId}
-          activeStep={activeProgressStep}
-          onStepClick={handleProgressStepClick}
-        >
-          <div style={{ padding: '48px', textAlign: 'center' }}>
-            <p style={{ fontSize: '18px', color: '#718096', marginBottom: '20px' }}>JSON이 생성되어 있지 않습니다.</p>
-            <button
-              onClick={() => router.push(`/json-generation?projectId=${projectId}`)}
-              style={{ padding: '10px 20px', background: '#667eea', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', marginRight: '10px' }}
-            >
-              JSON 생성으로 이동
-            </button>
-            <button
-              onClick={() => router.push(`/project?id=${projectId}`)}
-              style={{ padding: '10px 20px', background: 'white', color: '#4a5568', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }}
-            >
-              대시보드로 돌아가기
-            </button>
-          </div>
-        </StudioLayout>
-      );
-    }
-    return (
-      <ImageGeneration />
-    );
-  }
 
   // 대본 판단 함수: 작업단계-대본 편집에 내용이 있으면 접근 가능
   function hasScript() {

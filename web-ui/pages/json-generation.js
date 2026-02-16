@@ -81,10 +81,9 @@ const JSONGeneration = () => {
     };
 
     useEffect(() => {
-        if (projectId) {
-            loadData();
-        }
-    }, [projectId]);
+        if (!router.isReady) return;
+        loadData();
+    }, [router.isReady, projectId]);
 
     useEffect(() => {
         if (router.isReady && !projectId && characters.length === 0) {

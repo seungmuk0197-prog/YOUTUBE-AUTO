@@ -27,7 +27,7 @@ const IMAGE_STYLES = [
     { id: 'cute-character', name: '귀여운 동물 캐릭터', desc: '3D 애니메이션 스타일', bg: 'linear-gradient(135deg, #e8f5e9 0%, #f3e5f5 100%)', color: '#2e7d32' }
 ];
 
-const ImageGeneration = () => {
+const ImageGeneration = ({ projectId: propProjectId }) => {
     const router = useRouter();
     const projectIdParam = Array.isArray(router.query.projectId)
         ? router.query.projectId[0]
@@ -35,7 +35,7 @@ const ImageGeneration = () => {
     const idParam = Array.isArray(router.query.id)
         ? router.query.id[0]
         : router.query.id;
-    const projectId = projectIdParam || idParam;
+    const projectId = propProjectId || projectIdParam || idParam;
 
     // 이전 단계 데이터
     const [blueprint, setBlueprint] = useState(null);
@@ -47,6 +47,11 @@ const ImageGeneration = () => {
     // Generated Images State
     const [generatedImages, setGeneratedImages] = useState({}); // Scenes
     const [generatedCharacterImages, setGeneratedCharacterImages] = useState({}); // Characters
+    const [successCount, setSuccessCount] = useState(0);
+    const [failCount, setFailCount] = useState(0);
+    const [generating, setGenerating] = useState(false);
+    const [generatingIndex, setGeneratingIndex] = useState(null);
+    const [targetScenesCount, setTargetScenesCount] = useState(0);
     const [errors, setErrors] = useState({});
     const [characterErrors, setCharacterErrors] = useState({});
 
@@ -56,7 +61,6 @@ const ImageGeneration = () => {
 
     // 이미지 생성 상태 (Scenes)
     const [generationStatus, setGenerationStatus] = useState('idle'); // idle, generating, completed, error
-    const [currentGeneratingIndex, setCurrentGeneratingIndex] = useState(-1);
 
     // 이미지 생성 상태 (Characters)
     const [charGenerationStatus, setCharGenerationStatus] = useState('idle'); // idle, generating, completed, error
@@ -66,21 +70,6 @@ const ImageGeneration = () => {
     const [selectedScene, setSelectedScene] = useState(null);
     const [viewMode, setViewMode] = useState('grid'); // grid, timeline
     const [activeCharacterId, setActiveCharacterId] = useState(null); // 현재 활성 캐릭터 (썸네일 일관성 적용용)
-
-    const resolveImageUrlFromPayload = (payload) => {
-        if (!payload || typeof payload !== 'object') return null;
-        const candidates = [
-            payload.imageUrl,
-            payload.url,
-            payload.result?.imageUrl,
-            payload.result?.url,
-            payload.data?.[0]?.url,
-            payload.data?.[0]?.imageUrl,
-            payload.output?.[0]?.url,
-            payload.output?.[0]?.imageUrl,
-        ];
-        return candidates.find(Boolean) || null;
-    };
 
     // 초기 로딩 추적 (Strict Mode 중복 방지 + ID 변경 시 리셋)
     const initRef = useRef({ projectId: null, started: false, finished: false });
@@ -283,9 +272,12 @@ const ImageGeneration = () => {
         }
 
         const data = await response.json();
+        if (!data.ok) {
+            throw new Error(data.error || 'Character image generation failed');
+        }
         const imageUrl = data.imageUrl;
         if (!imageUrl) {
-            throw new Error('API did not return imageUrl');
+            throw new Error('Image URL missing in response');
         }
 
             return {
@@ -353,77 +345,93 @@ const ImageGeneration = () => {
 
     // 전체 이미지 생성
     const handleGenerateAll = async () => {
-        console.log('🚀 Starting batch image generation');
-        setGenerationStatus('generating');
+        if (generating || !scenes.length) return;
 
-        const newImages = { ...generatedImages };
-        const newErrors = {};
-
-        for (let i = 0; i < scenes.length; i++) {
-            const scene = scenes[i];
-
-            // 이미 생성된 이미지는 스킵
-            if (newImages[scene.id]) {
-                console.log(`⏭️ Scene ${i + 1}: Already generated, skipping`);
-                continue;
-            }
-
-            setCurrentGeneratingIndex(i);
-            console.log(`🎨 Generating image for scene ${i + 1}/${scenes.length}`);
-
-            try {
-                const imageData = await generateSingleImage(scene);
-                newImages[scene.id] = imageData;
-                setGeneratedImages({ ...newImages });
-
-                // localStorage에 저장 (projectId 기준)
-                if (projectId) {
-                    saveProjectData(projectId, PROJECT_DATA_KEYS.GENERATED_IMAGES, newImages);
-                }
-
-                console.log(`✅ Scene ${i + 1}: Success`);
-
-            } catch (error) {
-                console.error(`❌ Scene ${i + 1}: Failed`, error);
-                newErrors[scene.id] = error.message;
-                setErrors({ ...newErrors });
-            }
-
-            // API 레이트 리미트 방지
-            if (i < scenes.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-            }
+        const pendingScenes = scenes.filter(scene => !generatedImages[scene.id]);
+        if (pendingScenes.length === 0) {
+            setTargetScenesCount(0);
+            alert('모든 씬 이미지가 이미 생성되었습니다.');
+            return;
         }
 
-        setGenerationStatus('completed');
-        setCurrentGeneratingIndex(-1);
+        setTargetScenesCount(pendingScenes.length);
+        setSuccessCount(0);
+        setFailCount(0);
+        setErrors({});
+        setGenerationStatus('generating');
+        setGenerating(true);
 
-        const successCount = Object.keys(newImages).length;
-        const failCount = Object.keys(newErrors).length;
-        alert(`✅ 이미지 생성 완료!\n성공: ${successCount}개\n실패: ${failCount}개`);
+        try {
+            const results = await Promise.allSettled(
+                pendingScenes.map((scene, index) => {
+                    const sceneIndex = scene.index ?? scene.sequence ?? index;
+                    return generateSingleImage(scene, sceneIndex);
+                })
+            );
 
-        // 이미지 생성 완료 후 프로젝트 목록/대시보드 데이터 refetch
-        if (typeof window !== 'undefined' && projectId) {
-            // 1. 프로젝트 목록 페이지에 이벤트 전달
-            window.dispatchEvent(new CustomEvent('projectImagesUpdated', {
-                detail: { projectId, imagesCount: successCount }
-            }));
+            const updatedImages = { ...generatedImages };
+            const updatedErrors = { ...errors };
+            let success = 0;
+            let failure = 0;
 
-            // 2. 현재 프로젝트 페이지가 열려있다면 프로젝트 데이터 refetch
-            // (project.js에서 이벤트 리스너로 처리하거나, 직접 refetch)
-            if (window.location.pathname.includes('/project')) {
-                window.dispatchEvent(new CustomEvent('projectDataRefresh', {
-                    detail: { projectId }
-                }));
+            results.forEach((result, idx) => {
+                const scene = pendingScenes[idx];
+                if (!scene) return;
+
+                if (result.status === 'fulfilled' && result.value) {
+                    success++;
+                    updatedImages[scene.id] = result.value;
+                    delete updatedErrors[scene.id];
+                } else {
+                    failure++;
+                    const message = result.status === 'rejected'
+                        ? (result.reason?.message || '이미지 생성 실패')
+                        : '이미지 생성 실패';
+                    updatedErrors[scene.id] = message;
+                }
+            });
+
+            if (projectId) {
+                saveProjectData(projectId, PROJECT_DATA_KEYS.GENERATED_IMAGES, updatedImages);
             }
+
+            setGeneratedImages(updatedImages);
+            setErrors(updatedErrors);
+            setSuccessCount(success);
+            setFailCount(failure);
+            setGenerationStatus('completed');
+            setTargetScenesCount(0);
+
+            const totalSuccessCount = Object.keys(updatedImages).length;
+            alert(`✅ 이미지 생성 완료!\n성공: ${success}개\n실패: ${failure}개`);
+
+            if (typeof window !== 'undefined' && projectId) {
+                window.dispatchEvent(new CustomEvent('projectImagesUpdated', {
+                    detail: { projectId, imagesCount: totalSuccessCount }
+                }));
+                if (window.location.pathname.includes('/project')) {
+                    window.dispatchEvent(new CustomEvent('projectDataRefresh', {
+                        detail: { projectId }
+                    }));
+                }
+            }
+        } catch (error) {
+            console.error('[ImageGeneration] handleGenerateAll error', error);
+            alert('이미지 생성 중 오류가 발생했습니다. 콘솔을 확인하세요.');
+            setGenerationStatus('error');
+            setTargetScenesCount(0);
+        } finally {
+            setGenerating(false);
+            setGeneratingIndex(null);
         }
     };
 
     // 개별 이미지 생성
-    const generateSingleImage = async (scene) => {
-        const projectId = blueprint?.id || 'p_20260210_155249_6d2c';
-
-        // 프롬프트 구성: 스타일/캐릭터 합성은 백엔드(SSOT) 위임
+    const generateSingleImage = async (scene, sceneIndex) => {
+        const pid = projectId || blueprint?.id || 'p_20260210_155249_6d2c';
+        if (sceneIndex !== undefined && sceneIndex !== null) {
+            setGeneratingIndex(sceneIndex);
+        }
 
         let charactersPayload = [];
         if (activeCharacterId) {
@@ -432,7 +440,6 @@ const ImageGeneration = () => {
                 charactersPayload.push(activeChar);
             }
         } else if (scene.characterId) {
-            // Scene-specific character
             const linkedChar = characters.find(c => c.id === scene.characterId);
             if (linkedChar) {
                 charactersPayload.push(linkedChar);
@@ -440,6 +447,7 @@ const ImageGeneration = () => {
         }
 
         const sendPrompt = clampAndLogPrompt(scene.imagePrompt, scene.id, scene.text);
+        const sequenceValue = scene.sequence ?? (scenes.indexOf(scene) + 1);
 
         const response = await fetch(`/api/projects/${pid}/generate/image`, {
             method: 'POST',
@@ -447,7 +455,8 @@ const ImageGeneration = () => {
             body: JSON.stringify({
                 prompt: sendPrompt,
                 sceneId: scene.id,
-                sequence: scene.sequence || (scenes.indexOf(scene) + 1),
+                sequence: sequenceValue,
+                sceneIndex: sceneIndex ?? sequenceValue,
                 aspectRatio: aspectRatio,
                 styleId: selectedStyle.id,
                 characters: charactersPayload
@@ -470,9 +479,13 @@ const ImageGeneration = () => {
         }
 
         const data = await response.json();
+        if (!data.ok) {
+            throw new Error(data.error || 'Image generation failed');
+        }
+
         const imageUrl = data.imageUrl;
         if (!imageUrl) {
-            throw new Error('API did not return imageUrl');
+            throw new Error('Image URL missing in response');
         }
 
         return {
@@ -493,11 +506,13 @@ const ImageGeneration = () => {
         const confirmed = confirm(`씬 ${scenes.indexOf(scene) + 1}의 이미지를 다시 생성하시겠습니까?`);
         if (!confirmed) return;
 
+        const sceneIndex = scene.sequence ?? scenes.indexOf(scene);
         setGenerationStatus('generating');
-        setCurrentGeneratingIndex(scenes.indexOf(scene));
+        setGenerating(true);
+        setGeneratingIndex(sceneIndex);
 
         try {
-            const imageData = await generateSingleImage(scene);
+            const imageData = await generateSingleImage(scene, sceneIndex);
 
             const newImages = {
                 ...generatedImages,
@@ -524,7 +539,8 @@ const ImageGeneration = () => {
             });
         } finally {
             setGenerationStatus('idle');
-            setCurrentGeneratingIndex(-1);
+            setGenerating(false);
+            setGeneratingIndex(null);
         }
     };
 
@@ -726,7 +742,7 @@ const ImageGeneration = () => {
                     </button>
                 </div>
 
-                <div className="char-list">
+                <div className="char-list character-grid">
                     {characters.map((char, index) => {
                         const image = generatedCharacterImages[char.id];
                         const isCurrent = isGenerating && currentCharIndex === index;
@@ -794,7 +810,7 @@ const ImageGeneration = () => {
                         <button
                             className="btn-generate-all"
                             onClick={handleGenerateAll}
-                            disabled={scenes.length === 0}
+                            disabled={scenes.length === 0 || generationStatus === 'generating' || generating}
                             title={characters.length > 0 && charGenerationStatus !== 'completed' ? '캐릭터 생성을 먼저 완료해주세요' : ''}
                             style={{
                                 backgroundColor: '#6200ea',
@@ -842,6 +858,8 @@ const ImageGeneration = () => {
                             const error = errors[scene.id];
                             const status = error ? 'error' : image ? 'completed' : 'pending';
                             const isSelected = selectedSceneIds.has(scene.id);
+                            const sceneIndex = scene.index ?? scene.sequence ?? index;
+                            const isGeneratingScene = generating && generatingIndex === sceneIndex;
 
                             return (
                                 <div
@@ -860,6 +878,12 @@ const ImageGeneration = () => {
                                                 {isSelected && '✓'}
                                             </div>
                                         </div>
+
+                                        {isGeneratingScene && (
+                                            <div className="spinner-overlay">
+                                                <span className="spinner-icon">⏳</span>
+                                            </div>
+                                        )}
 
                                         {/* 이미지 또는 플레이스홀더 */}
                                         {status === 'completed' ? (
@@ -927,11 +951,12 @@ const ImageGeneration = () => {
     const renderGenerationProgress = () => {
         if (generationStatus !== 'generating') return null;
 
-        const progress = currentGeneratingIndex >= 0
-            ? ((currentGeneratingIndex + 1) / scenes.length) * 100
-            : 0;
-        const completed = Object.keys(generatedImages).length;
-        const failed = Object.keys(errors).length;
+        const totalTargets = targetScenesCount || scenes.length;
+        const completed = Math.min(successCount, totalTargets);
+        const failed = Math.min(failCount, Math.max(totalTargets - completed, 0));
+        const attempted = Math.min(totalTargets, completed + failed);
+        const pending = Math.max(totalTargets - attempted, 0);
+        const progress = totalTargets > 0 ? Math.min(100, (attempted / totalTargets) * 100) : 0;
 
         return (
             <div className="modal-overlay">
@@ -946,9 +971,12 @@ const ImageGeneration = () => {
                     </div>
 
                     <h2>AI가 씬 이미지를 생성하고 있습니다</h2>
-                    {currentGeneratingIndex >= 0 && (
+                    <p className="current-scene">
+                        시도: {attempted} / {totalTargets} (완료 {completed}, 실패 {failed})
+                    </p>
+                    {generatingIndex !== null && (
                         <p className="current-scene">
-                            현재: 씬 {currentGeneratingIndex + 1} / {scenes.length}
+                            현재: 씬 {Math.min(generatingIndex + 1, scenes.length)}
                         </p>
                     )}
 
@@ -968,7 +996,7 @@ const ImageGeneration = () => {
                         </div>
                         <div className="stat-item pending">
                             <span className="stat-icon">⏳</span>
-                            <span className="stat-count">{scenes.length - completed - failed}</span>
+                            <span className="stat-count">{pending}</span>
                             <span className="stat-label">대기</span>
                         </div>
                         {failed > 0 && (
@@ -982,7 +1010,7 @@ const ImageGeneration = () => {
 
                     <div className="generation-tips">
                         <p>💡 평균 생성 시간: 씬당 약 10-15초</p>
-                        <p>⏱️ 예상 완료 시간: {Math.ceil((scenes.length - completed) * 12 / 60)}분</p>
+                        <p>⏱️ 예상 완료 시간: {Math.ceil(pending * 12 / 60)}분</p>
                     </div>
 
                     <button
@@ -1072,7 +1100,9 @@ const ImageGeneration = () => {
             reachedStep="images"
             projectId={projectId}
         >
-            <div className="image-generation-container">
+            <div className="container">
+                <div className="section-card">
+                    <div className="image-generation-container">
 
             {/* 컨트롤 바 */}
             <div className="control-bar">
@@ -1093,7 +1123,7 @@ const ImageGeneration = () => {
                     <button
                         className="btn-control primary"
                         onClick={handleGenerateAll}
-                        disabled={generationStatus === 'generating'}
+                        disabled={generationStatus === 'generating' || generating}
                     >
                         {generationStatus === 'generating'
                             ? '⏳ 생성 중...'
@@ -1179,13 +1209,21 @@ const ImageGeneration = () => {
 
                 <div className="footer-stats">
                     <div className="stat">
+                        <span className="stat-label">최근 성공:</span>
+                        <span className="stat-value">{successCount}</span>
+                    </div>
+                    <div className="stat">
+                        <span className="stat-label">최근 실패:</span>
+                        <span className="stat-value error">{failCount}</span>
+                    </div>
+                    <div className="stat">
                         <span className="stat-label">생성 완료:</span>
                         <span className="stat-value">
                             {Object.keys(generatedImages).length} / {scenes.length}
                         </span>
                     </div>
                     <div className="stat">
-                        <span className="stat-label">실패:</span>
+                        <span className="stat-label">전체 실패:</span>
                         <span className="stat-value error">
                             {Object.keys(errors).length}
                         </span>
@@ -1200,6 +1238,8 @@ const ImageGeneration = () => {
                     다음 단계: TTS 생성 →
                 </button>
             </footer>
+                </div>
+            </div>
 
             <style jsx>{`
         .image-generation-container {
@@ -1207,7 +1247,18 @@ const ImageGeneration = () => {
             display: flex;
             flex-direction: column;
             gap: 10px;
-            background: #f0f0f0;
+            background: transparent;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .section-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
         }
 
         .page-header {
@@ -1322,6 +1373,7 @@ const ImageGeneration = () => {
         border: 2px solid #E0E0E0;
         transition: all 0.3s;
         cursor: pointer;
+        position: relative;
         }
 
         .image-card:hover {
@@ -1336,6 +1388,25 @@ const ImageGeneration = () => {
 
         .image-card.error {
         border-color: #FF6B6B;
+        }
+
+        .image-card-new {
+            position: relative;
+        }
+
+        .spinner-overlay {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            z-index: 5;
         }
 
         .card-header {
@@ -1416,8 +1487,8 @@ const ImageGeneration = () => {
 
         .style-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
         }
 
         .style-card {
@@ -2376,6 +2447,11 @@ const ImageGeneration = () => {
                         gap: 12px;
                         overflow-x: auto;
                         padding-bottom: 4px;
+                    }
+                    .character-grid {
+                        display: grid;
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 20px;
                     }
                     .char-item {
                         display: flex;

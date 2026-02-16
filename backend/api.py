@@ -28,6 +28,7 @@ sys.path.insert(0, str(project_root))
 
 # .env 로드
 load_dotenv(project_root / ".env")
+print("OPENAI KEY EXISTS:", bool(os.getenv("OPENAI_API_KEY")))
 
 from backend.project_manager import ProjectManager
 from backend.models import Project, Scene
@@ -2156,6 +2157,7 @@ def generate_image(project_id):
         scene_id = data.get('sceneId')
         base_prompt = data.get('prompt')
         sequence = data.get('sequence', 0)
+        scene_index = data.get('sceneIndex', sequence)
         
         # New SSOT parameters
         style_id = data.get('styleId')
@@ -2203,6 +2205,7 @@ def generate_image(project_id):
         
         raw_prompt = "\n".join(final_prompt_parts)
         final_prompt = clamp_prompt_server(raw_prompt, base_prompt)
+        logger.info(f"[IMAGE] Generating scene {scene_index}")
         logger.info(f"[PROMPT_DEBUG_SERVER] sceneId={scene_id} rawLen={len(raw_prompt)} sendLen={len(final_prompt)} rawHead={raw_prompt[:120]} rawTail={raw_prompt[-120:]} send={final_prompt[:200]}")
 
         # DALL-E 3 호출
@@ -2217,7 +2220,7 @@ def generate_image(project_id):
         elif aspect_ratio == '1:1':
             size = "1024x1024"
 
-        logger.info(f"Generating image for scene {sequence}: {final_prompt[:100]}... (Size: {size})")
+        logger.info(f"Generating image for scene {scene_index}: {final_prompt[:100]}... (Size: {size})")
 
         try:
             response = client.images.generate(
@@ -2277,17 +2280,7 @@ def generate_image(project_id):
             return jsonify({
                 'ok': True,
                 'imageUrl': relative_url,
-                'imagePath': relative_path,  # 상대 경로도 반환 (프론트에서 사용 가능)
-                'localPath': str(file_path),
-                'filename': filename,
-                'sceneUpdated': scene_updated,
-                'metadata': { # Expanded Metadata
-                    'styleId': used_style_name,
-                    'aspectRatio': aspect_ratio,
-                    'usedPrompt': final_prompt,
-                    'width': int(size.split('x')[0]),
-                    'height': int(size.split('x')[1])
-                }
+                'sceneIndex': scene_index
             }), 200
 
         except openai.OpenAIError as e:
@@ -2295,10 +2288,11 @@ def generate_image(project_id):
             err_str = str(e)
             if "too long" in err_str.lower():
                 err_str += f" (rawLen={len(raw_prompt)}, sendLen={len(final_prompt)})"
+            logger.error(f"[IMAGE] Failed: {err_str}")
             return jsonify({'ok': False, 'error': f"OpenAI API Error: {err_str}"}), 500
 
     except Exception as e:
-        logger.error(f"이미지 생성 실패: {e}")
+        logger.error(f"[IMAGE] Failed: {str(e)}")
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 

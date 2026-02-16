@@ -1,0 +1,202 @@
+[
+  {
+    "id": "scene_1771246036107_0",
+    "sequence": 1,
+    "text": "",
+    "duration": 12,
+    "startTime": 0,
+    "endTime": 12,
+    "imagePrompt": "",
+    "imageStyle": "vibrant",
+    "imageUrl": null,
+    "transition": "none",
+    "effects": {
+      "zoom": false,
+      "pan": false,
+      "kenBurns": false,
+      "textAnimation": "none"
+    },
+    "characterId": "char_slot_1771246027633_0",
+    "prompt": ""
+  },
+  {
+    "id": "scene_1771246036107_2",
+    "sequence": 2,
+    "text": "",
+    "duration": 8,
+    "startTime": 12,
+    "endTime": 20,
+    "imagePrompt": "",
+    "imageStyle": "vibrant",
+    "imageUrl": null,
+    "transition": "none",
+    "effects": {
+      "zoom": false,
+      "pan": false,
+      "kenBurns": false,
+      "textAnimation": "none"
+    },
+    "characterId": "char_slot_1771246027633_0",
+    "prompt": ""
+  },
+  {
+    "id": "scene_1771246036107_4",
+    "sequence": 3,
+    "text": "",
+    "duration": 6,
+    "startTime": 20,
+    "endTime": 26,
+    "imagePrompt": "",
+    "imageStyle": "vibrant",
+    "imageUrl": null,
+    "transition": "none",
+    "effects": {
+      "zoom": false,
+      "pan": false,
+      "kenBurns": false,
+      "textAnimation": "none"
+    },
+    "characterId": "char_slot_1771246027633_0",
+    "prompt": ""
+  },
+  {
+    "id": "scene_1771246036107_6",
+    "sequence": 4,
+    "text": "",
+    "duration": 4,
+    "startTime": 26,
+    "endTime": 30,
+    "imagePrompt": "",
+    "imageStyle": "vibrant",
+    "imageUrl": null,
+    "transition": "none",
+    "effects": {
+      "zoom": false,
+      "pan": false,
+      "kenBurns": false,
+      "textAnimation": "none"
+    },
+    "characterId": "char_slot_1771246027633_0",
+    "prompt": ""
+  },
+  {
+    "id": "scene_1771246036107_8",
+    "sequence": 5,
+    "text": "",
+    "duration": 5,
+    "startTime": 30,
+    "endTime": 35,
+    "imagePrompt": "",
+    "imageStyle": "vibrant",
+    "imageUrl": null,
+    "transition": "none",
+    "effects": {
+      "zoom": false,
+      "pan": false,
+      "kenBurns": false,
+      "textAnimation": "none"
+    },
+    "characterId": "char_slot_1771246027633_0",
+    "prompt": ""
+  },
+  {
+    "id": "scene_1771246036108_10",
+    "sequence": 6,
+    "text": "",
+    "duration": 5,
+    "startTime": 35,
+    "endTime": 40,
+    "imagePrompt": "",
+    "imageStyle": "vibrant",
+    "imageUrl": null,
+    "transition": "none",
+    "effects": {
+      "zoom": false,
+      "pan": false,
+      "kenBurns": false,
+      "textAnimation": "none"
+    },
+    "characterId": "char_slot_1771246027633_0",
+    "prompt": ""
+  },
+  {
+    "id": "scene_1771246036108_12",
+    "sequence": 7,
+    "text": "",
+    "duration": 6,
+    "startTime": 40,
+    "endTime": 46,
+    "imagePrompt": "",
+    "imageStyle": "vibrant",
+    "imageUrl": null,
+    "transition": "none",
+    "effects": {
+      "zoom": false,
+      "pan": false,
+      "kenBurns": false,
+      "textAnimation": "none"
+    },
+    "characterId": "char_slot_1771246027633_0",
+    "prompt": ""
+  },
+  {
+    "id": "scene_1771246036108_14",
+    "sequence": 8,
+    "text": "",
+    "duration": 5,
+    "startTime": 46,
+    "endTime": 51,
+    "imagePrompt": "",
+    "imageStyle": "vibrant",
+    "imageUrl": null,
+    "transition": "none",
+    "effects": {
+      "zoom": false,
+      "pan": false,
+      "kenBurns": false,
+      "textAnimation": "none"
+    },
+    "characterId": "char_slot_1771246027633_0",
+    "prompt": ""
+  },
+  {
+    "id": "scene_1771246036108_16",
+    "sequence": 9,
+    "text": "",
+    "duration": 8,
+    "startTime": 51,
+    "endTime": 59,
+    "imagePrompt": "",
+    "imageStyle": "vibrant",
+    "imageUrl": null,
+    "transition": "none",
+    "effects": {
+      "zoom": false,
+      "pan": false,
+      "kenBurns": false,
+      "textAnimation": "none"
+    },
+    "characterId": "char_slot_1771246027633_0",
+    "prompt": ""
+  },
+  {
+    "id": "scene_1771246036108_18",
+    "sequence": 10,
+    "text": "",
+    "duration": 5,
+    "startTime": 59,
+    "endTime": 64,
+    "imagePrompt": "",
+    "imageStyle": "vibrant",
+    "imageUrl": null,
+    "transition": "none",
+    "effects": {
+      "zoom": false,
+      "pan": false,
+      "kenBurns": false,
+      "textAnimation": "none"
+    },
+    "characterId": "char_slot_1771246027633_0",
+    "prompt": ""
+  }
+]
