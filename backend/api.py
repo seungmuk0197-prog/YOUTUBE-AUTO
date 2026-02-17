@@ -38,6 +38,7 @@ from src.video.tts import get_audio_duration
 from src.video.render import render_video_simple
 from src.video.srt import format_timestamp, split_sentences_ko, write_srt
 import mimetypes
+import shutil
 
 app = Flask(__name__)
 
@@ -2453,23 +2454,29 @@ def generate_tts_endpoint(project_id):
             'traceId': trace_id
         }), 400
 
+    project_dir = pm.get_project_dir(project_id)
+    project_audio_dir = project_dir / "assets" / "audio"
+    project_audio_dir.mkdir(parents=True, exist_ok=True)
+
     tts_dir = STORAGE_ROOT / project_id / "tts"
     tts_dir.mkdir(parents=True, exist_ok=True)
     filename = f"{scene_id}.{format_value}"
-    audio_path = tts_dir / filename
+    storage_audio_path = tts_dir / filename
+    project_audio_path = project_audio_dir / filename
 
     try:
         audio_bytes = _synthesize_openai_tts(narration, voice)
-        with open(audio_path, 'wb') as out_file:
+        with open(project_audio_path, 'wb') as out_file:
             out_file.write(audio_bytes)
+        shutil.copy2(project_audio_path, storage_audio_path)
 
-        duration = get_audio_duration(str(audio_path))
+        duration = get_audio_duration(str(project_audio_path))
         if duration is None:
             raise RuntimeError("Failed to measure audio duration")
 
-        scene.audio_path = str(audio_path.relative_to(project_root))
+        scene.audio_path = str(project_audio_path.relative_to(project_dir).as_posix())
         scene.ttsStatus = 'success'
-        scene.ttsAudioUrl = f"/files/projects/{project_id}/tts/{filename}"
+        scene.ttsAudioUrl = f"/api/projects/{project_id}/files/assets/audio/{filename}"
         scene.ttsTraceId = trace_id
         scene.ttsError = None
         scene.ttsUpdatedAt = datetime.now().astimezone().isoformat()
@@ -2482,6 +2489,7 @@ def generate_tts_endpoint(project_id):
             'sceneId': scene_id,
             'status': 'success',
             'audioUrl': scene.ttsAudioUrl,
+            'audioPath': scene.audio_path,
             'durationSec': duration,
             'speed': speed,
             'traceId': trace_id
